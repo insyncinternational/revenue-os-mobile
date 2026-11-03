@@ -19,11 +19,16 @@ export type MobileCapability =
   | "deals_money"
   | "deals_edit"
   | "tasks_create"
+  | "tasks_edit"
   | "meetings_read"
   | "meetings_edit"
   | "calls_log"
   | "invoices_read"
-  | "invoices_edit";
+  | "invoices_edit"
+  | "ai_drafts_read"
+  | "ai_drafts_decide"
+  | "campaigns_read"
+  | "campaigns_pause";
 
 /** GET /api/mobile/access?base_id= */
 export type WorkspaceAccess = {

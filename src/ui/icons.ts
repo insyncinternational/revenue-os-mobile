@@ -2,28 +2,66 @@
  * The icons the app uses — the same lucide set as the web. Each one is imported from its own file so the bundle
  * carries only these, not all ~1,600 icons. Add new icons here; never import from "lucide-react-native" directly.
  */
-export { default as ArrowLeft } from "lucide-react-native/icons/arrow-left";
+import ArrowLeftIcon from "lucide-react-native/icons/arrow-left";
+import ChevronRightIcon from "lucide-react-native/icons/chevron-right";
+import SendIcon from "lucide-react-native/icons/send";
+import { mirroredInRtl } from "./rtlIcon";
+
+// Direction icons face the other way in Arabic (right-to-left).
+export const ArrowLeft = mirroredInRtl(ArrowLeftIcon);
+export const ChevronRight = mirroredInRtl(ChevronRightIcon);
+export const Send = mirroredInRtl(SendIcon);
 export { default as Bell } from "lucide-react-native/icons/bell";
 export { default as Building } from "lucide-react-native/icons/building";
 export { default as Calendar } from "lucide-react-native/icons/calendar";
 export { default as Check } from "lucide-react-native/icons/check";
 export { default as CheckCircle2 } from "lucide-react-native/icons/circle-check";
 export { default as ChevronDown } from "lucide-react-native/icons/chevron-down";
-export { default as ChevronRight } from "lucide-react-native/icons/chevron-right";
 export { default as CircleAlert } from "lucide-react-native/icons/circle-alert";
 export { default as Clock } from "lucide-react-native/icons/clock";
 export { default as Archive } from "lucide-react-native/icons/archive";
+export { default as Flame } from "lucide-react-native/icons/flame";
+export { default as TrendingUp } from "lucide-react-native/icons/trending-up";
+export { default as TrendingDown } from "lucide-react-native/icons/trending-down";
+export { default as Video } from "lucide-react-native/icons/video";
+export { default as Target } from "lucide-react-native/icons/target";
+export { default as Lightbulb } from "lucide-react-native/icons/lightbulb";
+export { default as BellOff } from "lucide-react-native/icons/bell-off";
+export { default as BellRing } from "lucide-react-native/icons/bell-ring";
+export { default as ArrowUp } from "lucide-react-native/icons/arrow-up";
+export { default as MapPin } from "lucide-react-native/icons/map-pin";
+export { default as Trophy } from "lucide-react-native/icons/trophy";
+export { default as XCircle } from "lucide-react-native/icons/circle-x";
+export { default as CalendarClock } from "lucide-react-native/icons/calendar-clock";
+export { default as Percent } from "lucide-react-native/icons/percent";
+export { default as UserRound } from "lucide-react-native/icons/user-round";
+export { default as CircleUserRound } from "lucide-react-native/icons/circle-user-round";
+export { default as Briefcase } from "lucide-react-native/icons/briefcase";
+export { default as Factory } from "lucide-react-native/icons/factory";
+export { default as StickyNote } from "lucide-react-native/icons/sticky-note";
+export { default as Pencil } from "lucide-react-native/icons/pencil";
+export { default as PhoneOutgoing } from "lucide-react-native/icons/phone-outgoing";
+export { default as FileText } from "lucide-react-native/icons/file-text";
+export { default as CheckCheck } from "lucide-react-native/icons/check-check";
 export { default as Eye } from "lucide-react-native/icons/eye";
 export { default as EyeOff } from "lucide-react-native/icons/eye-off";
 export { default as Globe } from "lucide-react-native/icons/globe";
 export { default as Languages } from "lucide-react-native/icons/languages";
 export { default as Lock } from "lucide-react-native/icons/lock";
+export { default as KeyRound } from "lucide-react-native/icons/key-round";
+export { default as Trash2 } from "lucide-react-native/icons/trash";
 export { default as LogOut } from "lucide-react-native/icons/log-out";
 export { default as Palette } from "lucide-react-native/icons/palette";
 export { default as PauseCircle } from "lucide-react-native/icons/circle-pause";
 export { default as ArrowUpCircle } from "lucide-react-native/icons/circle-arrow-up";
 export { default as LayoutGrid } from "lucide-react-native/icons/layout-grid";
 export { default as ShieldCheck } from "lucide-react-native/icons/shield-check";
+export { default as Bot } from "lucide-react-native/icons/bot";
+export { default as Paperclip } from "lucide-react-native/icons/paperclip";
+export { default as ImageIcon } from "lucide-react-native/icons/image";
+export { default as Camera } from "lucide-react-native/icons/camera";
+export { default as Fingerprint } from "lucide-react-native/icons/fingerprint-pattern";
+export { default as ScanFace } from "lucide-react-native/icons/scan-face";
 export { default as ArrowLeftRight } from "lucide-react-native/icons/arrow-left-right";
 export { default as Inbox } from "lucide-react-native/icons/inbox";
 export { default as KanbanSquare } from "lucide-react-native/icons/square-kanban";
@@ -43,6 +81,21 @@ export { default as Users } from "lucide-react-native/icons/users";
 export { default as WifiOff } from "lucide-react-native/icons/wifi-off";
 export { default as X } from "lucide-react-native/icons/x";
 
+export { default as CalendarCheck } from "lucide-react-native/icons/calendar-check";
+export { default as CalendarDays } from "lucide-react-native/icons/calendar-days";
+export { default as CalendarPlus } from "lucide-react-native/icons/calendar-plus";
+export { default as CalendarX } from "lucide-react-native/icons/calendar-x";
+export { default as ExternalLink } from "lucide-react-native/icons/external-link";
+export { default as Link } from "lucide-react-native/icons/link";
+export { default as ListChecks } from "lucide-react-native/icons/list-checks";
+export { default as ListTodo } from "lucide-react-native/icons/list-todo";
+export { default as RotateCcw } from "lucide-react-native/icons/rotate-ccw";
+export { default as UserX } from "lucide-react-native/icons/user-x";
+export { default as UserPlus } from "lucide-react-native/icons/user-plus";
+export { default as Rocket } from "lucide-react-native/icons/rocket";
+export { default as Ban } from "lucide-react-native/icons/ban";
+export { default as Receipt } from "lucide-react-native/icons/receipt";
+export { default as Share2 } from "lucide-react-native/icons/share-2";
 export type { LucideIcon as IconComponent } from "lucide-react-native";
 
 /** Default stroke for every icon (thinner than lucide's 2 — matches the web). */

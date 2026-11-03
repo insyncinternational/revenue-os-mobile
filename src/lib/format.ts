@@ -34,6 +34,31 @@ function startOfDay(d: Date): number {
 const DAY = 86_400_000;
 
 /**
+ * Words for phones whose Intl can't say them (Hermes on some Android builds has no RelativeTimeFormat):
+ * "Now" / "Yesterday" and the "5m" / "3h" list shorthands, per app language.
+ */
+const SHORT: Record<string, { now: string; yesterday: string; min: (n: number) => string; hour: (n: number) => string }> = {
+  en: { now: "Now", yesterday: "Yesterday", min: (n) => `${n}m`, hour: (n) => `${n}h` },
+  az: { now: "İndi", yesterday: "Dünən", min: (n) => `${n} dəq`, hour: (n) => `${n} saat` },
+  ar: { now: "الآن", yesterday: "أمس", min: (n) => `${n} د`, hour: (n) => `${n} س` },
+};
+function shortWords(locale: string): (typeof SHORT)[string] {
+  return SHORT[locale.slice(0, 2).toLowerCase()] ?? SHORT.en!;
+}
+
+/** "now" / "Yesterday" in the user's language (Intl), capitalised; the table above where Intl can't say it. */
+function relativeWord(locale: string, value: number, unit: "second" | "day", fallback: string): string {
+  try {
+    const word = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(value, unit);
+    // An engine without this locale answers in English: use our own word instead.
+    if (!locale.startsWith("en") && /^[a-z\s]+$/i.test(word)) return fallback;
+    return word.charAt(0).toLocaleUpperCase(locale) + word.slice(1);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
  * Short relative time for lists: "now", "5m", "3h", "Yesterday", "Mon", "12 Oct", "12 Oct 2025".
  * `now` is injectable for tests.
  */
@@ -42,11 +67,12 @@ export function relativeTime(value: Date | string | number, locale = "en-US", no
   const t = d.getTime();
   if (Number.isNaN(t)) return "";
   const diff = now.getTime() - t;
-  if (diff < 60_000 && diff > -60_000) return "now";
-  if (diff > 0 && diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
+  const words = shortWords(locale);
+  if (diff < 60_000 && diff > -60_000) return relativeWord(locale, 0, "second", words.now).toLocaleLowerCase(locale);
+  if (diff > 0 && diff < 3_600_000) return words.min(Math.floor(diff / 60_000));
   const days = Math.round((startOfDay(now) - startOfDay(d)) / DAY);
-  if (days === 0) return diff > 0 ? `${Math.floor(diff / 3_600_000)}h` : new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(d);
-  if (days === 1) return "Yesterday";
+  if (days === 0) return diff > 0 ? words.hour(Math.floor(diff / 3_600_000)) : new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(d);
+  if (days === 1) return relativeWord(locale, -1, "day", words.yesterday);
   if (days > 1 && days < 7) return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d);
   const sameYear = d.getFullYear() === now.getFullYear();
   return new Intl.DateTimeFormat(locale, sameYear ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" }).format(d);

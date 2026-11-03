@@ -13,9 +13,11 @@ type ChipProps = {
   onPress?: () => void;
 };
 
+/** A choice pill: ink when selected, a plain card-coloured pill otherwise (no outlines), with its count in a small badge. */
 export function Chip({ label, selected, count, icon: Icon, onPress }: ChipProps) {
-  const { colors } = useTheme();
-  const fg = selected ? colors.primaryText : colors.textSecondary;
+  const { colors, scheme } = useTheme();
+  const fg = selected ? colors.onInk : colors.textSecondary;
+  const countBg = selected ? (scheme === "dark" ? "rgba(17, 17, 20, 0.12)" : "rgba(255, 255, 255, 0.2)") : colors.surfaceTertiary;
   return (
     <Pressable
       onPress={onPress}
@@ -26,8 +28,9 @@ export function Chip({ label, selected, count, icon: Icon, onPress }: ChipProps)
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? (pressed ? colors.primarySubtlePressed : colors.primarySubtle) : pressed ? colors.pressed : colors.surface,
-          borderColor: selected ? colors.primaryBorder : colors.border,
+          backgroundColor: selected ? (pressed ? colors.inkPressed : colors.ink) : pressed ? colors.pressed : colors.surface,
+          // A hairline keeps an unselected pill visible on a white card as well as on the grey page.
+          borderColor: selected ? colors.ink : colors.border,
         },
       ]}
     >
@@ -36,9 +39,11 @@ export function Chip({ label, selected, count, icon: Icon, onPress }: ChipProps)
         {label}
       </Text>
       {count != null && count > 0 ? (
-        <Text variant="caption" numeric style={{ color: selected ? colors.primaryText : colors.textMuted }}>
-          {count > 99 ? "99+" : count}
-        </Text>
+        <View style={[styles.count, { backgroundColor: countBg }]}>
+          <Text variant="caption" numeric weight="semibold" style={{ color: fg, fontSize: 11, lineHeight: 14 }}>
+            {count > 99 ? "99+" : count}
+          </Text>
+        </View>
       ) : null}
     </Pressable>
   );
@@ -71,7 +76,8 @@ export function FilterChips<K extends string>({ options, value, onChange }: { op
 }
 
 const styles = StyleSheet.create({
-  chip: { height: 34, borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: space.md, flexDirection: "row", alignItems: "center", gap: space.xs + 2 },
+  chip: { height: 34, borderRadius: radius.pill, paddingHorizontal: space.md + 2, flexDirection: "row", alignItems: "center", gap: space.xs + 2, borderWidth: 1 },
+  count: { minWidth: 20, height: 18, paddingHorizontal: 5, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   row: { paddingHorizontal: gutter, gap: space.sm, alignItems: "center" },
   endSpacer: { width: space.xs },
 });

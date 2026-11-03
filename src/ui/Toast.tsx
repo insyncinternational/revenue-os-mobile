@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import Animated, { FadeInUp, FadeOutDown } from "react-native-reanimated";
+import Animated, { FadeInUp, FadeOutDown, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, shadows, space } from "@/theme/tokens";
@@ -56,7 +56,7 @@ function ToastView({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
         accessibilityLiveRegion="polite"
         style={[styles.toast, { backgroundColor: colors.surfaceInverse }]}
       >
-        {toast.kind !== "info" ? <Icon size={18} color={iconColor} strokeWidth={ICON_STROKE + 0.25} /> : null}
+        {toast.kind !== "info" ? <PopIcon Icon={Icon} color={iconColor} /> : null}
         <Text variant="subhead" tone="inverse" weight="medium" style={styles.message} numberOfLines={3}>
           {toast.message}
         </Text>
@@ -79,6 +79,21 @@ function ToastView({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
   );
 }
 
+/** The toast's icon springs in a beat after the toast itself, so "done" lands with a little pop. */
+function PopIcon({ Icon, color }: { Icon: typeof CheckCircle2; color: string }) {
+  const reduce = useReducedMotion();
+  const s = useSharedValue(reduce ? 1 : 0.3);
+  useEffect(() => {
+    if (!reduce) s.set(withDelay(90, withSpring(1, { damping: 7, stiffness: 260 })));
+  }, [reduce, s]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  return (
+    <Animated.View style={style}>
+      <Icon size={18} color={color} strokeWidth={ICON_STROKE + 0.25} />
+    </Animated.View>
+  );
+}
+
 export function useToast(): ToastApi {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error("useToast must be used inside ToastProvider");
@@ -86,7 +101,8 @@ export function useToast(): ToastApi {
 }
 
 const styles = StyleSheet.create({
-  layer: { justifyContent: "flex-end", alignItems: "center", paddingHorizontal: gutter },
-  toast: { flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md, borderRadius: radius.lg, maxWidth: 520, alignSelf: "stretch", shadowColor: shadows.neutral, shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+  // Above everything on screen, the floating + button included, so Undo is always reachable.
+  layer: { justifyContent: "flex-end", alignItems: "center", paddingHorizontal: gutter, zIndex: 1000 },
+  toast: { flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md, borderRadius: radius.lg, maxWidth: 520, alignSelf: "stretch", shadowColor: shadows.neutral, shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 12 },
   message: { flex: 1 },
 });

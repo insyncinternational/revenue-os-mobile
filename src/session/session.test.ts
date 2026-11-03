@@ -47,5 +47,10 @@ describe("small checks", () => {
     expect(greetingKey(7)).toBe("today.greetingMorning");
     expect(greetingKey(12)).toBe("today.greetingAfternoon");
     expect(greetingKey(19)).toBe("today.greetingEvening");
+    // Same edges as the web dashboard: 17:00 is still afternoon, small hours are evening.
+    expect(greetingKey(17)).toBe("today.greetingAfternoon");
+    expect(greetingKey(18)).toBe("today.greetingEvening");
+    expect(greetingKey(2)).toBe("today.greetingEvening");
+    expect(greetingKey(5)).toBe("today.greetingMorning");
   });
 });

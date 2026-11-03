@@ -3,6 +3,7 @@ import { StyleSheet, View, type DimensionValue } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, useReducedMotion, Easing } from "react-native-reanimated";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
+import { t } from "@/i18n";
 
 /** Placeholder block with a slow pulse (static when "Reduce motion" is on). */
 export function Skeleton({ width = "100%", height = 14, round = false }: { width?: DimensionValue; height?: number; round?: boolean }) {
@@ -34,7 +35,7 @@ export function SkeletonRow({ avatar = true }: { avatar?: boolean }) {
 
 export function SkeletonList({ rows = 8, avatar = true }: { rows?: number; avatar?: boolean }) {
   return (
-    <View accessibilityLabel="Loading" accessibilityRole="progressbar">
+    <View accessibilityLabel={t("state.loading")} accessibilityRole="progressbar">
       {Array.from({ length: rows }, (_, i) => (
         <SkeletonRow key={i} avatar={avatar} />
       ))}

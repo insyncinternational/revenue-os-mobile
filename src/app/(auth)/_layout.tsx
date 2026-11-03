@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { useStackOptions } from "@/theme/stackOptions";
 
-export const unstable_settings = { initialRouteName: "sign-in" };
+export const unstable_settings = { anchor: "sign-in" };
 
 export default function AuthLayout() {
   const options = useStackOptions();

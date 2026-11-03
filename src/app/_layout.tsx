@@ -1,21 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import Constants from "expo-constants";
 import { useFonts } from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { authApi } from "@/api/auth";
-import { useLanguage } from "@/i18n";
+import { syncLayoutDirection, useLanguage } from "@/i18n";
 import { isOlderThan } from "@/lib/version";
 import { queryClient } from "@/query/queryClient";
 import { persistOnBackground, restoreQueryCache } from "@/query/persist";
 import { useSession } from "@/session/sessionStore";
+import { useStatusBarOverride } from "@/theme/statusBar";
 import { useBrandColor } from "@/theme/brandStore";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { fonts } from "@/theme/tokens";
+import { CelebrateProvider } from "@/ui/Celebrate";
+import { LaunchIntro } from "@/ui/LaunchIntro";
 import { ToastProvider } from "@/ui/Toast";
 
 // Keep the splash up until fonts and the session are ready — no flash of unstyled text or the wrong screen.
@@ -24,6 +28,16 @@ SplashScreen.setOptions({ duration: 200, fade: true });
 
 // Saved data is in memory before the first render, so screens open on content instead of a spinner.
 restoreQueryCache(queryClient);
+
+// Arabic runs right-to-left: make the native layout direction match the saved language (restarts once if not).
+syncLayoutDirection();
+
+let splashHidden = false;
+function hideSplash(): void {
+  if (splashHidden) return;
+  splashHidden = true;
+  SplashScreen.hide();
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -43,9 +57,20 @@ export default function RootLayout() {
 
   useEffect(() => persistOnBackground(queryClient), []);
 
-  const ready = (fontsLoaded || fontError != null) && status !== "loading";
+  // Server-written text (KPI labels, notifications, errors) comes in the app language: refetch on a switch.
+  const firstLanguage = useRef(language);
   useEffect(() => {
-    if (ready) SplashScreen.hide();
+    if (language === firstLanguage.current) return;
+    firstLanguage.current = language;
+    void queryClient.invalidateQueries();
+  }, [language]);
+
+  const ready = (fontsLoaded || fontError != null) && status !== "loading";
+  // The intro says when its cover is drawn; the timer is a backstop so the splash can never stay up.
+  useEffect(() => {
+    if (!ready) return;
+    const backstop = setTimeout(hideSplash, 1500);
+    return () => clearTimeout(backstop);
   }, [ready]);
 
   if (!ready) return null;
@@ -53,14 +78,20 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        <KeyboardProvider>
         <QueryClientProvider client={queryClient}>
           <BrandedTheme>
             <ToastProvider>
-              {/* Keyed on the language: switching re-renders every screen once in the new language. */}
-              <RootStack key={language} />
+              <CelebrateProvider>
+                {/* Keyed on the language: switching re-renders every screen once in the new language. */}
+                <RootStack key={language} />
+              </CelebrateProvider>
             </ToastProvider>
           </BrandedTheme>
         </QueryClientProvider>
+        </KeyboardProvider>
+        {/* Over everything, once per cold start: the full intro before sign-in, a short one before Today. */}
+        <LaunchIntro mode={status === "signedIn" ? "short" : "full"} onShown={hideSplash} />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -74,8 +105,8 @@ function BrandedTheme({ children }: { children: React.ReactNode }) {
   return <ThemeProvider brandColor={preview ?? workspace ?? fromUser}>{children}</ThemeProvider>;
 }
 
-/** Today, the first tab (typed-routes spelling of "/"). */
-const HOME = "/(app)/(tabs)/index" as const;
+/** Today, the first tab. */
+const HOME = "/" as const;
 
 /** Versions older than the server's minimum must update (checked once per launch; never blocks offline). */
 function useUpdateRequired(): boolean {
@@ -85,6 +116,7 @@ function useUpdateRequired(): boolean {
 
 function RootStack() {
   const { colors, scheme } = useTheme();
+  const statusOverride = useStatusBarOverride((s) => s.style);
   const status = useSession((s) => s.status);
   const gate = useSession((s) => s.gate);
   const updateRequired = useUpdateRequired();
@@ -92,7 +124,7 @@ function RootStack() {
 
   return (
     <>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <StatusBar style={statusOverride ?? (scheme === "dark" ? "light" : "dark")} />
       <Stack
         screenOptions={{
           headerShown: false,

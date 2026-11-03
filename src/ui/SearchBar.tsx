@@ -37,5 +37,5 @@ export function SearchBar({ value, onChangeText, placeholder = "Search", ...rest
 
 const styles = StyleSheet.create({
   bar: { height: 40, borderRadius: radius.md, flexDirection: "row", alignItems: "center", paddingHorizontal: space.md, gap: space.sm },
-  input: { flex: 1, fontFamily: fonts.regular, fontSize: 16, paddingVertical: 0 },
+  input: { flex: 1, fontFamily: fonts.regular, fontSize: 16, paddingVertical: 0, outlineWidth: 0 },
 });

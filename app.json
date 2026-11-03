@@ -9,16 +9,18 @@
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#f7f6f5",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.revenueos.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff",
+        "backgroundColor": "#4f46e5",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.revenueos.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -31,21 +33,79 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 120,
-          "backgroundColor": "#f7f6f5",
+          "image": "./assets/splash-mark.png",
+          "imageWidth": 96,
+          "backgroundColor": "#312e81",
           "dark": {
-            "image": "./assets/splash-icon.png",
-            "backgroundColor": "#0b0b0d"
+            "image": "./assets/splash-mark.png",
+            "backgroundColor": "#312e81"
           }
         }
       ],
       "expo-localization",
       "expo-image",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#4f46e5",
+          "enableBackgroundRemoteNotifications": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Revenue OS needs your photos to attach them to email replies.",
+          "cameraPermission": "Revenue OS needs the camera to take a photo for an email reply.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Revenue OS uses Face ID to unlock the app when you turn on the app lock."
+        }
+      ],
+      [
+        "./plugins/withWidgetOpenApp",
+        {
+          "widgets": [
+            "TodayWidget"
+          ]
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "enableAndroid": true,
+          "widgets": [
+            {
+              "name": "TodayWidget",
+              "displayName": "Today",
+              "description": "Replies, calls and meetings waiting for you, and what to do next.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemMedium"
+                ],
+                "initialLayout": "./src/widgets/TodayWidget.ios.tsx"
+              },
+              "android": {
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "minWidth": 250,
+                "minHeight": 150,
+                "initialLayout": "./src/widgets/TodayWidget.android.tsx"
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCompiler": true
     }
   }
 }

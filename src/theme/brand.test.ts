@@ -1,5 +1,29 @@
-import { brandPalette, contrastRatio, isHexColor } from "./brand";
+import { brandPalette, contrastRatio, flattenOver, isHexColor, splitAlpha, withAlpha } from "./brand";
 import { palettes } from "./tokens";
+
+describe("withAlpha", () => {
+  it("turns a hex colour into rgba and leaves other values alone", () => {
+    expect(withAlpha("#4f46e5", 0.12)).toBe("rgba(79, 70, 229, 0.12)");
+    expect(withAlpha("#4f46e5", 3)).toBe("rgba(79, 70, 229, 1)");
+    expect(withAlpha("rgb(1,2,3)", 0.5)).toBe("rgb(1,2,3)");
+  });
+});
+
+describe("splitAlpha", () => {
+  it("moves an rgba alpha out of the colour and leaves opaque colours whole", () => {
+    expect(splitAlpha("rgba(87, 211, 119, 0.12)")).toEqual({ color: "rgb(87, 211, 119)", opacity: 0.12 });
+    expect(splitAlpha("#4f46e5")).toEqual({ color: "#4f46e5", opacity: 1 });
+    expect(splitAlpha("rgb(1, 2, 3)")).toEqual({ color: "rgb(1, 2, 3)", opacity: 1 });
+  });
+});
+
+describe("flattenOver", () => {
+  it("blends a translucent colour onto the base and keeps hex as it is", () => {
+    expect(flattenOver("rgba(255, 255, 255, 0.5)", "#000000")).toBe("#808080");
+    expect(flattenOver("#4f46e5", "#000000")).toBe("#4f46e5");
+    expect(flattenOver("rgba(0, 0, 0, 0)", "#312e81")).toBe("#312e81");
+  });
+});
 
 describe("brandPalette", () => {
   it("keeps Revenue OS colours when there is no valid agency colour", () => {

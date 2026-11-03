@@ -8,7 +8,7 @@ import { t } from "@/i18n";
 import { haptics } from "@/lib/haptics";
 import { useDebounced } from "@/lib/useDebounced";
 import { useSession } from "@/session/sessionStore";
-import { useActiveBaseId, useWorkspaceList, workspaceKeys } from "@/session/workspace";
+import { useActiveBaseId, useWorkspaceAccess, useWorkspaceList, workspaceKeys } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
 import type { AgencyClient, AgencyMembership, Workspace } from "@/types/workspace";
@@ -95,6 +95,8 @@ function AgencyClients({ agency, activeBaseId, ownIds, onChoose }: AgencyClients
   const [q, setQ] = useState("");
   const query = useDebounced(q);
   const [expanded, setExpanded] = useState<{ clientId: number; bases: Workspace[] } | null>(null);
+  // The client open right now gets the same tick as the current workspace above.
+  const currentClientId = useWorkspaceAccess().data?.client?.id;
   const clients = useQuery({
     queryKey: workspaceKeys.agencyClients(agency.id, query),
     queryFn: ({ signal }) => workspacesApi.agencyClients(agency.id, query, signal),
@@ -144,7 +146,15 @@ function AgencyClients({ agency, activeBaseId, ownIds, onChoose }: AgencyClients
                   title={title}
                   subtitle={c.business_name ? c.name : c.email}
                   leading={<Avatar name={title} size={36} />}
-                  trailing={busy ? <ActivityIndicator color={colors.textMuted} /> : c.paused || c.suspended ? <Badge label={t("workspace.paused")} tone="warning" /> : undefined}
+                  trailing={
+                    busy ? (
+                      <ActivityIndicator color={colors.textMuted} />
+                    ) : c.paused || c.suspended ? (
+                      <Badge label={t("workspace.paused")} tone="warning" />
+                    ) : c.id === currentClientId ? (
+                      <Check size={20} color={colors.primary} strokeWidth={ICON_STROKE + 0.5} />
+                    ) : undefined
+                  }
                   chevron={!busy}
                   onPress={() => {
                     if (!open.isPending) open.mutate(c);
@@ -166,6 +176,12 @@ function AgencyClients({ agency, activeBaseId, ownIds, onChoose }: AgencyClients
           })
         )}
       </Card>
+      {clients.data && clients.data.total > rows.length ? (
+        // The list loads the first 50; a big agency searches for the rest.
+        <Text variant="footnote" tone="muted" align="center" style={styles.more} numeric>
+          {t("workspace.showingSome", { shown: rows.length, total: clients.data.total })}
+        </Text>
+      ) : null}
     </>
   );
 }
@@ -177,5 +193,6 @@ const styles = StyleSheet.create({
   card: { marginHorizontal: gutter },
   search: { paddingHorizontal: gutter, paddingBottom: space.sm },
   empty: { padding: space.xl },
+  more: { paddingHorizontal: gutter, paddingTop: space.md },
   indent: { width: 36 },
 });

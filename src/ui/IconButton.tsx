@@ -9,11 +9,13 @@ type Props = Omit<PressableProps, "children" | "style"> & {
   label: string;
   tone?: "default" | "primary" | "danger";
   filled?: boolean;
+  /** A floating white circle (headers: back, edit, more), the same in every screen. */
+  circle?: boolean;
   size?: number;
 };
 
 /** Icon-only button with a full 44pt touch area, whatever the icon size. */
-export function IconButton({ icon: Icon, label, tone = "default", filled, size = 22, disabled, ...rest }: Props) {
+export function IconButton({ icon: Icon, label, tone = "default", filled, circle, size = 22, disabled, ...rest }: Props) {
   const { colors } = useTheme();
   const fg = tone === "primary" ? colors.primary : tone === "danger" ? colors.danger : colors.text;
   return (
@@ -24,7 +26,8 @@ export function IconButton({ icon: Icon, label, tone = "default", filled, size =
       disabled={disabled}
       style={({ pressed }) => [
         styles.base,
-        { backgroundColor: pressed ? colors.pressed : filled ? colors.surfaceSecondary : "transparent" },
+        { backgroundColor: pressed ? colors.pressed : circle ? colors.surface : filled ? colors.surfaceSecondary : "transparent" },
+        circle && { boxShadow: colors.cardShadowSoft },
         disabled && styles.disabled,
       ]}
       {...rest}

@@ -15,6 +15,9 @@ describe("relativeTime", () => {
     expect(relativeTime(new Date(2026, 9, 12, 9, 0), "en-US", now)).toBe("Oct 12");
     expect(relativeTime(new Date(2025, 9, 12, 9, 0), "en-US", now)).toBe("Oct 12, 2025");
   });
+  it("speaks the user's language", () => {
+    expect(relativeTime(new Date(2026, 9, 31, 22, 0), "az", now)).toBe("Dünən");
+  });
   it("returns empty text for invalid dates", () => {
     expect(relativeTime("not a date", "en-US", now)).toBe("");
   });

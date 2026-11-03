@@ -94,7 +94,8 @@ function errorFrom(res: Response, body: unknown): ApiError {
 
 async function send(path: string, opts: RequestOptions): Promise<Response> {
   const { method = "GET", query, body, signal, auth = true, timeoutMs = REQUEST_TIMEOUT_MS } = opts;
-  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": getLanguage(), ...opts.headers };
+  // X-App: the backend translates server-written text (labels, notifications, errors) for the app.
+  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": getLanguage(), "X-App": "mobile", ...opts.headers };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   const token = auth ? handlers.getToken() : null;
   if (token) headers.Authorization = `Bearer ${token}`;

@@ -4,6 +4,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
 import { ChevronRight, ICON_STROKE } from "./icons";
 import { Text } from "./Text";
+import { t } from "@/i18n";
 
 type Props = {
   title: string;
@@ -31,7 +32,7 @@ export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, t
       delayLongPress={350}
       disabled={!onPress && !onLongPress}
       accessibilityRole={onPress ? "button" : undefined}
-      accessibilityLabel={[unread ? "Unread" : null, title, subtitle, meta].filter(Boolean).join(", ")}
+      accessibilityLabel={[unread ? t("state.unread") : null, title, subtitle, meta].filter(Boolean).join(", ")}
       accessibilityHint={accessibilityHint}
       style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.pressed : colors.surface }]}
     >

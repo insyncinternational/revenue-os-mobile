@@ -9,14 +9,23 @@ import { fonts } from "@/theme/tokens";
 import { APP_BRAND_NAME, APP_BRAND_TAGLINE } from "@/lib/brand";
 
 /** Same colours as the web wordmark (not themeable: this is the Revenue OS brand, not an agency's). */
-const LOGO = {
+export const LOGO = {
   light: { ink: "#0f172a", accent: "#4f46e5", sub: "#475569" },
   dark: { ink: "#f1f5f9", accent: "#818cf8", sub: "#a5b4fc" },
+  /** On the indigo splash, launch and sign-in hero: white with a light-indigo accent, in both themes. */
+  onBrand: { ink: "#ffffff", accent: "#c7d2fe", sub: "rgba(255, 255, 255, 0.72)" },
 } as const;
 
-export function BrandMark({ size = 32 }: { size?: number }) {
+/** "auto" follows light/dark; "onBrand" is for indigo backgrounds. */
+export type LogoTone = "auto" | "onBrand";
+
+function useLogoColors(tone: LogoTone) {
   const { scheme } = useTheme();
-  const c = LOGO[scheme];
+  return LOGO[tone === "onBrand" ? "onBrand" : scheme];
+}
+
+export function BrandMark({ size = 32, tone = "auto" }: { size?: number; tone?: LogoTone }) {
+  const c = useLogoColors(tone);
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40">
       <Rect x={6} y={23} width={7} height={11} rx={3.5} fill={c.ink} />
@@ -28,16 +37,15 @@ export function BrandMark({ size = 32 }: { size?: number }) {
 }
 
 /** Mark + "REVENUE OS" (+ tagline spread under the name when there is room). */
-export function Logo({ height = 40, tagline = true }: { height?: number; tagline?: boolean }) {
-  const { scheme } = useTheme();
-  const c = LOGO[scheme];
+export function Logo({ height = 40, tagline = true, tone = "auto" }: { height?: number; tagline?: boolean; tone?: LogoTone }) {
+  const c = useLogoColors(tone);
   const mark = Math.round(height * 0.78);
   const nameSize = Math.round(mark * 0.56);
   const tagSize = Math.max(8, Math.round(nameSize * 0.4));
   const showTag = tagline && height >= 30;
   return (
     <View style={styles.row} accessible accessibilityRole="image" accessibilityLabel={`${APP_BRAND_NAME}, ${APP_BRAND_TAGLINE}`}>
-      <BrandMark size={mark} />
+      <BrandMark size={mark} tone={tone} />
       <View style={{ marginLeft: Math.round(mark * 0.32) }}>
         <RNText allowFontScaling={false} style={{ fontFamily: fonts.extrabold, fontSize: nameSize, lineHeight: Math.round(nameSize * 1.1), color: c.ink, letterSpacing: nameSize * 0.005 }}>
           REVENUE <RNText style={{ color: c.accent }}>OS</RNText>

@@ -28,9 +28,24 @@ export const authApi = {
 
   logout: (token: string) => request<{ ok: true }>("/mobile/auth/logout", { method: "POST", body: {}, auth: false, headers: { Authorization: `Bearer ${token}` }, timeoutMs: 5000 }),
 
+  /** A fresh binding for Google sign-in: `bind` (hash) goes to the browser, `secret` stays in the app. */
+  oauthBind: () => request<{ bind: string; secret: string }>("/mobile/auth/oauth/bind", { method: "POST", body: {}, auth: false }),
+
+  /** The one-time ticket Google sign-in returned → a session (with the binding secret only this app has). */
+  oauthHandover: (handover: string, bind_secret: string) => request<SignedIn>("/mobile/auth/oauth/handover", { method: "POST", body: { handover, bind_secret }, auth: false }),
+
   requestPasswordReset: (email: string) => request<{ ok: true }>("/auth/password-reset/request", { method: "POST", body: { email }, auth: false }),
 
   me: () => api.get<{ user: User }>("/auth/me"),
+
+  /** Settings → Profile on the web: name, company, time zone (email is not editable). */
+  updateProfile: (body: { name?: string; company?: string; timezone?: string }) => api.put<{ user: User }>("/auth/profile", body),
+
+  /** Ends every other session; returns this phone's fresh one. */
+  changePassword: (current_password: string, new_password: string) => api.post<{ ok: true; token: string; expires_at: string | null }>("/mobile/auth/change-password", { current_password, new_password }),
+
+  /** Asks the platform admins to close the account (they get an in-app request). */
+  requestDeletion: () => api.post<{ ok?: boolean; message?: string }>("/auth/account/deletion-request"),
 
   sendVerificationEmail: () => api.post<{ success?: boolean; message?: string }>("/auth/verify-email/send"),
 

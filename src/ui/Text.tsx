@@ -1,4 +1,4 @@
-import { Text as RNText, type TextProps as RNTextProps } from "react-native";
+import { I18nManager, Text as RNText, type TextProps as RNTextProps } from "react-native";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fonts, maxFontScale, typography, type Palette, type TextVariant } from "@/theme/tokens";
 
@@ -26,6 +26,12 @@ export type TextProps = RNTextProps & {
   numeric?: boolean;
 };
 
+/**
+ * Arabic (the app runs right-to-left only for it): letter spacing breaks the joins between Arabic letters
+ * and makes Android measure titles too wide ("صندوق الوا…"), so it is turned off.
+ */
+const NO_TRACKING = { letterSpacing: 0 } as const;
+
 export function Text({ variant = "body", tone = "default", weight, align, numeric, style, maxFontSizeMultiplier, ...rest }: TextProps) {
   const { colors } = useTheme();
   const t = typography[variant];
@@ -35,6 +41,7 @@ export function Text({ variant = "body", tone = "default", weight, align, numeri
       maxFontSizeMultiplier={maxFontSizeMultiplier ?? (dense ? maxFontScale.dense : maxFontScale.body)}
       style={[
         t,
+        I18nManager.isRTL && NO_TRACKING,
         { color: colors[toneColor[tone]] },
         weight && { fontFamily: fonts[weight] },
         align && { textAlign: align },

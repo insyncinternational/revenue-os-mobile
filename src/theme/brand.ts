@@ -12,6 +12,36 @@ export function isHexColor(v: string | null | undefined): v is string {
   return typeof v === "string" && HEX_RE.test(v.trim());
 }
 
+/** Pure: a #rrggbb colour at the given opacity (0–1) as rgba(); anything else comes back unchanged. */
+export function withAlpha(color: string, alpha: number): string {
+  if (!isHexColor(color)) return color;
+  const [r, g, b] = hexToRgb(color);
+  return `rgba(${r}, ${g}, ${b}, ${Math.min(1, Math.max(0, alpha))})`;
+}
+
+/**
+ * A colour as an opaque colour plus its opacity: "rgba(87, 211, 119, 0.12)" → { color: "rgb(87, 211, 119)", opacity: 0.12 }.
+ * For SVG gradient stops, which ignore the alpha inside a colour on Android and draw it solid.
+ */
+export function splitAlpha(color: string): { color: string; opacity: number } {
+  const m = color.trim().match(/^rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/i);
+  if (!m) return { color, opacity: 1 };
+  return { color: `rgb(${m[1]}, ${m[2]}, ${m[3]})`, opacity: Math.min(1, Math.max(0, Number(m[4]))) };
+}
+
+/**
+ * An opaque hex for `color` drawn over `base` — for surfaces that take no transparency (home-screen widgets).
+ * "rgba(255, 255, 255, 0.14)" over "#312e81" → a lighter indigo. A hex colour comes back as it is.
+ */
+export function flattenOver(color: string, base: string): string {
+  if (isHexColor(color)) return color;
+  const { color: rgb, opacity } = splitAlpha(color);
+  const m = rgb.match(/^rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/i);
+  if (!m || !isHexColor(base)) return base;
+  const under = hexToRgb(base);
+  return rgbToHex([0, 1, 2].map((i) => Number(m[i + 1]) * opacity + under[i]! * (1 - opacity)) as Rgb);
+}
+
 function hexToRgb(hex: string): Rgb {
   const n = parseInt(hex.trim().slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
@@ -54,6 +84,26 @@ const WHITE = "#ffffff";
 const DARK_INK = "#0b0b0d";
 
 /**
+ * Hero gradient from an agency colour: a deep shade into the colour itself. Content on it is white unless that
+ * can't reach 4.5:1 on both ends (very light colours such as yellow), then near-black.
+ */
+function heroFor(base: Rgb, scheme: ColorScheme): Partial<Palette> {
+  const from = rgbToHex(shade(base, scheme === "dark" ? 0.55 : 0.35));
+  const to = rgbToHex(scheme === "dark" ? shade(base, 0.2) : base);
+  const whiteReads = contrastRatio(from, WHITE) >= 4.5 && contrastRatio(to, WHITE) >= 4.5;
+  const darkText = !whiteReads && contrastRatio(to, DARK_INK) > contrastRatio(to, WHITE);
+  return {
+    heroFrom: from,
+    heroTo: to,
+    heroGlow: rgbToHex(tint(base, 0.35)),
+    onHero: darkText ? DARK_INK : WHITE,
+    onHeroMuted: darkText ? "rgba(11, 11, 13, 0.72)" : "rgba(255, 255, 255, 0.78)",
+    heroGlass: darkText ? "rgba(11, 11, 13, 0.08)" : "rgba(255, 255, 255, 0.14)",
+    heroGlassBorder: darkText ? "rgba(11, 11, 13, 0.14)" : "rgba(255, 255, 255, 0.22)",
+  };
+}
+
+/**
  * Palette overrides for an agency colour, or an empty object (keep Revenue OS colours) when the colour is
  * missing or invalid. Unlike the web, the text on a solid fill is chosen by contrast (white or near-black),
  * so a light agency colour in dark mode never ends up with unreadable white text.
@@ -77,6 +127,7 @@ export function brandPalette(primary: string | null | undefined, scheme: ColorSc
       primaryBorder: `rgba(${rgb}, 0.32)`,
       primaryText: fillHex,
       borderFocus: hex,
+      ...heroFor(base, scheme),
     };
   }
 
@@ -93,5 +144,6 @@ export function brandPalette(primary: string | null | undefined, scheme: ColorSc
     primaryBorder: `rgba(${rgb}, 0.32)`,
     primaryText: text,
     borderFocus: text,
+    ...heroFor(base, scheme),
   };
 }

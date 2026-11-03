@@ -1,7 +1,8 @@
-import { useState, type ReactNode, type Ref } from "react";
+import { use, useState, type ReactNode, type Ref } from "react";
 import { StyleSheet, TextInput, View, type TextInputInstance, type TextInputProps } from "react-native";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fonts, maxFontScale, radius, space, touchTarget, typography } from "@/theme/tokens";
+import { FilledInputs } from "./FormSection";
 import { ICON_STROKE, type IconComponent } from "./icons";
 import { Text } from "./Text";
 
@@ -18,7 +19,10 @@ type Props = TextInputProps & {
 export function Input({ ref, label, hint, error, icon: Icon, trailing, style, onFocus, onBlur, editable = true, ...rest }: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
-  const borderColor = error ? colors.danger : focused ? colors.borderFocus : colors.border;
+  // Inside a form section: filled soft grey, outlined only while focused. Elsewhere (sign-in): outlined.
+  const filled = use(FilledInputs);
+  const borderColor = error ? colors.danger : focused ? colors.borderFocus : filled ? "transparent" : colors.border;
+  const background = filled && !focused ? colors.surfaceSecondary : colors.surface;
   return (
     <View style={styles.wrap}>
       {label ? (
@@ -26,7 +30,7 @@ export function Input({ ref, label, hint, error, icon: Icon, trailing, style, on
           {label}
         </Text>
       ) : null}
-      <View style={[styles.field, { backgroundColor: colors.surface, borderColor, borderWidth: focused || error ? 1.5 : 1 }, !editable && { backgroundColor: colors.surfaceSecondary }]}>
+      <View style={[styles.field, { backgroundColor: background, borderColor, borderWidth: filled || focused || error ? 1.5 : 1 }, !editable && { backgroundColor: colors.surfaceSecondary }]}>
         {Icon ? <Icon size={18} color={colors.textSubtle} strokeWidth={ICON_STROKE} /> : null}
         <TextInput
           ref={ref}
@@ -66,5 +70,5 @@ export function Input({ ref, label, hint, error, icon: Icon, trailing, style, on
 const styles = StyleSheet.create({
   wrap: { gap: space.xs + 2 },
   field: { minHeight: touchTarget + 4, borderRadius: radius.md, flexDirection: "row", alignItems: "center", paddingHorizontal: space.md, gap: space.sm },
-  input: { flex: 1, fontFamily: fonts.regular, fontSize: typography.body.fontSize, paddingVertical: space.sm + 2 },
+  input: { flex: 1, fontFamily: fonts.regular, fontSize: typography.body.fontSize, paddingVertical: space.sm + 2, outlineWidth: 0 },
 });

@@ -9,11 +9,15 @@ import { authApi, type SignedIn } from "@/api/auth";
 import { setAuthHandlers, type RefreshOutcome } from "@/api/client";
 import { ApiError, type ApiErrorKind } from "@/api/errors";
 import { readJson, storage, StorageKeys, writeJson } from "@/lib/storage";
+import { unregisterPush } from "@/push/push";
 import { clearQueryCache } from "@/query/persist";
 import { queryClient } from "@/query/queryClient";
 import type { User } from "@/types/session";
+import { clearTodayWidget } from "@/widgets/widgetSync";
+import { useAppLock } from "./appLock";
 import { gateFor, type SessionGate } from "./gate";
 import { clearToken, loadToken, saveToken } from "./tokenStore";
+import { useBrandColor } from "@/theme/brandStore";
 
 export type SessionStatus = "loading" | "signedOut" | "signedIn";
 export type { SessionGate };
@@ -33,6 +37,8 @@ type SessionState = {
   hydrate: () => Promise<void>;
   signIn: (result: SignedIn) => Promise<void>;
   setUser: (user: User) => void;
+  /** A fresh session token from the server (after a password change, which ends the old one). */
+  adoptToken: (token: string, expiresAt: string | null) => Promise<void>;
   setGate: (gate: SessionGate) => void;
   setActiveBase: (baseId: number | null) => void;
   refresh: () => Promise<RefreshOutcome>;
@@ -74,6 +80,8 @@ export const useSession = create<SessionState>((set, get) => {
       const last = storage.getNumber(lastBaseKey(user.id)) ?? null;
       if (last == null) storage.remove(StorageKeys.activeBaseId);
       else storage.set(StorageKeys.activeBaseId, last);
+      // The password (or Google) just proved who this is: no Face ID right after signing in.
+      useAppLock.getState().unlock();
       set({ token, user, expiresAt: expires_at, activeBaseId: last, status: "signedIn", gate: gateFor(user), endedReason: null });
     },
 
@@ -99,6 +107,12 @@ export const useSession = create<SessionState>((set, get) => {
       set({ activeBaseId: baseId });
     },
 
+    async adoptToken(token, expiresAt) {
+      await saveToken(token);
+      if (expiresAt) storage.set(StorageKeys.expiresAt, expiresAt);
+      set({ token, expiresAt });
+    },
+
     async refresh() {
       const token = get().token;
       if (!token) return "ended";
@@ -110,20 +124,31 @@ export const useSession = create<SessionState>((set, get) => {
         set({ token: result.token, user: result.user, expiresAt: result.expires_at, gate: gateFor(result.user) });
         return "ok";
       } catch (e) {
-        if (e instanceof ApiError && (e.kind === "network" || e.kind === "timeout" || e.kind === "server")) return "transient";
+        // "Too many requests" is temporary too: signing out on it ended a session that was still valid.
+        if (e instanceof ApiError && (e.kind === "network" || e.kind === "timeout" || e.kind === "server" || e.kind === "rateLimited")) return "transient";
         return "ended";
       }
     },
 
     async signOut(reason) {
       const token = get().token;
-      // Sign out on the server too (best effort: offline sign-out still clears the phone).
-      if (token) void authApi.logout(token).catch(() => undefined);
+      // Stop this phone's notifications for the account, then sign out on the server (both best effort:
+      // offline sign-out still clears the phone).
+      if (token) {
+        void unregisterPush(token)
+          .catch(() => undefined)
+          .finally(() => void authApi.logout(token).catch(() => undefined));
+      }
       await clearToken();
       storage.remove(StorageKeys.user);
       storage.remove(StorageKeys.expiresAt);
       storage.remove(StorageKeys.activeBaseId);
       clearQueryCache(queryClient);
+      // The lock belongs to whoever turned it on; the next person signing in here starts without it.
+      useAppLock.getState().setEnabled(false);
+      clearTodayWidget();
+      // The sign-in screen is Revenue OS's, not the last agency's (its colour came back on the button).
+      useBrandColor.getState().setWorkspace(null);
       set({ token: null, user: null, expiresAt: null, activeBaseId: null, status: "signedOut", gate: "ok", endedReason: reason ?? null });
     },
   };
