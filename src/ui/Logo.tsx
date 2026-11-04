@@ -1,5 +1,5 @@
 /**
- * The GrowthReach.ai logo — the "G" mark (dark G, three rising orange bars, orange arrow) and the
+ * The GrowthReach.ai logo — the mark (dark hexagon "G" with an orange arrow rising through it) and the
  * GrowthReach.ai wordmark, drawn from the same outlined geometry as the web
  * (revenue-os-frontend/components/ui/AppBrandLogo.tsx, lib/brandGeometry.ts).
  */
@@ -26,7 +26,7 @@ function useLogoColors(tone: LogoTone) {
   return LOGO[tone === "onBrand" ? "onBrand" : scheme];
 }
 
-/** The orange top-to-bottom fill used by the bars, arrow, ".ai" and dashes. */
+/** The arrow's orange, top to bottom. */
 export function BrandOrange({ id }: { id: string }) {
   return (
     <Defs>
@@ -50,9 +50,6 @@ export function BrandMark({ size = 32, tone = "auto" }: { size?: number; tone?: 
     <Svg width={size} height={size} viewBox={G.markViewBox}>
       <BrandOrange id={id} />
       <Path d={G.g} fill={c.ink} />
-      {G.bars.map((d) => (
-        <Path key={d} d={d} fill={fill} />
-      ))}
       <Path d={G.arrow} fill={fill} />
     </Svg>
   );
@@ -60,7 +57,7 @@ export function BrandMark({ size = 32, tone = "auto" }: { size?: number; tone?: 
 
 const [, , LW, LH] = G.lockupViewBox.split(" ").map(Number) as [number, number, number, number];
 
-/** Mark | "GrowthReach.ai" + "— INTELLIGENCE AT SCALE —" under the name. */
+/** Mark, "GrowthReach.ai" and "INTELLIGENCE AT SCALE" under the name. */
 export function Logo({ height = 40, tagline = true, tone = "auto" }: { height?: number; tagline?: boolean; tone?: LogoTone }) {
   const c = useLogoColors(tone);
   const id = useGradId();
@@ -72,21 +69,10 @@ export function Logo({ height = 40, tagline = true, tone = "auto" }: { height?: 
       <Svg width={Math.round((height * LW) / LH)} height={height} viewBox={G.lockupViewBox}>
         <BrandOrange id={id} />
         <Path d={G.g} fill={c.ink} />
-        {G.bars.map((d) => (
-          <Path key={d} d={d} fill={fill} />
-        ))}
         <Path d={G.arrow} fill={fill} />
-        <Path d={G.divider} fill={c.ink} />
         <Path d={G.name} fill={c.ink} />
-        <Path d={G.ai} fill={fill} />
-        {showTag ? (
-          <>
-            {G.dashes.map((d) => (
-              <Path key={d} d={d} fill={fill} />
-            ))}
-            <Path d={G.tagline} fill={c.sub} />
-          </>
-        ) : null}
+        <Path d={G.ai} fill={c.accent} />
+        {showTag ? <Path d={G.tagline} fill={c.sub} /> : null}
       </Svg>
     </View>
   );

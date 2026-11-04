@@ -9,7 +9,7 @@ import { usePortalInvoices, usePortalMeetings, usePortalMessages } from "@/porta
 import { QuickActions } from "@/features/today/QuickActions";
 import { getIntlLocale, t, type TranslationKey } from "@/i18n";
 import { dateTime, money, relativeTime } from "@/lib/format";
-import { greetingKey } from "@/lib/greeting";
+import { firstNameOf, greetingKey } from "@/lib/greeting";
 import { useOnline } from "@/query/useOnline";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
@@ -43,7 +43,7 @@ export default function CustomerHome() {
     void messages.refetch();
   };
 
-  const first = portal?.customer.name?.split(" ")[0];
+  const first = firstNameOf(portal?.customer.name) || undefined;
   const next = splitMeetings(meetings.data?.meetings ?? [], now).upcoming[0];
   const unpaid = unpaidInvoices(invoices.data?.invoices ?? []);
   const latest = chronological(messages.data?.messages ?? []).at(-1);

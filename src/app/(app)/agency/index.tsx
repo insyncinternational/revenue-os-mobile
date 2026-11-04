@@ -13,7 +13,7 @@ import { Kpis } from "@/features/today/Kpis";
 import { QuickActions } from "@/features/today/QuickActions";
 import { getIntlLocale, t, type TranslationKey } from "@/i18n";
 import { count, money } from "@/lib/format";
-import { greetingKey } from "@/lib/greeting";
+import { firstNameOf, greetingKey } from "@/lib/greeting";
 import { useOnline } from "@/query/useOnline";
 import { useSession } from "@/session/sessionStore";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -54,7 +54,7 @@ export default function AgencyHome() {
     void reports.refetch();
   };
 
-  const firstName = user?.name?.split(" ")[0];
+  const firstName = firstNameOf(user?.name);
   const greeting = `${t(greetingKey(new Date().getHours()))}${firstName ? `, ${firstName}` : ""}`;
   const totals = dashboard.data?.totals;
   const summary = totals ? t("agency.home.summary", { clients: count(totals.clients, locale), credits: count(totals.lead_credits, locale) }) : null;

@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { t, type TranslationKey } from "@/i18n";
-import { greetingKey } from "@/lib/greeting";
+import { firstNameOf, greetingKey } from "@/lib/greeting";
 import { useSession } from "@/session/sessionStore";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
@@ -43,7 +43,7 @@ export function Hero({ counters, headline, onCounter, approvals = 0, onApprovals
   const insets = useSafeAreaInsets();
   const user = useSession((s) => s.user);
   const chip = useHeaderChip();
-  const firstName = user?.name?.trim().split(/\s+/)[0] ?? "";
+  const firstName = firstNameOf(user?.name);
   const greeting = t(greetingKey(new Date().getHours()));
   const live = liveCounters(HERO_COUNTERS.map((h) => h.key), counters);
   // Two pills at most (the mock): the AI replies pill takes one of the two places when it shows.
