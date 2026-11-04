@@ -23,7 +23,7 @@ function readPreference(): ThemePreference {
 
 /**
  * Light / dark follows the phone unless the user picks one. `brandColor` (an agency's primary colour) re-tints the
- * brand roles; everything else keeps the Revenue OS palette.
+ * brand roles; everything else keeps the GrowthReach.ai palette.
  */
 export function ThemeProvider({ brandColor, children }: { brandColor?: string | null; children: ReactNode }) {
   const system = useColorScheme();

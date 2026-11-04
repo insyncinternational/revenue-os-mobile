@@ -1,6 +1,6 @@
 import { emailDocument, hasRemoteImages, openableLink } from "./emailDocument";
 
-const theme = { text: "#111111", link: "#4f46e5", background: "#ffffff", dark: false };
+const theme = { text: "#111111", link: "#f7820f", background: "#ffffff", dark: false };
 
 describe("emailDocument", () => {
   it("puts a strict policy first: no script, no forms, images inline only by default", () => {

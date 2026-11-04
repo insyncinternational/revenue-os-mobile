@@ -1,5 +1,5 @@
 import type { Stage } from "@/types/pipeline";
-import { closeDateChoices, daysInStage, dealBody, isRotting, nextStage, orderedStages, stageProgress } from "./pipeline";
+import { closeDateChoices, daysInStage, dealBody, isRotting, nextStage, orderedStages, stageAgeTone, stageProgress } from "./pipeline";
 
 const st = (id: number, sort_order: number, extra: Partial<Stage> = {}): Stage =>
   ({ id, pipeline_id: 1, name: `S${id}`, sort_order, probability: 10, is_won: false, is_lost: false, color: null, rotting_days: null, ...extra }) as Stage;
@@ -55,5 +55,16 @@ describe("dealBody", () => {
 describe("closeDateChoices", () => {
   it("gives month ends", () => {
     expect(closeDateChoices(new Date(2026, 10, 1)).map((c) => c.date)).toEqual(["2026-11-30", "2026-12-31", "2027-02-28"]);
+  });
+});
+
+describe("stageAgeTone", () => {
+  it("is new on the first day, then neutral, amber after 14 days and red after 30", () => {
+    expect(stageAgeTone(0)).toBe("new");
+    expect(stageAgeTone(1)).toBe("neutral");
+    expect(stageAgeTone(14)).toBe("neutral");
+    expect(stageAgeTone(15)).toBe("warning");
+    expect(stageAgeTone(30)).toBe("warning");
+    expect(stageAgeTone(31)).toBe("danger");
   });
 });

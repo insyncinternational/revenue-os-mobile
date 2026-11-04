@@ -18,14 +18,18 @@ export const contactsApi = {
         search: f.search.trim() || undefined,
         owner_id: f.view === "mine" && me ? me : undefined,
         has_phone: f.view === "phone" ? "true" : undefined,
-        sort_by: "last_activity",
-        sort_order: "desc",
+        // A–Z, so the list files under letters; the recently active ones have their own row (`recent`).
+        sort_by: "name",
+        sort_order: "asc",
         // Light rows: enrichment trimmed to what a list shows (~25 KB less per contact, and this list is
         // kept on the phone for offline use). The contact screen loads the full record (GET /leads/:id).
         view: "table",
       },
       signal
     ),
+  /** The few contacts touched most recently, for the "Recently active" row above the A–Z list. */
+  recent: (baseId: number, signal?: AbortSignal) =>
+    api.get<ContactPage>("/leads", { base_id: baseId, page: 1, limit: 8, sort_by: "last_activity", sort_order: "desc", view: "table" }, signal),
   get: (id: number, signal?: AbortSignal) => api.get<Contact>(`/leads/${id}`, undefined, signal),
   /** Free (no enrichment, no credits). base_id must be a JSON number. */
   create: (baseId: number, input: ContactInput) => api.post<{ lead: Contact }>("/leads", { base_id: baseId, ...contactPatch(input, "create") }),

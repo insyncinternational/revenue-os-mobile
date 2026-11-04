@@ -6,6 +6,7 @@ import { useDeal, useMoveDeal, usePipelineBoard } from "@/features/pipeline/useP
 import { lostReasonLabel } from "@/features/pipeline/labels";
 import { t } from "@/i18n";
 import { haptics } from "@/lib/haptics";
+import { withAlpha } from "@/theme/brand";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { Stage } from "@/types/pipeline";
@@ -81,6 +82,9 @@ export default function MoveDeal() {
           {stages.map((s) => {
             const current = s.id === d?.stage_id;
             const Icon = s.is_won ? Trophy : s.is_lost ? XCircle : null;
+            // Each stage as a card with its colour on a tile; Won is a green card, Lost a soft red one.
+            const accent = s.is_won ? colors.success : s.is_lost ? colors.danger : colors.primary;
+            const fill = current ? colors.primarySubtle : s.is_won ? colors.successSurface : s.is_lost ? colors.dangerSurface : colors.surface;
             return (
               <PressableScale
                 key={s.id}
@@ -90,13 +94,11 @@ export default function MoveDeal() {
                 accessibilityLabel={s.name}
                 onPress={() => (s.is_lost ? setLostStage(s) : go(s))}
                 scaleTo={0.985}
-                style={[styles.stage, { backgroundColor: current ? colors.primarySubtle : colors.surface, borderColor: current ? colors.primaryBorder : colors.border }]}
+                style={[styles.stage, { backgroundColor: fill, borderColor: current ? colors.primaryBorder : "transparent", boxShadow: s.is_won || s.is_lost || current ? undefined : colors.cardShadowSoft }]}
               >
-                {Icon ? (
-                  <Icon size={18} color={s.is_won ? colors.success : colors.danger} strokeWidth={ICON_STROKE + 0.25} />
-                ) : (
-                  <View style={[styles.dot, { backgroundColor: s.color ?? colors.primary }]} />
-                )}
+                <View style={[styles.tile, { backgroundColor: s.is_won || s.is_lost ? colors.surface : withAlpha(accent, 0.16) }]}>
+                  {Icon ? <Icon size={18} color={accent} strokeWidth={ICON_STROKE + 0.25} /> : <View style={[styles.dot, { backgroundColor: accent }]} />}
+                </View>
                 <Text variant="callout" weight={current ? "semibold" : "medium"} style={styles.flex} numberOfLines={1}>
                   {s.name}
                 </Text>
@@ -119,7 +121,8 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingLeft: gutter, paddingRight: space.sm, paddingTop: space.md },
   list: { paddingHorizontal: gutter, paddingBottom: space.huge, gap: space.sm },
-  stage: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 52, paddingHorizontal: space.lg, borderRadius: radius.lg, borderWidth: 1 },
+  stage: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 60, paddingHorizontal: space.md, borderRadius: radius.xl, borderWidth: 1.5 },
+  tile: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   dot: { width: 10, height: 10, borderRadius: 5 },
   flex: { flex: 1, minWidth: 0 },
   lost: { paddingHorizontal: gutter, gap: space.md },

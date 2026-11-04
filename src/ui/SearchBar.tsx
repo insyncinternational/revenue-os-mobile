@@ -8,7 +8,7 @@ type Props = Omit<TextInputProps, "onChange"> & { value: string; onChangeText: (
 export function SearchBar({ value, onChangeText, placeholder = "Search", ...rest }: Props) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.bar, { backgroundColor: colors.surfaceSecondary }]}>
+    <View style={[styles.bar, { backgroundColor: colors.surface }]}>
       <Search size={18} color={colors.textMuted} strokeWidth={ICON_STROKE} />
       <TextInput
         value={value}
@@ -36,6 +36,6 @@ export function SearchBar({ value, onChangeText, placeholder = "Search", ...rest
 }
 
 const styles = StyleSheet.create({
-  bar: { height: 40, borderRadius: radius.md, flexDirection: "row", alignItems: "center", paddingHorizontal: space.md, gap: space.sm },
+  bar: { height: 46, borderRadius: radius.pill, flexDirection: "row", alignItems: "center", paddingHorizontal: space.md, gap: space.sm },
   input: { flex: 1, fontFamily: fonts.regular, fontSize: 16, paddingVertical: 0, outlineWidth: 0 },
 });

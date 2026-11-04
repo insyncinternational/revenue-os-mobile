@@ -14,6 +14,9 @@ export type PushData = {
   meeting_id?: number;
   /** An AI SDR draft waiting for approval. */
   pending_action_id?: number;
+  /** Agency alerts. */
+  agency_id?: number;
+  client_id?: number;
 };
 
 /** Pure: an inbox item id ("email:145") from a push or notification, if it names one. */

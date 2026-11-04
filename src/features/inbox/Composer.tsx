@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { useRef, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, TextInput, View, type TextInputInstance } from "react-native";
 import Animated, { useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getIntlLocale, t, type TranslationKey } from "@/i18n";
@@ -13,6 +13,7 @@ import { PressableScale } from "@/ui/PressableScale";
 import { Reveal } from "@/ui/Reveal";
 import { Text } from "@/ui/Text";
 import { useToast } from "@/ui/Toast";
+import { useFocusAfterOpen } from "@/ui/useFocusAfterOpen";
 import { addWithinLimits, canPickFiles, formatBytes, MAX_ATTACHMENTS, pickFile, pickPhotos, takePhoto, type ReplyAttachment } from "./attachments";
 
 type Props = {
@@ -25,6 +26,8 @@ type Props = {
   accessory?: React.ReactNode;
   /** AI rewrite of the draft; the button shows only when given. Resolves to the new text (rejects on failure). */
   onRewrite?: (text: string, mode: RewriteMode) => Promise<string>;
+  /** Focus the box once the screen has opened (came from a Reply button). */
+  focusOnOpen?: boolean;
 };
 
 const MIN = 40;
@@ -38,7 +41,7 @@ const modeKey = (m: RewriteMode) => `inbox.rewrite_${m.replace("tone:", "")}` as
  * draft and can be undone. 📎 (email only) adds photos, a camera shot or a file, shown as removable chips.
  * Sits on the keyboard (KeyboardStickyView in the screen) and above the home indicator.
  */
-export function Composer({ onSend, disabled, placeholder, onHeight, accessory, onRewrite, canAttach }: Props) {
+export function Composer({ onSend, disabled, placeholder, onHeight, accessory, onRewrite, canAttach, focusOnOpen }: Props) {
   const { colors } = useTheme();
   const toast = useToast();
   const locale = getIntlLocale();
@@ -52,9 +55,12 @@ export function Composer({ onSend, disabled, placeholder, onHeight, accessory, o
   const [busy, setBusy] = useState<RewriteMode | null>(null);
   const [before, setBefore] = useState<string | null>(null);
   const ready = !disabled && text.trim().length > 0;
+  const input = useRef<TextInputInstance>(null);
+  useFocusAfterOpen(input, Boolean(focusOnOpen) && !disabled);
   const canRewrite = Boolean(onRewrite) && ready;
 
-  const sendStyle = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(ready ? 1 : 0.86, { damping: 14, stiffness: 220 }) }], opacity: withSpring(ready ? 1 : 0.45) }), [ready]);
+  // No deps array: Reanimated tracks `ready` itself (a deps array is ignored on phones and only warns).
+  const sendStyle = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(ready ? 1 : 0.86, { damping: 14, stiffness: 220 }) }], opacity: withSpring(ready ? 1 : 0.45) }));
 
   const send = () => {
     const value = text.trim();
@@ -183,6 +189,7 @@ export function Composer({ onSend, disabled, placeholder, onHeight, accessory, o
         ) : null}
         <View style={[styles.field, { backgroundColor: colors.surface, borderColor: aiOpen && canRewrite ? colors.primaryBorder : colors.border }]}>
           <TextInput
+            ref={input}
             value={text}
             onChangeText={(v) => {
               setText(v);

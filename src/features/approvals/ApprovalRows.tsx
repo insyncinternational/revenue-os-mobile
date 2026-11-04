@@ -12,7 +12,8 @@ import { ChannelBadge } from "@/ui/ChannelIcon";
 import { Bot, CalendarClock, ICON_STROKE } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Text } from "@/ui/Text";
-import { draftLeadName, humanize } from "./approvals";
+import { scoreTone } from "@/ui/scoreTone";
+import { confidencePercent, draftLeadName, humanize } from "./approvals";
 
 /** A draft reply: who it's for, the first lines of what the AI wrote, why it waits. Tap to read, edit and decide. */
 export const DraftRow = memo(function DraftRow({ draft, locale, onOpen }: { draft: AiDraft; locale: string; onOpen: (d: AiDraft) => void }) {
@@ -51,6 +52,8 @@ export const DraftRow = memo(function DraftRow({ draft, locale, onOpen }: { draf
       <View style={styles.meta}>
         <Badge label={draft.action_type === "send_follow_up" ? t("approvals.followUp") : t("approvals.reply")} tone="brand" />
         {intent ? <Badge label={intent} tone="neutral" /> : null}
+        {/* How sure the AI is, coloured like a score (as on the draft's own page). */}
+        {confidencePercent(draft) != null ? <Badge label={t("approvals.confidence", { n: confidencePercent(draft)! })} tone={scoreTone(confidencePercent(draft)!)} dot /> : null}
         {draft.proposed_booking ? (
           <View style={styles.booking}>
             <CalendarClock size={14} color={colors.primary} strokeWidth={ICON_STROKE} />

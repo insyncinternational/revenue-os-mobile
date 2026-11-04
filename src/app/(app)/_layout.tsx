@@ -22,7 +22,7 @@ export default function AppLayout() {
   return (
     <>
       <Stack screenOptions={options}>
-        {/* The title is what Back is called on screens above the tabs ("Revenue OS, back" for screen readers). */}
+        {/* The title is what Back is called on screens above the tabs ("GrowthReach.ai, back" for screen readers). */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: APP_BRAND_NAME }} />
         <Stack.Screen
           name="switcher"
@@ -62,6 +62,20 @@ export default function AppLayout() {
         <Stack.Screen name="email-original" options={{ presentation: "modal", title: "" }} />
         <Stack.Screen name="contact-peek" options={{ presentation: "formSheet", sheetAllowedDetents: [0.6, 1], sheetGrabberVisible: true, sheetCornerRadius: 16, headerShown: false }} />
         <Stack.Screen name="gallery" options={{ title: t("more.gallery"), headerLargeTitle: true }} />
+        {/* The agency area: its tabs, then the screens and sheets above them. */}
+        <Stack.Screen name="agency" options={{ headerShown: false, title: APP_BRAND_NAME }} />
+        <Stack.Screen name="agency-client/[id]" options={{ title: "" }} />
+        <Stack.Screen name="agency-client-people" options={{ title: t("agency.client.people") }} />
+        <Stack.Screen name="agency-team" options={{ title: t("agency.team.title"), headerLargeTitle: true }} />
+        <Stack.Screen name="agency-reports" options={{ title: t("agency.reports.title"), headerLargeTitle: true }} />
+        <Stack.Screen name="agency-activity" options={{ title: t("agency.activity.title"), headerLargeTitle: true }} />
+        <Stack.Screen name="agency-billing" options={{ title: t("agency.billing.title"), headerLargeTitle: true }} />
+        <Stack.Screen name="agency-client-edit" options={{ presentation: "formSheet", sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 16 }} />
+        <Stack.Screen name="agency-client-new" options={{ presentation: "formSheet", sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 16 }} />
+        <Stack.Screen name="agency-invite" options={{ presentation: "formSheet", sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 16 }} />
+        <Stack.Screen name="agency-credits-move" options={{ presentation: "formSheet", sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 16 }} />
+        <Stack.Screen name="agency-buy-credits" options={{ presentation: "formSheet", sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 16 }} />
+        <Stack.Screen name="agency-team-invite" options={{ presentation: "formSheet", sheetAllowedDetents: [0.75, 1], sheetGrabberVisible: true, sheetCornerRadius: 16 }} />
       </Stack>
       {/* Face ID / fingerprint cover (a native modal, so it covers open sheets too). */}
       <AppLockGate />

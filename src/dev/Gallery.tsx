@@ -8,16 +8,20 @@ import { makeStyles } from "@/theme/makeStyles";
 import { gutter, radius, space, type Palette } from "@/theme/tokens";
 import { Avatar } from "@/ui/Avatar";
 import { Badge, CountBadge } from "@/ui/Badge";
+import { BottomActionBar } from "@/ui/BottomActionBar";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { ChannelBadge, ChannelGlyph, channelLabel, type Channel } from "@/ui/ChannelIcon";
 import { FilterChips } from "@/ui/Chip";
 import { Fab } from "@/ui/Fab";
+import { Gauge } from "@/ui/Gauge";
 import { IconButton } from "@/ui/IconButton";
-import { Archive, Bell, Calendar, Inbox, Mail, MailOpen, Phone, Search as SearchIcon, Sparkles, Users } from "@/ui/icons";
+import { Archive, Bell, Calendar, CalendarPlus, Inbox, Link, Mail, MailOpen, Phone, Reply, Search as SearchIcon, Sparkles, Users } from "@/ui/icons";
 import { Input } from "@/ui/Input";
 import { ListRow } from "@/ui/ListRow";
 import { BrandMark, Logo } from "@/ui/Logo";
+import { ScoreBar, StageBar } from "@/ui/Meters";
+import { RowAction } from "@/ui/RowAction";
 import { Screen } from "@/ui/Screen";
 import { SearchBar } from "@/ui/SearchBar";
 import { Divider, SectionHeader } from "@/ui/Section";
@@ -27,6 +31,7 @@ import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { SwipeableRow } from "@/ui/SwipeableRow";
 import { Text } from "@/ui/Text";
 import { useToast } from "@/ui/Toast";
+import { UnderlineTabs } from "@/ui/UnderlineTabs";
 
 /**
  * UI gallery (development builds only, from More): every component in one place, in light, dark and agency colours, to review the design before
@@ -45,7 +50,7 @@ const SAMPLE_CONVERSATIONS: { name: string; channel: Channel; preview: string; a
 ];
 
 const BRANDS: { key: string; label: string; color: string | null }[] = [
-  { key: "ros", label: "Revenue OS", color: null },
+  { key: "ros", label: "GrowthReach.ai", color: null },
   { key: "teal", label: "Agency teal", color: "#0f9d8a" },
   { key: "orange", label: "Agency orange", color: "#f97316" },
   { key: "yellow", label: "Agency yellow", color: "#facc15" },
@@ -67,6 +72,7 @@ export default function Gallery() {
   const [query, setQuery] = useState("");
   const [email, setEmail] = useState("");
   const [rows, setRows] = useState(SAMPLE_CONVERSATIONS);
+  const [detailTab, setDetailTab] = useState<"activity" | "deals" | "meetings" | "tasks">("activity");
 
   return (
     <>
@@ -196,6 +202,12 @@ export default function Gallery() {
             <CountBadge count={128} />
           </View>
           <View style={s.row}>
+            <Badge label="Live" tone="success" dot />
+            <Badge label="Overdue" tone="danger" dot />
+            <Badge label="Due soon" tone="warning" dot />
+            <Badge label="Paused" dot />
+          </View>
+          <View style={s.row}>
             <Avatar name="Sara Ahmed" />
             <Avatar name="James Carter" />
             <Avatar name="Layla Hassan" />
@@ -308,6 +320,75 @@ export default function Gallery() {
           </Card>
         </View>
 
+        <SectionHeader title="Section title with count" count={3} action="See all" onAction={() => toast.show("See all")} />
+
+        <SectionHeader title="Meters" />
+        <Card style={s.card} contentStyle={s.cardBody}>
+          <Text variant="footnote" tone="muted">
+            Lead score / deal probability (red below 40, amber below 70, green from 70)
+          </Text>
+          <ScoreBar value={22} label="Lead score" />
+          <ScoreBar value={55} label="Lead score" />
+          <ScoreBar value={86} label="Lead score" />
+          <Text variant="footnote" tone="muted">
+            Open value by stage
+          </Text>
+          <StageBar
+            parts={[
+              { key: "lead", share: 0.12, color: colors.info },
+              { key: "qualified", share: 0.28, color: colors.primary },
+              { key: "proposal", share: 0.45, color: colors.warning },
+              { key: "negotiation", share: 0.15, color: colors.success },
+            ]}
+          />
+          <View style={s.gaugeRow}>
+            <Gauge value={0.68} color={colors.primary} track={colors.surfaceTertiary}>
+              <Text variant="title" numeric>
+                68%
+              </Text>
+              <Text variant="caption" tone="muted">
+                weighted
+              </Text>
+            </Gauge>
+            <Gauge value={0.32} size={110} stroke={10} color={colors.success} track={colors.surfaceTertiary}>
+              <Text variant="headline" numeric>
+                32%
+              </Text>
+            </Gauge>
+          </View>
+        </Card>
+
+        <SectionHeader title="Rows with one action" />
+        <View style={s.list}>
+          <ListRow title="Sara Ahmed" subtitle="Head of Growth · Northwind Ltd" leading={<Avatar name="Sara Ahmed" size={44} />} trailing={<RowAction icon={Phone} label="Call Sara Ahmed" tone="success" onPress={() => toast.show("Calling…")} />} onPress={() => toast.show("Open contact")} />
+          <Divider inset={gutter + 44 + space.md} />
+          <ListRow title="James Carter" subtitle="Re: Proposal — thanks, I've shared it" unread leading={<Avatar name="James Carter" size={44} />} trailing={<RowAction icon={Reply} label="Reply to James Carter" onPress={() => toast.show("Reply")} />} onPress={() => toast.show("Open conversation")} />
+          <Divider inset={gutter + 44 + space.md} />
+          <ListRow title="INV-0042" subtitle="Northwind Ltd · due in 5 days" leading={<Avatar name="Northwind Ltd" size={44} />} trailing={<RowAction icon={Link} label="Share pay link" tone="info" onPress={() => toast.show("Link copied")} />} onPress={() => toast.show("Open invoice")} />
+        </View>
+
+        <SectionHeader title="Detail screen parts" />
+        <UnderlineTabs
+          tabs={[
+            { key: "activity", label: "Activity" },
+            { key: "deals", label: "Deals" },
+            { key: "meetings", label: "Meetings" },
+            { key: "tasks", label: "Tasks" },
+          ]}
+          value={detailTab}
+          onChange={setDetailTab}
+          style={s.tabs}
+        />
+        <View style={s.barStage}>
+          <BottomActionBar
+            main={{ key: "call", label: "Call", icon: Phone, run: () => toast.show("Calling…") }}
+            more={[
+              { key: "email", label: "Email", icon: Mail, run: () => toast.show("Email") },
+              { key: "book", label: "Book meeting", icon: CalendarPlus, run: () => toast.show("Book") },
+            ]}
+          />
+        </View>
+
         <SectionHeader title="Loading" />
         <View style={s.list}>
           <SkeletonList rows={3} />
@@ -360,4 +441,8 @@ const useStyles = makeStyles((c) => ({
   flex: { flex: 1, minWidth: 0 },
   stack: { gap: space.sm },
   fabSpace: { height: 80 },
+  gaugeRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-around", paddingTop: space.sm },
+  tabs: { marginBottom: space.md },
+  // The action bar pins itself to the bottom of its parent: a short stage to show it on.
+  barStage: { height: 120, overflow: "hidden" },
 }));

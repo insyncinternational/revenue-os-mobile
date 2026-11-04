@@ -12,7 +12,9 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { AiDraft } from "@/types/approvals";
 import { Avatar } from "@/ui/Avatar";
+import { Badge } from "@/ui/Badge";
 import { Banner } from "@/ui/Banner";
+import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { ChannelBadge, channelLabel } from "@/ui/ChannelIcon";
@@ -23,6 +25,7 @@ import { SectionHeader } from "@/ui/Section";
 import { SegmentedControl } from "@/ui/SegmentedControl";
 import { DelayedFallback, Skeleton } from "@/ui/Skeleton";
 import { ErrorState } from "@/ui/States";
+import { scoreTone } from "@/ui/scoreTone";
 import { Text } from "@/ui/Text";
 
 /** One AI draft: who it's for, why the AI wrote it, the text (editable), then Approve or Reject. */
@@ -30,12 +33,14 @@ export default function ApprovalScreen() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = Number(raw) || 0;
   const query = useDraft(id);
+  // Approvals live under Today: the same indigo wash.
+  const headerStyle = useAreaHeaderStyle("today");
   const draft = query.data;
 
   if (!draft) {
     return (
       <>
-        <Stack.Screen options={{ title: "" }} />
+        <Stack.Screen options={{ title: "", headerStyle }} />
         <Screen>
           {query.isPending ? (
             <DelayedFallback>
@@ -60,6 +65,7 @@ export default function ApprovalScreen() {
 
 function DraftReview({ draft, refreshing, onRefresh }: { draft: AiDraft; refreshing: boolean; onRefresh: () => void }) {
   const { colors } = useTheme();
+  const headerStyle = useAreaHeaderStyle("today");
   const locale = getIntlLocale();
   const decide = useDecideDraft();
   const canDecide = useCan("ai_drafts_decide") && isApprovable(draft);
@@ -91,9 +97,10 @@ function DraftReview({ draft, refreshing, onRefresh }: { draft: AiDraft; refresh
 
   return (
     <>
-      <Stack.Screen options={{ title: t("approvals.draftTitle") }} />
+      <Stack.Screen options={{ title: t("approvals.draftTitle"), headerStyle }} />
       <Screen onRefresh={onRefresh} refreshing={refreshing} keyboardAware>
         <View style={styles.hero}>
+          <Backdrop area="today" underBar />
           <View>
             <Avatar name={name} size={56} />
             <View style={styles.channel}>
@@ -116,11 +123,8 @@ function DraftReview({ draft, refreshing, onRefresh }: { draft: AiDraft; refresh
               <Text variant="subhead" weight="semibold" style={styles.flex}>
                 {intent ? t("approvals.classifiedAs", { intent }) : t("approvals.why")}
               </Text>
-              {confidence != null ? (
-                <Text variant="footnote" tone="muted" numeric>
-                  {t("approvals.confidence", { n: confidence })}
-                </Text>
-              ) : null}
+              {/* How sure the AI is, coloured like a score: green from 70, amber from 40, red below. */}
+              {confidence != null ? <Badge label={t("approvals.confidence", { n: confidence })} tone={scoreTone(confidence)} dot /> : null}
             </View>
             {draft.classification?.reasoning || draft.reason ? (
               <Text variant="footnote" tone="secondary" style={styles.whyText}>

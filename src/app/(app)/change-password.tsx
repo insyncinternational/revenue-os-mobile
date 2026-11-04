@@ -5,13 +5,18 @@ import { authApi } from "@/api/auth";
 import { userMessage } from "@/api/errors";
 import { t } from "@/i18n";
 import { haptics } from "@/lib/haptics";
+import { passwordStrength } from "@/lib/password";
+import { StyleSheet, View } from "react-native";
 import { useSession } from "@/session/sessionStore";
+import { useTheme } from "@/theme/ThemeProvider";
+import { radius, space, type Palette } from "@/theme/tokens";
 import { Banner } from "@/ui/Banner";
 import { Button } from "@/ui/Button";
 import { FormScreen } from "@/ui/FormScreen";
 import { FormSection } from "@/ui/FormSection";
 import { KeyRound } from "@/ui/icons";
 import { Input } from "@/ui/Input";
+import { Text } from "@/ui/Text";
 import { useToast } from "@/ui/Toast";
 
 /** Same rule as the server (utils/passwordHash.ts newPasswordSchema): at least 8 characters. */
@@ -56,6 +61,7 @@ export default function ChangePasswordScreen() {
         <FormSection title={t("password.section")} icon={KeyRound}>
           <Input label={t("password.current")} value={current} onChangeText={setCurrent} secureTextEntry autoCapitalize="none" textContentType="password" autoFocus error={tried && !current ? t("password.currentRequired") : null} />
           <Input label={t("password.new")} value={next} onChangeText={setNext} secureTextEntry autoCapitalize="none" textContentType="newPassword" hint={t("password.rule")} error={tooShort || (tried && next.length < MIN) ? t("password.rule") : null} />
+          {next ? <StrengthMeter value={passwordStrength(next)} /> : null}
           <Input label={t("password.again")} value={again} onChangeText={setAgain} secureTextEntry autoCapitalize="none" textContentType="newPassword" error={mismatch ? t("password.mismatch") : null} />
         </FormSection>
         <Banner kind="info" message={t("password.othersSignedOut")} />
@@ -63,3 +69,34 @@ export default function ChangePasswordScreen() {
     </>
   );
 }
+
+const LEVELS: { key: "password.weak" | "password.fair" | "password.good" | "password.strong"; color: keyof Palette }[] = [
+  { key: "password.weak", color: "danger" },
+  { key: "password.fair", color: "warning" },
+  { key: "password.good", color: "success" },
+  { key: "password.strong", color: "success" },
+];
+
+/** How strong the new password looks: four bars filling red → amber → green, and the word. */
+function StrengthMeter({ value }: { value: 0 | 1 | 2 | 3 | 4 }) {
+  const { colors } = useTheme();
+  const level = LEVELS[Math.max(0, value - 1)]!;
+  return (
+    <View style={styles.meter} accessible accessibilityLabel={t(level.key)}>
+      <View style={styles.bars}>
+        {LEVELS.map((l, i) => (
+          <View key={l.key} style={[styles.bar, { backgroundColor: i < value ? colors[level.color] : colors.surfaceTertiary }]} />
+        ))}
+      </View>
+      <Text variant="caption" weight="semibold" style={{ color: colors[`${level.color}Text` as keyof Palette] }}>
+        {t(level.key)}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  meter: { flexDirection: "row", alignItems: "center", gap: space.md, marginTop: -space.xs },
+  bars: { flex: 1, flexDirection: "row", gap: 4 },
+  bar: { flex: 1, height: 5, borderRadius: radius.pill },
+});

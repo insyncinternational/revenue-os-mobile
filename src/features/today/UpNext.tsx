@@ -9,22 +9,22 @@ import { radius, space, type Palette } from "@/theme/tokens";
 import type { PlanAction, PlanItem } from "@/types/home";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
-import { GradientFill } from "@/ui/Gradient";
 import { Calendar, CheckCircle2, ChevronRight, CircleAlert, Clock, Flame, ICON_STROKE, KanbanSquare, MessageCircle, Phone, Sparkles, type IconComponent } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Divider } from "@/ui/Section";
+import { accentGradient, Sheen } from "@/ui/Gloss";
 import { Text } from "@/ui/Text";
 
 /** Each kind's icon on a soft tinted circle: the row's action pill is its only strong colour, so rows stay calm. */
 const KIND: Record<PlanItem["kind"], { icon: IconComponent; tone: { bg: keyof Palette; fg: keyof Palette } }> = {
   approval: { icon: Sparkles, tone: { bg: "primarySubtle", fg: "primary" } },
-  reply: { icon: MessageCircle, tone: { bg: "infoSurface", fg: "info" } },
-  meeting: { icon: Calendar, tone: { bg: "primarySubtle", fg: "primary" } },
-  call: { icon: Phone, tone: { bg: "successSurface", fg: "success" } },
-  follow_up: { icon: Clock, tone: { bg: "warningSurface", fg: "warning" } },
-  hot_lead: { icon: Flame, tone: { bg: "dangerSurface", fg: "danger" } },
-  stalled_deal: { icon: KanbanSquare, tone: { bg: "warningSurface", fg: "warning" } },
-  attention: { icon: CircleAlert, tone: { bg: "warningSurface", fg: "warning" } },
+  reply: { icon: MessageCircle, tone: { bg: "surfaceTertiary", fg: "text" } },
+  meeting: { icon: Calendar, tone: { bg: "surfaceTertiary", fg: "text" } },
+  call: { icon: Phone, tone: { bg: "surfaceTertiary", fg: "text" } },
+  follow_up: { icon: Clock, tone: { bg: "surfaceTertiary", fg: "text" } },
+  hot_lead: { icon: Flame, tone: { bg: "primarySubtle", fg: "primary" } },
+  stalled_deal: { icon: KanbanSquare, tone: { bg: "surfaceTertiary", fg: "text" } },
+  attention: { icon: CircleAlert, tone: { bg: "surfaceTertiary", fg: "text" } },
 };
 
 /** The one action the app can do for an item, best first: review an approval, call, complete, open. AI briefs come later. */
@@ -107,29 +107,30 @@ function CaughtUp() {
   const sparkA = useAnimatedStyle(() => ({ opacity: pop.value, transform: [{ translateY: -drift.value * 4 }, { rotate: `${drift.value * 18}deg` }] }));
   const sparkB = useAnimatedStyle(() => ({ opacity: pop.value * 0.8, transform: [{ translateY: drift.value * 3 }, { rotate: `${-drift.value * 14}deg` }] }));
   return (
-    <Card elevated padded={false} style={styles.caughtCard}>
-      <GradientFill from={colors.successSurface} to={colors.surface} vertical />
+    // The hero slot when nothing is due: the same glossy accent card as "Up next", saying all is clear.
+    <View style={[styles.caughtCard, { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}>
+      <Sheen />
       <View style={styles.clear}>
         <View style={styles.tickWrap}>
-          <Animated.View style={[styles.ripple, { borderColor: colors.success }, ring]} />
-          <Animated.View style={[styles.icon, { backgroundColor: colors.successSurface }, tick]}>
-            <CheckCircle2 size={22} color={colors.success} strokeWidth={ICON_STROKE + 0.25} />
+          <Animated.View style={[styles.ripple, { borderColor: colors.onPrimary }, ring]} />
+          <Animated.View style={[styles.icon, { backgroundColor: colors.primaryTrack }, tick]}>
+            <CheckCircle2 size={22} color={colors.onPrimary} strokeWidth={ICON_STROKE + 0.25} />
           </Animated.View>
           <Animated.View style={[styles.sparkA, sparkA]}>
-            <Sparkles size={12} color={colors.success} strokeWidth={ICON_STROKE} />
+            <Sparkles size={12} color={colors.onPrimary} strokeWidth={ICON_STROKE} />
           </Animated.View>
           <Animated.View style={[styles.sparkB, sparkB]}>
-            <Sparkles size={10} color={colors.warning} strokeWidth={ICON_STROKE} />
+            <Sparkles size={10} color={colors.onPrimaryMuted} strokeWidth={ICON_STROKE} />
           </Animated.View>
         </View>
         <View style={styles.flex}>
-          <Text variant="headline">{t("today.allClear")}</Text>
-          <Text variant="subhead" tone="muted">
+          <Text variant="title" style={{ color: colors.onPrimary }}>{t("today.allClear")}</Text>
+          <Text variant="subhead" style={{ color: colors.onPrimaryMuted }}>
             {t("today.allClearMessage")}
           </Text>
         </View>
       </View>
-    </Card>
+    </View>
   );
 }
 
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
   // Filled, fully rounded, text only: the one strong thing on the row.
   pill: { borderRadius: radius.pill, paddingHorizontal: space.md + 2 },
   clear: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.lg },
-  caughtCard: { overflow: "hidden" },
+  caughtCard: { overflow: "hidden", borderRadius: radius.xxl, paddingVertical: space.md },
   tickWrap: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   ripple: { position: "absolute", width: 40, height: 40, borderRadius: radius.md, borderWidth: 2 },
   sparkA: { position: "absolute", top: -8, right: -8 },

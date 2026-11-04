@@ -11,6 +11,7 @@ import { openApproval } from "@/lib/navigate";
 import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
+import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import { gutter, space } from "@/theme/tokens";
 import { FilterChips } from "@/ui/Chip";
 import { ListReveal } from "@/ui/ListReveal";
@@ -23,6 +24,7 @@ type Filter = "all" | "drafts" | "actions";
 
 /** Everything the AI is waiting on you for: reply drafts to read and approve, and agent actions to OK. */
 export default function ApprovalsScreen() {
+  const headerTint = useAreaHeaderStyle("today");
   const { colors } = useTheme();
   const online = useOnline();
   const locale = getIntlLocale();
@@ -48,7 +50,7 @@ export default function ApprovalsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t("approvals.title") }} />
+      <Stack.Screen options={{ headerStyle: headerTint, title: t("approvals.title") }} />
       <View style={[styles.fill, { backgroundColor: colors.background }]}>
         {!online ? <OfflineBanner /> : null}
         <FlashList<ApprovalItem>
@@ -61,6 +63,7 @@ export default function ApprovalsScreen() {
           ListHeaderComponent={
             draftsOn ? (
               <View style={styles.filters}>
+                <Backdrop area="today" underBar />
                 <FilterChips<Filter>
                   value={filter}
                   onChange={setFilter}
@@ -86,7 +89,7 @@ export default function ApprovalsScreen() {
             ) : failed ? (
               <ErrorState offline={!online} message={online ? userMessage(actions.error) : undefined} onRetry={refetch} />
             ) : (
-              <EmptyState icon={ShieldCheck} title={t("approvals.emptyTitle")} message={t("approvals.emptyMessage")} />
+              <EmptyState area="today" icon={ShieldCheck} title={t("approvals.emptyTitle")} message={t("approvals.emptyMessage")} />
             )
           }
           ListFooterComponent={<View style={styles.footer} />}

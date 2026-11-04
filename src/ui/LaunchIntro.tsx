@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "expo-router";
-import { StyleSheet, Text as RNText, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import Animated, {
   Easing,
   runOnJS,
@@ -13,29 +14,32 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from "react-native-reanimated";
-import { APP_BRAND_TAGLINE } from "@/lib/brand";
 import { useLaunch } from "@/session/launch";
-import { fonts, launchBrand } from "@/theme/tokens";
+import { launchBrand } from "@/theme/tokens";
 import { GradientFill } from "./Gradient";
-import { LOGO } from "./Logo";
+import { BrandOrange, LOGO } from "./Logo";
+import { BRAND_GEOMETRY as G } from "./brandGeometry";
 
 /** The native splash's mark size (app.json expo-splash-screen imageWidth), so the hand-off is invisible. */
 const MARK = 96;
-const K = MARK / 40; // the mark's viewBox is 40
+const [VX, VY, VS] = G.markViewBox.split(" ").map(Number) as [number, number, number];
+const K = MARK / VS; // mark viewBox units → px
 const EASE = Easing.bezier(0.16, 1, 0.3, 1);
 const c = LOGO.onBrand;
 
-/** The spark bars as views (so each can move on the UI thread), same geometry as BrandMark. */
-const BARS = [
-  { x: 6, y: 23, w: 7, h: 11, color: c.ink },
-  { x: 15.5, y: 17, w: 7, h: 17, color: c.ink },
-  { x: 25, y: 15, w: 7, h: 19, color: c.accent },
-] as const;
+/** The three orange bars inside the G as views (so each can move on the UI thread), same geometry as BrandMark. */
+const BARS = G.bars.map((d) => {
+  const [x, y, w, h] = (d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number) as [number, number, number, number];
+  return { x: x - VX, y: y - VY, w, h };
+});
+/** The name + tagline part of the lockup (right of the divider). */
+const WORDS_VB = "570 130 1400 230";
+const WORDS_W = 260;
 
 /**
  * The first thing after the native splash, once per cold start:
- *  - "full" (signed out, ~1.6 s): the bars bounce up one after another, the dot hops, the indigo gradient glows in,
- *    the mark lifts and REVENUE OS / tagline slide in under it, then everything rises away into the sign-in page.
+ *  - "full" (signed out, ~1.6 s): the bars bounce up one after another, the arrow shoots out, the indigo gradient glows in,
+ *    the mark lifts and GrowthReach.ai / tagline slide in under it, then everything rises away into the sign-in page.
  *  - "short" (signed in, ~0.8 s): just the bounce, then straight to Today — nobody waits on every launch.
  * Reduce Motion: a plain fade. Runs entirely on the UI thread (Reanimated), so it stays smooth while JS loads.
  */
@@ -48,7 +52,7 @@ export function LaunchIntro({ mode, onShown }: { mode: "full" | "short"; onShown
   const [skip] = useState(() => !["/", "/sign-in"].includes(path || "/"));
 
   const bars = [useSharedValue(1), useSharedValue(1), useSharedValue(1)];
-  const dot = useSharedValue(0);
+  const arrow = useSharedValue(1);
   const glow = useSharedValue(0);
   const lift = useSharedValue(0);
   const words = useSharedValue(0);
@@ -80,11 +84,11 @@ export function LaunchIntro({ mode, onShown }: { mode: "full" | "short"; onShown
       exit.set(withDelay(150, withTiming(1, { duration: 220 }, (ok) => ok && end())));
       return;
     }
-    // Bars dip and spring back up, left to right, like a level meter; the dot hops after the tall bar.
+    // Bars dip and spring back up, left to right, like a level meter; the arrow then shoots out of the G.
     bars.forEach((b, i) =>
       b.set(withDelay(120 + i * 90, withSequence(withTiming(0.3, { duration: 160, easing: Easing.out(Easing.quad) }), withSpring(1, { damping: 9, stiffness: 180 }))))
     );
-    dot.set(withDelay(400, withSequence(withTiming(-14, { duration: 170, easing: Easing.out(Easing.quad) }), withSpring(0, { damping: 7, stiffness: 200 }))));
+    arrow.set(withDelay(330, withSequence(withTiming(0, { duration: 1 }), withSpring(1, { damping: 11, stiffness: 160 }))));
     if (mode === "short") {
       exit.set(withDelay(620, withTiming(1, { duration: 240, easing: EASE }, (ok) => ok && end())));
       return;
@@ -103,7 +107,10 @@ export function LaunchIntro({ mode, onShown }: { mode: "full" | "short"; onShown
     transform: [{ translateY: -lift.value * 34 - exit.value * 28 }, { scale: 1 - lift.value * 0.12 }],
   }));
   const wordmark = useAnimatedStyle(() => ({ opacity: words.value, transform: [{ translateY: (1 - words.value) * 14 }] }));
-  const dotStyle = useAnimatedStyle(() => ({ transform: [{ translateY: dot.value }] }));
+  const arrowStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(1, arrow.value * 1.6),
+    transform: [{ translateX: (arrow.value - 1) * 22 }, { translateY: (1 - arrow.value) * 22 }],
+  }));
 
   if (done || skip) return null;
   return (
@@ -120,19 +127,30 @@ export function LaunchIntro({ mode, onShown }: { mode: "full" | "short"; onShown
       </Animated.View>
       <Animated.View style={[styles.group, group]}>
         <View style={styles.mark}>
+          <Svg width={MARK} height={MARK} viewBox={G.markViewBox} style={StyleSheet.absoluteFill}>
+            <Path d={G.g} fill={c.ink} />
+          </Svg>
           {BARS.map((b, i) => (
             <Bar key={i} bar={b} value={bars[i]!} />
           ))}
-          <Animated.View style={[styles.dot, dotStyle]} />
+          <Animated.View style={[StyleSheet.absoluteFill, arrowStyle]}>
+            <Svg width={MARK} height={MARK} viewBox={G.markViewBox}>
+              <BrandOrange id="launchArrow" />
+              <Path d={G.arrow} fill="url(#launchArrow)" />
+            </Svg>
+          </Animated.View>
         </View>
         {mode === "full" ? (
           <Animated.View style={[styles.words, wordmark]}>
-            <RNText allowFontScaling={false} style={styles.name}>
-              REVENUE <RNText style={{ color: c.accent }}>OS</RNText>
-            </RNText>
-            <RNText allowFontScaling={false} style={styles.tagline}>
-              {APP_BRAND_TAGLINE.toUpperCase()}
-            </RNText>
+            <Svg width={WORDS_W} height={(WORDS_W * 230) / 1400} viewBox={WORDS_VB}>
+              <BrandOrange id="launchWords" />
+              <Path d={G.name} fill={c.ink} />
+              <Path d={G.ai} fill="url(#launchWords)" />
+              {G.dashes.map((d) => (
+                <Path key={d} d={d} fill="url(#launchWords)" />
+              ))}
+              <Path d={G.tagline} fill={c.sub} />
+            </Svg>
           </Animated.View>
         ) : null}
       </Animated.View>
@@ -146,7 +164,7 @@ function Bar({ bar, value }: { bar: (typeof BARS)[number]; value: SharedValue<nu
     <Animated.View
       style={[
         styles.bar,
-        { left: bar.x * K, top: bar.y * K, width: bar.w * K, height: bar.h * K, borderRadius: 3.5 * K, backgroundColor: bar.color },
+        { left: bar.x * K, top: bar.y * K, width: bar.w * K, height: bar.h * K, borderRadius: 1, backgroundColor: c.accent },
         style,
       ]}
     />
@@ -159,8 +177,5 @@ const styles = StyleSheet.create({
   mark: { width: MARK, height: MARK },
   // Grows from its base, like the bars on a chart.
   bar: { position: "absolute", transformOrigin: "bottom" },
-  dot: { position: "absolute", left: (28.5 - 3.6) * K, top: (7.5 - 3.6) * K, width: 7.2 * K, height: 7.2 * K, borderRadius: 3.6 * K, backgroundColor: c.accent },
-  words: { alignItems: "center", marginTop: 18, gap: 8 },
-  name: { fontFamily: fonts.extrabold, fontSize: 30, lineHeight: 34, color: c.ink, letterSpacing: 0.4 },
-  tagline: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14, color: c.sub, letterSpacing: 4.2 },
+  words: { alignItems: "center", marginTop: 18 },
 });

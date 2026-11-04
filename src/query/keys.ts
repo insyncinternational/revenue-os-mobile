@@ -16,6 +16,7 @@ export const keys = {
   contacts: {
     all: (baseId: BaseId) => ["contacts", baseId] as const,
     list: (baseId: BaseId, filters: Record<string, unknown>) => ["contacts", baseId, "list", filters] as const,
+    recent: (baseId: BaseId) => ["contacts", baseId, "recent"] as const,
     detail: (baseId: BaseId, id: number) => ["contacts", baseId, "detail", id] as const,
     timeline: (baseId: BaseId, id: number) => ["contacts", baseId, "timeline", id] as const,
     tasks: (baseId: BaseId, id: number) => ["contacts", baseId, "tasks", id] as const,

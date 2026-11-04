@@ -7,6 +7,7 @@ import { fullName } from "@/features/contacts/contact";
 import { ContactPicker } from "@/features/contacts/ContactPicker";
 import { useContact } from "@/features/contacts/useContacts";
 import { closeDateChoices, dealBody, orderedStages } from "@/features/pipeline/pipeline";
+import { DealPreview } from "@/features/pipeline/DealPreview";
 import { StagePicker } from "@/features/pipeline/StagePicker";
 import { useDeal, usePipelineBoard, useSaveDeal } from "@/features/pipeline/usePipeline";
 import { t } from "@/i18n";
@@ -80,6 +81,8 @@ export default function DealForm() {
       <Stack.Screen options={{ title: id ? t("pipeline.edit") : t("pipeline.new") }} />
       <FormScreen topInset={false} sheetTitle={id ? t("pipeline.edit") : t("pipeline.new")} sticky={<Button label={t("common.save")} size="lg" fullWidth loading={save.isPending} onPress={submit} />}>
         {save.error ? <Banner message={save.error instanceof ApiError && save.error.fieldErrors[0] ? save.error.fieldErrors[0].message : userMessage(save.error)} /> : null}
+        {/* What you're making, filling in as you type: the deal card as the pipeline will show it. */}
+        <DealPreview name={form.name} amount={form.amount} currency={currency} stage={stages.find((s) => s.id === selectedStage) ?? null} contact={form.lead_id ? shownLead : null} />
         <FormSection title={t("pipeline.sectionDeal")} icon={KanbanSquare}>
           <Input
             label={t("pipeline.name")}

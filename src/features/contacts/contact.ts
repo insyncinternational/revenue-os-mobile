@@ -37,3 +37,32 @@ export function whatsappLink(phone: string | null | undefined): string | null {
   const d = dialable(phone);
   return d ? `https://wa.me/${d.replace(/\D/g, "")}` : null;
 }
+
+/** Pure: the letter a name files under in the A–Z list: its first letter (any alphabet), or "#" for digits and symbols. */
+export function letterOf(name: string): string {
+  const ch = name.trim().charAt(0).toLocaleUpperCase();
+  return /\p{L}/u.test(ch) ? ch : "#";
+}
+
+export type LetterRow<T> = { type: "letter"; key: string; letter: string } | { type: "contact"; key: string; contact: T };
+
+/**
+ * Pure: the A–Z list's rows: a letter heading before each run of names that file under it, and where those headings
+ * sit (for sticky headers). The list arrives sorted by name, so each letter normally appears once; a name that
+ * sorts oddly just starts a new run instead of breaking the list.
+ */
+export function withLetters<T extends { id: number }>(contacts: T[], nameOf: (c: T) => string): { rows: LetterRow<T>[]; headings: number[] } {
+  const rows: LetterRow<T>[] = [];
+  const headings: number[] = [];
+  let last: string | null = null;
+  for (const c of contacts) {
+    const letter = letterOf(nameOf(c));
+    if (letter !== last) {
+      headings.push(rows.length);
+      rows.push({ type: "letter", key: `letter-${letter}-${rows.length}`, letter });
+      last = letter;
+    }
+    rows.push({ type: "contact", key: String(c.id), contact: c });
+  }
+  return { rows, headings };
+}

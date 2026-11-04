@@ -3,8 +3,10 @@ import { StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { userMessage } from "@/api/errors";
 import { DealCard } from "@/features/pipeline/DealCard";
+import { FeaturedDealCard } from "@/features/pipeline/FeaturedDealCard";
 import { nextStage, orderedStages } from "@/features/pipeline/pipeline";
 import { StageTabs } from "@/features/pipeline/StageTabs";
+import { PipelineSummary } from "@/features/pipeline/PipelineSummary";
 import { useMoveDeal, usePipelineBoard } from "@/features/pipeline/usePipeline";
 import { getIntlLocale, t } from "@/i18n";
 import { money } from "@/lib/format";
@@ -14,8 +16,6 @@ import { useCan, useModuleEnabled } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
 import type { Deal } from "@/types/pipeline";
-import { AnimatedNumber } from "@/ui/AnimatedNumber";
-import { Fab } from "@/ui/Fab";
 import { useHeaderChip } from "@/ui/headerChip";
 import { ArrowLeftRight, ChevronDown, ChevronRight, ICON_STROKE, KanbanSquare, Lock, Trophy } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
@@ -23,14 +23,13 @@ import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { SwipeableRow } from "@/ui/SwipeableRow";
 import { Text } from "@/ui/Text";
-import { Ring } from "@/ui/Ring";
 import { ListReveal } from "@/ui/ListReveal";
 import { TabHeader } from "@/ui/TabHeader";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
 
 export default function PipelineScreen() {
   const enabled = useModuleEnabled("crm");
-  if (!enabled) return <EmptyState icon={Lock} title={t("state.notAllowedTitle")} message={t("pipeline.notAvailable")} />;
+  if (!enabled) return <EmptyState area="pipeline" icon={Lock} title={t("state.notAllowedTitle")} message={t("pipeline.notAvailable")} />;
   return <PipelineBoard />;
 }
 
@@ -58,11 +57,14 @@ function PipelineBoard() {
   const stageTotal = selected != null ? (totals[String(selected)]?.count ?? 0) : 0;
   const currency = bootstrap.data?.settings.default_currency ?? "USD";
   const wonStage = stages.find((s) => s.is_won);
+  const closedStages = stages.filter((s) => s.is_won || s.is_lost);
 
   const open = stages.filter((s) => !s.is_won && !s.is_lost);
   const openValue = open.reduce((n, s) => n + (totals[String(s.id)]?.value ?? 0), 0);
   const weighted = open.reduce((n, s) => n + (totals[String(s.id)]?.weighted_value ?? 0), 0);
   const openCount = open.reduce((n, s) => n + (totals[String(s.id)]?.count ?? 0), 0);
+  // Weighted as a share of the open value (0–100).
+  const likely = openValue > 0 ? Math.round((weighted / openValue) * 100) : 0;
 
   const onPress = useCallback((d: Deal) => openDeal(d.id), []);
 
@@ -87,7 +89,13 @@ function PipelineBoard() {
 
   const header = (
     <View style={styles.header}>
-      <TabHeader title={t("tabs.pipeline")} summary={openCount === 1 ? t("pipeline.dealCountOne") : t("pipeline.dealCount", { count: openCount })}>
+      <TabHeader
+        area="pipeline"
+        quiet={seeMoney && openCount > 0}
+        title={seeMoney && openCount > 0 ? t("pipeline.title") : t("tabs.pipeline")}
+        summary={openCount === 1 ? t("pipeline.dealCountOne") : t("pipeline.dealCount", { count: openCount })}
+        action={canCreate ? { label: t("pipeline.add"), onPress: () => openDealForm({ stageId: stage && !stage.is_won && !stage.is_lost ? stage.id : undefined }) } : undefined}
+      >
         {pipelineList.length > 1 && currentPipeline ? (
           <PressableScale
             onPress={switchPipeline}
@@ -102,27 +110,33 @@ function PipelineBoard() {
             <ChevronDown size={16} color={colors.textMuted} strokeWidth={ICON_STROKE} />
           </PressableScale>
         ) : null}
-        {seeMoney && openCount > 0 ? (
-          // The open value large, and how much of it is likely to close as a ring (brand colour).
-          <View style={styles.summary}>
-            <View style={styles.flex}>
-              <Text variant="footnote" style={{ color: colors.textMuted }}>
-                {t("pipeline.openValue")}
-              </Text>
-              <AnimatedNumber value={openValue} format={(n) => money(n, currency, locale, { compact: n >= 100_000 })} variant="display" style={{ color: colors.text }} numberOfLines={1} adjustsFontSizeToFit />
-              <Text variant="footnote" numeric style={{ color: colors.textMuted }}>
-                {t("pipeline.weighted", { value: money(weighted, currency, locale, { compact: weighted >= 100_000 }) })}
-              </Text>
-            </View>
-            <Ring value={openValue > 0 ? weighted / openValue : 0} size={64} color={colors.primary} track={colors.primarySubtle}>
-              <Text variant="caption" weight="semibold" numeric style={{ color: colors.primaryText }}>
-                {`${openValue > 0 ? Math.round((weighted / openValue) * 100) : 0}%`}
-              </Text>
-            </Ring>
-          </View>
-        ) : null}
       </TabHeader>
-      <StageTabs stages={stages} totals={totals} selected={selected} onSelect={setPicked} money={seeMoney ? (n) => money(n, currency, locale, { compact: true }) : undefined} />
+      {seeMoney && openCount > 0 ? (
+        <PipelineSummary
+          stages={open}
+          totals={totals}
+          openValue={openValue}
+          weighted={weighted}
+          likely={likely}
+          selected={selected}
+          onSelect={setPicked}
+          money={(n) => money(n, currency, locale, { compact: n >= 1_000_000 })}
+          compact={(n) => money(n, currency, locale, { compact: true })}
+        />
+      ) : null}
+      {seeMoney && openCount > 0 ? (
+        // The chart picks the open stage; its name and a hint head the list (the mock).
+        <View style={styles.stageHead}>
+          <Text variant="title" numberOfLines={1} style={styles.flexShrink}>
+            {stage?.name ?? ""}
+          </Text>
+          <Text variant="eyebrow" tone="muted" numberOfLines={1}>
+            {stageTotal === 1 ? t("pipeline.stageHintOne") : t("pipeline.stageHint", { count: stageTotal })}
+          </Text>
+        </View>
+      ) : (
+        <StageTabs stages={stages} totals={totals} selected={selected} onSelect={setPicked} money={seeMoney ? (n) => money(n, currency, locale, { compact: true }) : undefined} />
+      )}
     </View>
   );
 
@@ -140,7 +154,7 @@ function PipelineBoard() {
         ListHeaderComponent={header}
         ListEmptyComponent={
           openCount === 0 && (totals[String(selected)]?.count ?? 0) === 0 && !stages.some((s) => (totals[String(s.id)]?.count ?? 0) > 0) ? (
-            <EmptyState
+            <EmptyState area="pipeline"
               icon={KanbanSquare}
               title={t("pipeline.emptyBoardTitle")}
               message={t("pipeline.emptyBoardMessage")}
@@ -148,11 +162,19 @@ function PipelineBoard() {
               onAction={canCreate ? () => openDealForm() : undefined}
             />
           ) : (
-            <EmptyState icon={KanbanSquare} title={t("pipeline.empty")} message={t("pipeline.emptyMessage")} />
+            <EmptyState area="pipeline" icon={KanbanSquare} title={t("pipeline.empty")} message={t("pipeline.emptyMessage")} />
           )
         }
         ListFooterComponent={
           <View style={styles.footer}>
+            {seeMoney && openCount > 0 && closedStages.length > 0 ? (
+              <View style={styles.closed}>
+                <Text variant="eyebrow" tone="muted" style={styles.closedLabel}>
+                  {t("pipeline.closed")}
+                </Text>
+                <StageTabs stages={closedStages} totals={totals} selected={selected} onSelect={setPicked} money={(n) => money(n, currency, locale, { compact: true })} />
+              </View>
+            ) : null}
             {deals.length > 0 && stageTotal > deals.length ? (
               <Text variant="footnote" tone="muted" align="center" numeric>
                 {t("pipeline.showingOf", { shown: deals.length, total: stageTotal })}
@@ -165,7 +187,11 @@ function PipelineBoard() {
           // Inside the swipe row (never around it), so the swipe area isn't moved while it slides in.
           const card = (
             <ListReveal index={index}>
-              <DealCard deal={item} stage={stage} locale={locale} now={now} showMoney={seeMoney} onPress={onPress} fallbackCurrency={currency} />
+              {index === 0 && item.status === "open" ? (
+                <FeaturedDealCard deal={item} locale={locale} showMoney={seeMoney} onPress={onPress} fallbackCurrency={currency} />
+              ) : (
+                <DealCard deal={item} stage={stage} locale={locale} now={now} showMoney={seeMoney} onPress={onPress} fallbackCurrency={currency} />
+              )}
             </ListReveal>
           );
           if (!canEdit || item.status !== "open") return card;
@@ -181,7 +207,6 @@ function PipelineBoard() {
           );
         }}
       />
-      {canCreate ? <Fab label={t("pipeline.add")} onPress={() => openDealForm({ stageId: stage && !stage.is_won && !stage.is_lost ? stage.id : undefined })} /> : null}
       <StatusBarScrim shown={scrim.shown} />
     </View>
   );
@@ -192,7 +217,9 @@ const styles = StyleSheet.create({
   header: { gap: space.md, paddingBottom: space.md },
   pad: { marginHorizontal: gutter },
   pipelinePill: { flexDirection: "row", alignItems: "center", gap: space.xs, height: 32, paddingHorizontal: space.md, borderRadius: 999, borderWidth: 1, flexShrink: 1 },
-  summary: { flexDirection: "row", alignItems: "center", gap: space.md },
-  flex: { flex: 1, minWidth: 0, gap: 2 },
-  footer: { minHeight: 96, paddingTop: space.lg, paddingHorizontal: gutter },
+  footer: { minHeight: 96, paddingTop: space.lg, paddingHorizontal: gutter, gap: space.md },
+  stageHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md, paddingHorizontal: gutter, paddingTop: space.md },
+  flexShrink: { flexShrink: 1 },
+  closed: { gap: space.sm, marginHorizontal: -gutter, paddingTop: space.md },
+  closedLabel: { paddingHorizontal: gutter },
 });

@@ -237,6 +237,12 @@ export default function SignIn() {
               <Text variant="footnote" tone="muted" align="center">
                 {t("auth.noAccount")}
               </Text>
+              {/* Customers of a business sign in to its portal instead (a code from their email, or their portal password). */}
+              <Pressable onPress={() => router.push("/customer-sign-in")} hitSlop={10} accessibilityRole="link" style={styles.customer}>
+                <Text variant="subhead" weight="semibold" align="center" style={{ color: colors.primaryText }}>
+                  {t("portal.signIn.entry")}
+                </Text>
+              </Pressable>
             </Reveal>
           )}
         </View>
@@ -254,7 +260,7 @@ function BrandTile() {
   }, [reduce, breathe]);
   const halo = useAnimatedStyle(() => ({ opacity: 0.55 + breathe.value * 0.45, transform: [{ scale: 0.92 + breathe.value * 0.1 }] }));
   return (
-    <View style={styles.tileWrap} accessible accessibilityRole="image" accessibilityLabel="Revenue OS">
+    <View style={styles.tileWrap} accessible accessibilityRole="image" accessibilityLabel="GrowthReach.ai">
       {/* A soft round glow, fading to nothing at its edge. */}
       <Animated.View style={[styles.halo, halo]}>
         <Svg width={HALO} height={HALO}>
@@ -304,6 +310,7 @@ const styles = StyleSheet.create({
   tile: { width: 68, height: 68, borderRadius: radius.xl + 6, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   form: { width: "100%" },
   forgot: { alignSelf: "flex-end", marginTop: space.sm },
+  customer: { alignSelf: "center", marginTop: space.md, paddingVertical: space.xs },
   or: { flexDirection: "row", alignItems: "center", gap: space.md },
   rule: { flex: 1, height: StyleSheet.hairlineWidth },
 });

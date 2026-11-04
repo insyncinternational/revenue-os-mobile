@@ -25,7 +25,7 @@ describe("todayWidgetProps", () => {
   });
 
   it("signed out keeps no numbers", () => {
-    const p = signedOutWidgetProps({ title: "Revenue OS", hint: "Sign in", palette: palettes.light });
+    const p = signedOutWidgetProps({ title: "GrowthReach.ai", hint: "Sign in", palette: palettes.light });
     expect(p).toMatchObject({ signedIn: false, stats: [], next: "", subtitle: "Sign in" });
   });
 });

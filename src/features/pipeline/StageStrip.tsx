@@ -24,7 +24,7 @@ export function StageStrip({ stages, deal }: { stages: Stage[]; deal: Pick<Deal,
   const won = deal.status === "won";
   const at = won ? open.length - 1 : open.findIndex((s) => s.id === deal.stage_id);
   const current = stages.find((s) => s.id === deal.stage_id);
-  const accent = won ? colors.success : (current?.color ?? colors.primary);
+  const accent = won ? colors.success : colors.primaryFill;
   const share = open.length > 1 && at >= 0 ? at / (open.length - 1) : 0;
 
   const fill = useSharedValue(reduce ? share : 0);

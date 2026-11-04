@@ -69,3 +69,16 @@ export function taskBody(input: TaskInput, mode: "create" | "edit"): { ok: true;
   else if (mode === "edit") body.description = null;
   return { ok: true, body };
 }
+
+/**
+ * Pure: today's progress for the Tasks hero — what was due today (or is overdue) and what was finished today.
+ * `total` counts both, so ticking one off moves it from open to done and the ring fills.
+ */
+export function todayProgress(open: Pick<CrmTask, "due_at">[], done: Pick<CrmTask, "completed_at">[], now: Date): { done: number; total: number } {
+  const due = open.filter((t) => {
+    const b = bucketOf(t, now);
+    return b === "overdue" || b === "today";
+  }).length;
+  const doneToday = done.filter((t) => t.completed_at && daysBetween(now, new Date(t.completed_at)) === 0).length;
+  return { done: doneToday, total: due + doneToday };
+}

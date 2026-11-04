@@ -17,9 +17,49 @@ export function mergePages(pages: { items: InboxItem[] }[]): InboxItem[] {
   return out;
 }
 
+export type InboxGroup = "today" | "week" | "earlier";
+export type InboxListEntry<T> = { kind: "header"; key: string; group: InboxGroup } | { kind: "row"; key: string; item: T; first: boolean; last: boolean };
+
+/**
+ * Pure: the list with a header before each group (today / this week / earlier, by last message), and each row
+ * told whether it starts or ends its group (rows sit in one rounded card per group). Keeps the list order.
+ */
+export function groupByDay<T extends Pick<InboxItem, "id" | "last_message_at">>(items: T[], now: Date): InboxListEntry<T>[] {
+  const today = new Date(now).setHours(0, 0, 0, 0);
+  const weekAgo = today - 6 * 86_400_000;
+  const groupOf = (it: T): InboxGroup => {
+    const at = it.last_message_at ? Date.parse(it.last_message_at) : NaN;
+    if (!Number.isFinite(at)) return "earlier";
+    return at >= today ? "today" : at >= weekAgo ? "week" : "earlier";
+  };
+  const out: InboxListEntry<T>[] = [];
+  items.forEach((it, i) => {
+    const g = groupOf(it);
+    const prev = i > 0 ? groupOf(items[i - 1]!) : null;
+    const next = i < items.length - 1 ? groupOf(items[i + 1]!) : null;
+    if (g !== prev) out.push({ kind: "header", key: `h-${g}-${it.id}`, group: g });
+    out.push({ kind: "row", key: it.id, item: it, first: g !== prev, last: g !== next });
+  });
+  return out;
+}
+
 /** Pure: who to show for a conversation — the name, else the address, never empty. */
 export function contactName(item: Pick<InboxItem, "contact_label" | "contact_email" | "contact_phone">): string {
   return item.contact_label?.trim() || item.contact_email || item.contact_phone || "Unknown";
+}
+
+/** Pure: the conversations waiting on you (unread), in list order, one per person, at most `max`. */
+export function waitingOnYou<T extends Pick<InboxItem, "unread_count" | "contact_label" | "contact_email" | "contact_phone">>(items: T[], max = 10): T[] {
+  const seen = new Set<string>();
+  return items
+    .filter((i) => {
+      if (i.unread_count <= 0) return false;
+      const who = contactName(i);
+      if (seen.has(who)) return false;
+      seen.add(who);
+      return true;
+    })
+    .slice(0, max);
 }
 
 /**

@@ -43,6 +43,27 @@ export function invoiceActions(inv: Pick<Invoice, "status" | "customer_email">):
   };
 }
 
+export type InvoiceStep = "sendEmail" | "shareLink" | "markPaid" | "emailAgain" | "pdf" | "viewAsCustomer" | "void";
+
+/**
+ * Pure: what can be done with this invoice, most useful first — the first is the screen's main button, the next
+ * few its round buttons, the rest plain links. Sending needs the workspace's Stripe (`stripeReady`); editing
+ * steps need `canEdit`; the PDF needs its link.
+ */
+export function invoiceSteps(inv: Pick<Invoice, "status" | "customer_email">, opts: { canEdit: boolean; stripeReady: boolean; hasPdf: boolean }): InvoiceStep[] {
+  const can = invoiceActions(inv);
+  const open = inv.status === "sent" || inv.status === "overdue";
+  const steps: InvoiceStep[] = [];
+  if (opts.canEdit && can.send && opts.stripeReady && inv.customer_email) steps.push("sendEmail");
+  if (opts.canEdit && ((can.send && opts.stripeReady) || can.share)) steps.push("shareLink");
+  if (opts.canEdit && can.markPaid) steps.push("markPaid");
+  if (opts.canEdit && open && can.email) steps.push("emailAgain");
+  if (can.pdf && opts.hasPdf) steps.push("pdf");
+  if (can.pdf) steps.push("viewAsCustomer");
+  if (opts.canEdit && can.void) steps.push("void");
+  return steps;
+}
+
 /** Whole days past the due date (0 when not overdue). `today` is a local "YYYY-MM-DD". */
 export function daysOverdue(inv: Pick<Invoice, "status" | "due_date">, today: string): number {
   if (inv.status !== "overdue" || !inv.due_date) return 0;

@@ -16,7 +16,7 @@ type Props = ViewProps & {
 };
 
 /**
- * A borderless card: white on the light grey page, a stepped-up surface on the dark one — no outlines in either
+ * A flat, borderless card: white on the light grey page, a stepped-up surface on the dark one — no outlines in either
  * theme. `elevated` lifts primary content a little further (a soft shadow in light, a brighter surface in dark).
  * Rule: a card with `onPress` must not contain buttons (a button inside a button breaks screen readers). Cards
  * with their own actions stay static and put the tap target on a row or the actions themselves.
@@ -26,7 +26,7 @@ export function Card({ padded = true, elevated, onPress, style, contentStyle, ch
   const dark = scheme === "dark";
   const look = dark
     ? { backgroundColor: elevated ? colors.surfaceRaised : colors.surface, borderColor: "transparent" }
-    : { backgroundColor: colors.surface, borderColor: "transparent", boxShadow: elevated ? colors.cardShadow : colors.cardShadowSoft };
+    : { backgroundColor: colors.surface, borderColor: "rgba(255, 255, 255, 0.9)", boxShadow: colors.cardShadowSoft };
   const base = [styles.card, look, style];
   // The shadow needs the outer view unclipped; the inner one clips rows (and their pressed state) to the corners.
   const inner = <View style={[styles.clip, padded && styles.padded, contentStyle]}>{children}</View>;

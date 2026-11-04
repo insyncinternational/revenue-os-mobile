@@ -3,6 +3,9 @@ import { Alert, Platform, StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { userMessage } from "@/api/errors";
 import { InboxRow } from "@/features/inbox/InboxRow";
+import { NeedsReply } from "@/features/inbox/NeedsReply";
+import { groupByDay, type InboxGroup, type InboxListEntry } from "@/features/inbox/list";
+import { AiReviewCard } from "@/features/approvals/AiReviewCard";
 import { useInboxAction, useInboxList } from "@/features/inbox/useInbox";
 import { getIntlLocale, t } from "@/i18n";
 import { haptics } from "@/lib/haptics";
@@ -11,11 +14,12 @@ import { useDebounced } from "@/lib/useDebounced";
 import { useOnline } from "@/query/useOnline";
 import { useCan, useModuleEnabled } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
-import { gutter, space } from "@/theme/tokens";
+import { gutter, radius, space } from "@/theme/tokens";
 import type { InboxChannel, InboxFilter, InboxItem } from "@/types/inbox";
 import { channelLabel } from "@/ui/ChannelIcon";
 import { FilterChips, type FilterOption } from "@/ui/Chip";
-import { Archive, Inbox as InboxIcon, Lock, Mail, MailOpen } from "@/ui/icons";
+import { Archive, Inbox as InboxIcon, Lock, Mail, MailOpen, Search } from "@/ui/icons";
+import { Text } from "@/ui/Text";
 import { SearchBar } from "@/ui/SearchBar";
 import { Divider } from "@/ui/Section";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
@@ -32,7 +36,7 @@ const CHANNELS: InboxChannel[] = ["email", "whatsapp", "sms", "website_chat", "l
 export default function InboxScreen() {
   const enabled = useModuleEnabled("inbox");
   if (!enabled) {
-    return <EmptyState icon={Lock} title={t("state.notAllowedTitle")} message={t("inbox.notAvailable")} />;
+    return <EmptyState area="inbox" icon={Lock} title={t("state.notAllowedTitle")} message={t("inbox.notAvailable")} />;
   }
   return <InboxList />;
 }
@@ -47,6 +51,9 @@ function InboxList() {
   const [view, setView] = useState<View_>("all");
   const [channel, setChannel] = useState<"all" | InboxChannel>("all");
   const [search, setSearch] = useState("");
+  // Search sits behind the header's search button (as in the mock); it stays open while there's a query.
+  const [searching, setSearching] = useState(false);
+  const [now] = useState(() => new Date());
   const debounced = useDebounced(search, 300);
 
   const filter = useMemo<InboxFilter>(
@@ -54,10 +61,14 @@ function InboxList() {
     [view, channel, debounced]
   );
   const list = useInboxList(filter);
+  const rows = useMemo(() => groupByDay(list.items, now), [list.items, now]);
   const act = useInboxAction();
 
   const open = useCallback((item: InboxItem) => {
     openConversation(item.id);
+  }, []);
+  const reply = useCallback((item: InboxItem) => {
+    openConversation(item.id, { reply: true });
   }, []);
 
   const archive = useCallback(
@@ -102,7 +113,7 @@ function InboxList() {
   ) : list.isError ? (
     <ErrorState offline={!online} message={online ? userMessage(list.error) : undefined} onRetry={() => void list.refetch()} />
   ) : (
-    <EmptyState
+    <EmptyState area="inbox"
       icon={InboxIcon}
       title={debounced || view !== "all" || channel !== "all" ? t("inbox.emptyFilter") : t("inbox.emptyTitle")}
       message={debounced ? t("inbox.emptySearch") : view === "all" && channel === "all" ? t("inbox.emptyMessage") : undefined}
@@ -115,8 +126,9 @@ function InboxList() {
       <FlashList
         onScroll={scrim.onScroll}
         scrollEventThrottle={32}
-        data={list.items}
-        keyExtractor={(i) => i.id}
+        data={rows}
+        keyExtractor={(r) => r.key}
+        getItemType={(r) => r.kind}
         contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
@@ -126,23 +138,35 @@ function InboxList() {
         onEndReached={() => {
           if (list.hasNextPage && !list.isFetchingNextPage) void list.fetchNextPage();
         }}
-        ItemSeparatorComponent={RowDivider}
         ListHeaderComponent={
           <View style={styles.header}>
-            <TabHeader title={t("tabs.inbox")} summary={inboxSummary(counts?.all ?? 0, list.assignment?.unassigned ?? 0)} />
-            <View style={styles.pad}>
-              <SearchBar value={search} onChangeText={setSearch} placeholder={t("inbox.search")} />
-            </View>
+            <TabHeader
+              area="inbox"
+              title={t("tabs.inbox")}
+              summary={inboxSummary(counts?.all ?? 0, list.assignment?.unassigned ?? 0)}
+              extra={{ label: t("inbox.search"), icon: Search, active: searching || !!search, onPress: () => (search ? setSearch("") : setSearching((v) => !v)) }}
+            />
+            {searching || search ? (
+              <View style={styles.pad}>
+                <SearchBar value={search} onChangeText={setSearch} placeholder={t("inbox.search")} autoFocus />
+              </View>
+            ) : null}
             <FilterChips value={view} onChange={setView} options={viewOptions} />
+            {view === "all" && !debounced ? <AiReviewCard /> : null}
             {channelOptions.length > 2 ? (
               <FilterChips value={channel} onChange={setChannel} options={channelOptions} />
             ) : null}
+            {/* Who is waiting on a reply, one tap each (only while viewing everything, so it never repeats a filter).
+                Below the chips, so the filters stay put when it appears or goes. */}
+            {view === "all" && !debounced ? <NeedsReply items={list.items} onOpen={open} /> : null}
           </View>
         }
         ListEmptyComponent={empty}
         ListFooterComponent={list.isFetchingNextPage ? <SkeletonList rows={2} /> : <View style={styles.footer} />}
-        renderItem={({ item, index }) =>
-          canManage ? (
+        renderItem={({ item: entry, index }) => {
+          if (entry.kind === "header") return <GroupLabel group={entry.group} />;
+          const item = entry.item;
+          const row = canManage ? (
             <SwipeableRow
               id={item.id}
               left={{
@@ -157,32 +181,50 @@ function InboxList() {
             >
               {/* Inside the swipe row (never around it), so the swipe area isn't moved while it slides in. */}
               <ListReveal index={index}>
-                <InboxRow item={item} locale={locale} onPress={open} onLongPress={menu} />
+                <InboxRow item={item} locale={locale} onPress={open} onLongPress={menu} onReply={reply} />
               </ListReveal>
             </SwipeableRow>
           ) : (
             <ListReveal index={index}>
-              <InboxRow item={item} locale={locale} onPress={open} />
+              <InboxRow item={item} locale={locale} onPress={open} onReply={reply} />
             </ListReveal>
-          )
-        }
+          );
+          return <GroupRow entry={entry}>{row}</GroupRow>;
+        }}
       />
       <StatusBarScrim shown={scrim.shown} />
     </View>
   );
 }
 
-/** Stable separator: an inline one was a new component type on every render, so every divider remounted. */
-/** "2 unread · 3 unassigned", or "All caught up". */
+/** "2 unread · 3 conversations need an owner", or "All caught up". */
 function inboxSummary(unread: number, unassigned: number): string {
   const parts: string[] = [];
   if (unread) parts.push(t("inbox.summaryUnread", { count: unread }));
-  if (unassigned) parts.push(t("inbox.summaryUnassigned", { count: unassigned }));
+  if (unassigned) parts.push(unassigned === 1 ? t("inbox.summaryUnassignedOne") : t("inbox.summaryUnassigned", { count: unassigned }));
   return parts.length ? parts.join(" · ") : t("inbox.summaryClear");
 }
 
-function RowDivider() {
-  return <Divider inset={gutter + 48 + space.md} />;
+const GROUP_LABEL: Record<InboxGroup, "inbox.groupToday" | "inbox.groupWeek" | "inbox.groupEarlier"> = { today: "inbox.groupToday", week: "inbox.groupWeek", earlier: "inbox.groupEarlier" };
+
+/** "THIS WEEK": a small spaced label above each group. */
+function GroupLabel({ group }: { group: InboxGroup }) {
+  return (
+    <Text variant="eyebrow" tone="muted" style={styles.groupLabel} accessibilityRole="header">
+      {t(GROUP_LABEL[group])}
+    </Text>
+  );
+}
+
+/** A row inside its group's white card: rounded at the group's ends, a hairline between rows. */
+function GroupRow({ entry, children }: { entry: Extract<InboxListEntry<InboxItem>, { kind: "row" }>; children: React.ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.groupRow, { backgroundColor: colors.surface }, entry.first && styles.groupFirst, entry.last && styles.groupLast]}>
+      {entry.first ? null : <Divider inset={space.md + 2 + 48 + space.md} />}
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -190,4 +232,8 @@ const styles = StyleSheet.create({
   header: { gap: space.md, paddingBottom: space.sm },
   pad: { paddingHorizontal: gutter },
   footer: { height: space.huge * 2 },
+  groupLabel: { paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.sm + 2 },
+  groupRow: { marginHorizontal: gutter, overflow: "hidden" },
+  groupFirst: { borderTopLeftRadius: radius.xl + 4, borderTopRightRadius: radius.xl + 4, paddingTop: space.xs },
+  groupLast: { borderBottomLeftRadius: radius.xl + 4, borderBottomRightRadius: radius.xl + 4, paddingBottom: space.xs },
 });

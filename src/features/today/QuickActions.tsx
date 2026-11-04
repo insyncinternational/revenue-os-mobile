@@ -30,10 +30,10 @@ export function useQuickActions(): Action[] {
 
 /** Each shortcut in its own colour, so the row reads at a glance (and the screen isn't all one brand colour). */
 const TONE: Record<string, { bg: keyof Palette; fg: keyof Palette }> = {
-  contact: { bg: "infoSurface", fg: "info" },
+  contact: { bg: "primarySubtle", fg: "primary" },
   deal: { bg: "primarySubtle", fg: "primary" },
-  task: { bg: "successSurface", fg: "success" },
-  meeting: { bg: "warningSurface", fg: "warning" },
+  task: { bg: "primarySubtle", fg: "primary" },
+  meeting: { bg: "primarySubtle", fg: "primary" },
 };
 
 /**

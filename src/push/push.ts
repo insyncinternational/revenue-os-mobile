@@ -80,6 +80,23 @@ export async function registerForPush(): Promise<boolean> {
   }
 }
 
+/**
+ * This phone's Expo push token when notifications are allowed (null otherwise, on emulators without Play
+ * services, or before the app is linked to EAS). Used by customer sign-in, which registers with its own token.
+ */
+export async function expoPushToken(): Promise<string | null> {
+  if (!pushSupported) return null;
+  await ensureChannels();
+  if ((await pushPermission()) !== "granted") return null;
+  const id = projectId();
+  if (!id) return null;
+  try {
+    return (await Notifications.getExpoPushTokenAsync({ projectId: id })).data;
+  } catch {
+    return null;
+  }
+}
+
 /** Asks the system for permission (after the user tapped "Turn on"), then registers. */
 export async function askForPush(): Promise<PushPermission> {
   if (!pushSupported) return "unsupported";

@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { StyleSheet, Switch, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import Constants from "expo-constants";
-import { LANGUAGES, setLanguage, t, useLanguage, type AppLanguage, type TranslationKey } from "@/i18n";
-import { initials } from "@/lib/format";
-import { confirm } from "@/lib/confirm";
-import { biometricKind, confirmOwner, useAppLock, type BiometricKind } from "@/session/appLock";
+import { AccountSettings } from "@/features/account/AccountSettings";
+import { useMyAgencies } from "@/features/agency/useAgency";
+import { backToAgency } from "@/features/agency/openClient";
+import { t, type TranslationKey } from "@/i18n";
+import { pickAgency } from "@/features/agency/agency";
+import { useAppMode } from "@/session/mode";
 import { useSession } from "@/session/sessionStore";
 import { useMeetingsSummary } from "@/features/calendar/useMeetings";
 import { useInvoiceSummary } from "@/features/invoices/useInvoices";
@@ -15,47 +15,41 @@ import { campaignStatus } from "@/features/campaigns/campaign";
 import { useCampaigns, useCampaignsVisible } from "@/features/campaigns/useCampaigns";
 import { openApprovals, openCalendar, openCampaigns, openInvoices, openTasks } from "@/lib/navigate";
 import { useCan, useModuleEnabled, useWorkspaceAccess } from "@/session/workspace";
-import { useTheme, type ThemePreference } from "@/theme/ThemeProvider";
+import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import { Badge, CountBadge } from "@/ui/Badge";
-import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import {
   ArrowLeftRight,
+  Building,
   Bell,
-  BellRing,
   CalendarDays,
-  Fingerprint,
   ICON_STROKE,
-  LayoutGrid,
   ListChecks,
-  LogOut,
   Pencil,
   Receipt,
-  ScanFace,
   Send,
   ShieldCheck,
+  type IconComponent,
 } from "@/ui/icons";
 import { Divider, SectionHeader } from "@/ui/Section";
 import { ListRow } from "@/ui/ListRow";
 import { Screen } from "@/ui/Screen";
-import { SegmentedControl } from "@/ui/SegmentedControl";
 import { Text } from "@/ui/Text";
 import { Avatar } from "@/ui/Avatar";
+import { HeroCard } from "@/ui/HeroCard";
 import { PressableScale } from "@/ui/PressableScale";
 import { TabHeader } from "@/ui/TabHeader";
-import { useHeaderChip } from "@/ui/headerChip";
 import { useUnreadNotifications } from "@/ui/HeroTopBar";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
 
 export default function More() {
-  const { colors, preference, setPreference } = useTheme();
+  const { colors } = useTheme();
   const scrim = useStatusBarScrim();
-  const chip = useHeaderChip();
   const user = useSession((s) => s.user);
-  const signOut = useSession((s) => s.signOut);
   const access = useWorkspaceAccess().data;
-  const language = useLanguage((s) => s.language);
+  const agencies = useMyAgencies().data?.agencies ?? [];
+  const agencyId = pickAgency(useAppMode((s) => s.agencyId), agencies);
   const meetingsOn = useModuleEnabled("meetings");
   const canMeetings = useCan("meetings_read");
   const crmOn = useModuleEnabled("crm");
@@ -71,16 +65,6 @@ export default function More() {
   const approvals = useApprovalCount();
   const showCampaigns = useCampaignsVisible();
   const liveCampaigns = (useCampaigns(showCampaigns).data ?? []).filter((c) => !c.archived_at && campaignStatus(c) === "running").length;
-  const lockOn = useAppLock((s) => s.enabled);
-  const [lockKind, setLockKind] = useState<BiometricKind | null>(null);
-  useEffect(() => {
-    void biometricKind().then(setLockKind);
-  }, []);
-  // Turning it on asks once, so nobody locks themselves out with biometrics that don't work.
-  const toggleLock = async (on: boolean) => {
-    if (on && !(await confirmOwner(t("lock.confirmPrompt"), t("common.cancel")))) return;
-    useAppLock.getState().setEnabled(on);
-  };
   // Shown where the AI SDR is on, or whenever an agent has something waiting.
   const showApprovals = useDraftsVisible() || approvals > 0;
 
@@ -90,129 +74,59 @@ export default function More() {
   return (
     <>
       <Screen contentInsetAdjustmentBehavior="never" onScroll={scrim.onScroll} scrollEventThrottle={32}>
-        {/* Who is signed in lives in the header now (the avatar); no separate profile card. */}
-        <TabHeader
-          title={user?.name || t("tabs.more")}
-          summary={user?.email}
-          hideProfile
-          leading={<ProfileAvatar name={user?.name || user?.email || "?"} uri={user?.avatar_url} />}
-          titleAccessory={
-            <PressableScale
-              onPress={() => router.push("/profile")}
-              accessibilityRole="button"
-              accessibilityLabel={t("profile.edit")}
-              hitSlop={8}
-              style={[styles.editIcon, chip]}
-            >
-              <Pencil size={15} color={colors.primary} strokeWidth={ICON_STROKE + 0.5} />
-            </PressableScale>
-          }
-        >
-          {access ? (
-            <View style={styles.badges}>
-              <View style={[styles.badge, chip]}>
-                <Text variant="caption" weight="semibold" style={{ color: colors.textSecondary }}>
-                  {roleLabel(access.role)}
-                </Text>
+        {/* Who is signed in, as the screen's one hero card: the whole card opens Edit profile. */}
+        <TabHeader area="account" title={t("tabs.more")} hideProfile>
+          <HeroCard onPress={() => router.push("/profile")} accessibilityLabel={[user?.name, user?.email, t("profile.edit")].filter(Boolean).join(". ")}>
+            <View style={styles.profileTop}>
+              <View style={[styles.avatarRing, { borderColor: colors.heroGlassBorder }]}>
+                <Avatar name={user?.name || user?.email || "?"} uri={user?.avatar_url} size={60} />
               </View>
-              <View style={[styles.badge, chip]}>
-                <Text variant="caption" weight="semibold" numberOfLines={1} style={{ color: colors.textSecondary }}>
-                  {access.client?.name ?? access.workspace.name}
+              <View style={styles.profileText}>
+                <Text variant="title" numberOfLines={1} style={{ color: colors.onHero }}>
+                  {user?.name || user?.email || ""}
                 </Text>
+                {user?.name && user.email ? (
+                  <Text variant="subhead" numberOfLines={1} style={{ color: colors.onHeroMuted }}>
+                    {user.email}
+                  </Text>
+                ) : null}
+              </View>
+              <View style={[styles.editIcon, { backgroundColor: colors.heroGlass }]}>
+                <Pencil size={15} color={colors.onHero} strokeWidth={ICON_STROKE + 0.5} />
               </View>
             </View>
-          ) : null}
+            {access ? (
+              <View style={styles.badges}>
+                {[roleLabel(access.role), access.client?.name ?? access.workspace.name].map((label) => (
+                  <View key={label} style={[styles.badge, { backgroundColor: colors.heroGlass }]}>
+                    <Text variant="caption" weight="semibold" numberOfLines={1} style={{ color: colors.onHero }}>
+                      {label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </HeroCard>
         </TabHeader>
 
         <SectionHeader title={t("more.work")} />
-        <Card padded={false} style={styles.card}>
-          <ListRow
-            title={t("more.notifications")}
-            chevron
-            onPress={() => router.push("/notifications")}
-            leading={
-              <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                <Bell size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-              </View>
-            }
-            trailing={unread ? <CountBadge count={unread} /> : undefined}
-          />
-          {showApprovals ? (
-            <>
-              <Divider inset={64} />
-              <ListRow
-                title={t("approvals.title")}
-                subtitle={approvals ? t("approvals.waiting", { count: approvals }) : null}
-                chevron
-                onPress={openApprovals}
-                leading={
-                  <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                    <ShieldCheck size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                  </View>
-                }
-                trailing={approvals ? <CountBadge count={approvals} /> : undefined}
-              />
-            </>
-          ) : null}
-          {showCalendar || showTasks || showInvoices || showCampaigns ? <Divider inset={64} /> : null}
-          {showCalendar ? (
-            <ListRow
-              title={t("more.calendar")}
-              subtitle={toRecord ? `${t("meeting.toRecord")} · ${toRecord}` : null}
-              chevron
-              onPress={openCalendar}
-              leading={
-                <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                  <CalendarDays size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                </View>
-              }
-              trailing={toRecord ? <CountBadge count={toRecord} /> : undefined}
-            />
-          ) : null}
-          {showCalendar && showTasks ? <Divider inset={64} /> : null}
-          {showTasks ? (
-            <ListRow
-              title={t("more.tasks")}
-              chevron
-              onPress={openTasks}
-              leading={
-                <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                  <ListChecks size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                </View>
-              }
-              trailing={myTasks ? <Badge label={String(myTasks)} tone="neutral" /> : undefined}
-            />
-          ) : null}
-          {showInvoices && (showCalendar || showTasks) ? <Divider inset={64} /> : null}
-          {showInvoices ? (
-            <ListRow
-              title={t("more.invoices")}
-              subtitle={overdueInvoices ? t("invoice.overdueCount", { count: overdueInvoices }) : null}
-              chevron
-              onPress={openInvoices}
-              leading={
-                <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                  <Receipt size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                </View>
-              }
-              trailing={overdueInvoices ? <CountBadge count={overdueInvoices} /> : undefined}
-            />
-          ) : null}
-          {showCampaigns && (showCalendar || showTasks || showInvoices) ? <Divider inset={64} /> : null}
-          {showCampaigns ? (
-            <ListRow
-              title={t("campaigns.title")}
-              subtitle={liveCampaigns ? t("campaigns.liveCount", { count: liveCampaigns }) : null}
-              chevron
-              onPress={openCampaigns}
-              leading={
-                <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                  <Send size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                </View>
-              }
-            />
-          ) : null}
-        </Card>
+        {/* Your work as calm tiles (approvals in the accent), with what's waiting on it. */}
+        <View style={styles.grid}>
+          {(
+            [
+              { id: "notif", label: t("more.notifications"), icon: Bell, fg: colors.primary, bg: colors.primarySubtle, count: unread, onPress: () => router.push("/notifications") },
+              showApprovals && { id: "approvals", label: t("approvals.title"), icon: ShieldCheck, fg: colors.primary, bg: colors.primarySubtle, count: approvals, onPress: openApprovals },
+              showCalendar && { id: "calendar", label: t("more.calendar"), icon: CalendarDays, fg: colors.primary, bg: colors.primarySubtle, count: toRecord, onPress: openCalendar },
+              showTasks && { id: "tasks", label: t("more.tasks"), icon: ListChecks, fg: colors.primary, bg: colors.primarySubtle, count: myTasks, onPress: openTasks },
+              showInvoices && { id: "invoices", label: t("more.invoices"), icon: Receipt, fg: colors.primary, bg: colors.primarySubtle, count: overdueInvoices, onPress: openInvoices },
+              showCampaigns && { id: "campaigns", label: t("campaigns.title"), icon: Send, fg: colors.primary, bg: colors.primarySubtle, count: liveCampaigns, onPress: openCampaigns },
+            ] as (WorkTileProps | false)[]
+          )
+            .filter((x): x is WorkTileProps => x !== false)
+            .map((x) => (
+              <WorkTile key={x.id} {...x} />
+            ))}
+        </View>
 
         <SectionHeader title={t("more.workspace")} />
         <Card padded={false} style={styles.card}>
@@ -229,114 +143,23 @@ export default function More() {
             }
             trailing={access?.source === "agency" ? <Badge label={t("workspace.clients")} tone="brand" /> : undefined}
           />
+          {agencyId ? <Divider inset={gutter + 36 + space.md} /> : null}
+          {agencyId ? (
+            <ListRow
+              title={t("agency.backToAgency")}
+              subtitle={agencies.find((a) => a.id === agencyId)?.name}
+              chevron
+              onPress={() => backToAgency(agencyId)}
+              leading={
+                <View style={[styles.rowIcon, { backgroundColor: colors.primarySubtle }]}>
+                  <Building size={18} color={colors.primary} strokeWidth={ICON_STROKE} />
+                </View>
+              }
+            />
+          ) : null}
         </Card>
 
-        <SectionHeader title={t("more.settings")} />
-        <Card padded={false} style={styles.card}>
-          <ListRow
-            title={t("more.notificationSettings")}
-            chevron
-            onPress={() => router.push("/notification-settings")}
-            leading={
-              <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                <BellRing size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-              </View>
-            }
-          />
-        </Card>
-
-        {lockKind ? (
-          <>
-            <SectionHeader title={t("more.security")} />
-            <Card padded={false} style={styles.card}>
-              <ListRow
-                title={lockKind === "face" ? t("lock.settingFace") : t("lock.setting")}
-                subtitle={t("lock.settingHint")}
-                leading={
-                  <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                    {lockKind === "face" ? (
-                      <ScanFace size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                    ) : (
-                      <Fingerprint size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                    )}
-                  </View>
-                }
-                trailing={
-                  <Switch
-                    value={lockOn}
-                    onValueChange={(on) => void toggleLock(on)}
-                    accessibilityLabel={lockKind === "face" ? t("lock.settingFace") : t("lock.setting")}
-                    trackColor={{
-                      true: colors.primaryFill,
-                      false: colors.borderStrong,
-                    }}
-                    ios_backgroundColor={colors.surfaceTertiary}
-                  />
-                }
-              />
-            </Card>
-          </>
-        ) : null}
-
-        <SectionHeader title={t("more.appearance")} />
-        <View style={styles.block}>
-          <SegmentedControl<ThemePreference>
-            value={preference}
-            onChange={setPreference}
-            options={[
-              { key: "system", label: t("appearance.system") },
-              { key: "light", label: t("appearance.light") },
-              { key: "dark", label: t("appearance.dark") },
-            ]}
-          />
-        </View>
-
-        <SectionHeader title={t("more.language")} />
-        <View style={styles.block}>
-          <SegmentedControl<AppLanguage>
-            value={language}
-            onChange={setLanguage}
-            options={LANGUAGES.map((l) => ({
-              key: l.code,
-              label: l.nativeName,
-            }))}
-          />
-        </View>
-
-        {__DEV__ ? (
-          <>
-            <SectionHeader title={t("more.developer")} />
-            <Card padded={false} style={styles.card}>
-              <ListRow
-                title={t("more.gallery")}
-                chevron
-                onPress={() => router.push("/gallery")}
-                leading={
-                  <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                    <LayoutGrid size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-                  </View>
-                }
-              />
-            </Card>
-          </>
-        ) : null}
-
-        <View style={[styles.block, styles.signOut]}>
-          <Button
-            label={t("more.signOut")}
-            icon={LogOut}
-            variant="danger"
-            fullWidth
-            onPress={async () => {
-              if (await confirm(t("more.signOutConfirm"), t("more.signOut"), t("common.cancel"), true)) await signOut();
-            }}
-          />
-          <Text variant="footnote" tone="subtle" align="center">
-            {t("more.version", {
-              version: Constants.expoConfig?.version ?? "",
-            })}
-          </Text>
-        </View>
+        <AccountSettings />
       </Screen>
       <StatusBarScrim shown={scrim.shown} />
     </>
@@ -361,56 +184,47 @@ function roleLabel(role: string): string {
   return r.charAt(0).toUpperCase() + r.slice(1);
 }
 
-/** The profile picture in the header: the photo, else large initials on a brand tint (like the bar's initials above). */
-function ProfileAvatar({ name, uri }: { name: string; uri?: string | null }) {
+type WorkTileProps = { id: string; label: string; icon: IconComponent; fg: string; bg: string; count?: number; onPress: () => void };
+
+/** One of "Your work": a white tile with its icon on a tint of its own colour, and a badge when something waits. */
+function WorkTile({ label, icon: Icon, fg, bg, count, onPress }: WorkTileProps) {
   const { colors } = useTheme();
-  if (uri) return <Avatar name={name} uri={uri} size={68} />;
   return (
-    <View
-      style={[
-        styles.profileAvatar,
-        {
-          backgroundColor: colors.primarySubtle,
-          borderColor: colors.primaryBorder,
-        },
-      ]}
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={count ? `${label}, ${count}` : label}
+      scaleTo={0.96}
+      style={[styles.tile, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]}
     >
-      <Text variant="title" style={{ color: colors.primaryText }} maxFontSizeMultiplier={1}>
-        {initials(name)}
+      <View style={styles.tileTop}>
+        <View style={[styles.tileIcon, { backgroundColor: bg }]}>
+          <Icon size={20} color={fg} strokeWidth={ICON_STROKE + 0.25} />
+        </View>
+        {count ? <CountBadge count={count} /> : null}
+      </View>
+      <Text variant="callout" weight="semibold" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {label}
       </Text>
-    </View>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  badges: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
-  /** The pen after the name: opens Edit profile (28 px, 44 px to tap with hitSlop). */
-  editIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badge: {
-    height: 26,
-    paddingHorizontal: space.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    justifyContent: "center",
-    maxWidth: 220,
-  },
-  profileAvatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  profileTop: { flexDirection: "row", alignItems: "center", gap: space.md },
+  // A soft white ring, so the photo or initials stand off the gradient behind them.
+  avatarRing: { borderRadius: 34, borderWidth: 2, padding: 2 },
+  profileText: { flex: 1, minWidth: 0, gap: 2 },
+  /** A hint that the card edits the profile (the card itself is the button). */
+  editIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", alignSelf: "flex-start" },
+  badges: { flexDirection: "row", gap: space.sm, flexWrap: "wrap", marginTop: space.xs },
+  badge: { height: 26, paddingHorizontal: space.md, borderRadius: radius.pill, justifyContent: "center", maxWidth: 220 },
   card: { marginHorizontal: gutter },
   block: { paddingHorizontal: gutter },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: space.sm + 2, paddingHorizontal: gutter },
+  tile: { width: "31.5%", flexGrow: 1, borderRadius: radius.xl, padding: space.md + 2, gap: space.md },
+  tileTop: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  tileIcon: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   rowIcon: {
     width: 36,
     height: 36,
@@ -418,5 +232,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  signOut: { marginTop: space.xxxl, gap: space.md },
 });

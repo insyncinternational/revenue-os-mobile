@@ -29,6 +29,11 @@ export function daysInStage(deal: Pick<Deal, "stage_entered_at">, now: number): 
   return Number.isFinite(t) ? Math.max(0, Math.floor((now - t) / 86_400_000)) : null;
 }
 
+/** Pure: how a deal's time in its stage reads: new today, fine, getting long (over 14 days), too long (over 30). */
+export function stageAgeTone(days: number): "new" | "neutral" | "warning" | "danger" {
+  return days <= 0 ? "new" : days > 30 ? "danger" : days > 14 ? "warning" : "neutral";
+}
+
 /** Pure: "rotting" when a stage has a limit and the deal is past it. */
 export function isRotting(deal: Pick<Deal, "stage_entered_at" | "status">, stage: Pick<Stage, "rotting_days"> | undefined, now: number): boolean {
   if (deal.status !== "open" || !stage?.rotting_days) return false;

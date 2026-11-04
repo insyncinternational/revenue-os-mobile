@@ -29,6 +29,18 @@ export function useContactList(filter: ContactFilter) {
   return { ...query, items, total: query.data?.pages[0]?.pagination.total ?? 0 };
 }
 
+/** Up to six contacts with the most recent activity (none without any), for the "Recently active" row. */
+export function useRecentContacts(enabled: boolean) {
+  const baseId = useActiveBaseId();
+  return useQuery({
+    queryKey: keys.contacts.recent(baseId ?? 0),
+    queryFn: ({ signal }) => contactsApi.recent(baseId!, signal),
+    enabled: enabled && baseId != null,
+    staleTime: 60_000,
+    select: (page) => page.leads.filter((c) => c.last_activity_at).slice(0, 6),
+  });
+}
+
 /** One contact and everything around it; each part loads on its own so the screen fills in progressively. */
 export function useContact(id: number) {
   const baseId = useActiveBaseId() ?? 0;

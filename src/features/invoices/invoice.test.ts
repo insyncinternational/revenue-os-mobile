@@ -1,5 +1,5 @@
 import { invoicePdfUrl } from "@/api/invoices";
-import { balanceDue, cents, daysOverdue, invoiceActions, paidShare, perCurrency } from "./invoice";
+import { balanceDue, cents, daysOverdue, invoiceActions, invoiceSteps, paidShare, perCurrency } from "./invoice";
 
 jest.mock("@/api/client", () => ({ api: {} }));
 
@@ -46,5 +46,23 @@ describe("paidShare", () => {
     expect(paidShare(300, 100)).toBe(0.75);
     // Nothing invoiced yet: no bar at all.
     expect(paidShare(0, 0)).toBeNull();
+  });
+});
+
+describe("invoiceSteps", () => {
+  const all = { canEdit: true, stripeReady: true, hasPdf: true };
+  it("leads with sending a draft (email when there's an address, else the link)", () => {
+    expect(invoiceSteps({ status: "draft", customer_email: "a@b.co" }, all)).toEqual(["sendEmail", "shareLink", "void"]);
+    expect(invoiceSteps({ status: "draft", customer_email: null }, all)).toEqual(["shareLink", "void"]);
+  });
+  it("can't send a draft without Stripe", () => {
+    expect(invoiceSteps({ status: "draft", customer_email: "a@b.co" }, { ...all, stripeReady: false })).toEqual(["void"]);
+  });
+  it("leads with the pay link on an open invoice, then marking it paid", () => {
+    expect(invoiceSteps({ status: "overdue", customer_email: "a@b.co" }, all)).toEqual(["shareLink", "markPaid", "emailAgain", "pdf", "viewAsCustomer", "void"]);
+  });
+  it("only offers the PDF and the customer's page on a paid one, and no edits without the right", () => {
+    expect(invoiceSteps({ status: "paid", customer_email: "a@b.co" }, all)).toEqual(["pdf", "viewAsCustomer"]);
+    expect(invoiceSteps({ status: "sent", customer_email: "a@b.co" }, { ...all, canEdit: false })).toEqual(["pdf", "viewAsCustomer"]);
   });
 });

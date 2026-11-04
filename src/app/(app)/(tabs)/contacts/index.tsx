@@ -4,8 +4,10 @@ import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
 import type { ContactFilter } from "@/api/contacts";
 import { userMessage } from "@/api/errors";
+import { fullName, withLetters, type LetterRow } from "@/features/contacts/contact";
 import { ContactRow } from "@/features/contacts/ContactRow";
-import { useContactList } from "@/features/contacts/useContacts";
+import { RecentContacts } from "@/features/contacts/RecentContacts";
+import { useContactList, useRecentContacts } from "@/features/contacts/useContacts";
 import { getIntlLocale, t } from "@/i18n";
 import { count } from "@/lib/format";
 import { openContact, openContactForm } from "@/lib/navigate";
@@ -16,7 +18,6 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
 import type { Contact } from "@/types/contact";
 import { FilterChips } from "@/ui/Chip";
-import { Fab } from "@/ui/Fab";
 import { Lock, Users } from "@/ui/icons";
 import { SearchBar } from "@/ui/SearchBar";
 import { Divider } from "@/ui/Section";
@@ -24,6 +25,7 @@ import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { ListReveal } from "@/ui/ListReveal";
 import { TabHeader } from "@/ui/TabHeader";
+import { Text } from "@/ui/Text";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
 
 /**
@@ -56,8 +58,13 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
   const filter = useMemo<ContactFilter>(() => ({ view, search: debounced }), [view, debounced]);
   const list = useContactList(filter);
   const open = useCallback((c: Contact) => openContact(c.id), []);
+  // A–Z with a letter heading per run; the recently active get a row up top. (Not sticky: FlashList's sticky
+  // offset, needed to keep a heading clear of the status bar, pushes the whole list down by that much.)
+  const { rows } = useMemo(() => withLetters(list.items, fullName), [list.items]);
+  const showRecent = view === "all" && !debounced;
+  const recent = useRecentContacts(!hidden);
 
-  if (hidden) return <EmptyState icon={Lock} title={t("state.notAllowedTitle")} message={t("state.notAllowedMessage")} />;
+  if (hidden) return <EmptyState area="contacts" icon={Lock} title={t("state.notAllowedTitle")} message={t("state.notAllowedMessage")} />;
 
   const filtered = debounced || view !== "all";
   const empty = list.isPending ? (
@@ -67,7 +74,7 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
   ) : list.isError ? (
     <ErrorState offline={!online} message={online ? userMessage(list.error) : undefined} onRetry={() => void list.refetch()} />
   ) : (
-    <EmptyState
+    <EmptyState area="contacts"
       icon={Users}
       title={filtered ? t("inbox.emptyFilter") : t("contacts.emptyTitle")}
       message={debounced ? t("contacts.emptySearch") : filtered ? undefined : t("contacts.emptyMessage")}
@@ -80,8 +87,9 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
       <FlashList
         onScroll={scrim.onScroll}
         scrollEventThrottle={32}
-        data={list.items}
-        keyExtractor={(c) => String(c.id)}
+        data={rows}
+        keyExtractor={(r) => r.key}
+        getItemType={(r) => r.type}
         contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
@@ -94,7 +102,7 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
         ItemSeparatorComponent={RowDivider}
         ListHeaderComponent={
           <View style={styles.header}>
-            <TabHeader
+            <TabHeader action={canCreate ? { label: t("contacts.add"), onPress: () => openContactForm() } : undefined} area="contacts"
               title={t("tabs.contacts")}
               summary={`${count(list.total, locale)} ${view === "mine" ? t("contacts.totalMine") : view === "phone" ? t("contacts.totalPhone") : t("contacts.totalAll")}`}
             />
@@ -110,25 +118,42 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
                 { key: "phone", label: t("contacts.withPhone") },
               ]}
             />
+            {showRecent ? <RecentContacts contacts={recent.data ?? []} locale={locale} onOpen={open} /> : null}
           </View>
         }
         ListEmptyComponent={empty}
         ListFooterComponent={list.isFetchingNextPage ? <SkeletonList rows={2} /> : <View style={styles.footer} />}
-        renderItem={({ item, index }) => (
-          <ListReveal index={index}>
-            <ContactRow contact={item} locale={locale} onPress={open} />
-          </ListReveal>
-        )}
+        renderItem={({ item, index }) =>
+          item.type === "letter" ? (
+            <LetterHeading letter={item.letter} />
+          ) : (
+            <ListReveal index={index}>
+              <ContactRow contact={item.contact} locale={locale} onPress={open} />
+            </ListReveal>
+          )
+        }
       />
-      {canCreate ? <Fab label={t("contacts.add")} onPress={() => openContactForm()} /> : null}
       <StatusBarScrim shown={scrim.shown} />
     </View>
   );
 }
 
-/** Stable separator: an inline one was a new component type on every render, so every divider remounted. */
-function RowDivider() {
+/** Stable separator (an inline one remounted every divider on each render); only between two contacts. */
+function RowDivider({ leadingItem, trailingItem }: { leadingItem?: LetterRow<Contact>; trailingItem?: LetterRow<Contact> }) {
+  if (leadingItem?.type !== "contact" || trailingItem?.type !== "contact") return null;
   return <Divider inset={gutter + 46 + space.md} />;
+}
+
+/** The letter above its names. */
+function LetterHeading({ letter }: { letter: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.letter, { backgroundColor: colors.background }]} accessibilityRole="header">
+      <Text variant="footnote" weight="bold" style={{ color: colors.primaryText }}>
+        {letter}
+      </Text>
+    </View>
+  );
 }
 
 function askedView(v: string | undefined): ContactFilter["view"] | null {
@@ -140,4 +165,5 @@ const styles = StyleSheet.create({
   header: { gap: space.md, paddingBottom: space.sm },
   pad: { paddingHorizontal: gutter },
   footer: { height: 96 },
+  letter: { paddingHorizontal: gutter, paddingTop: space.sm, paddingBottom: space.xxs },
 });

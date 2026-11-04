@@ -1,26 +1,26 @@
 import { useState, type ReactNode } from "react";
-import { Linking, ScrollView, StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { userMessage } from "@/api/errors";
 import { dial } from "@/features/contacts/callFollowUp";
 import { dialable, fullName, headline, whatsappLink } from "@/features/contacts/contact";
+import { tierTone, tierWord } from "@/features/contacts/tier";
 import { Timeline } from "@/features/contacts/Timeline";
 import { useAddNote, useContact } from "@/features/contacts/useContacts";
 import { TaskRow } from "@/features/tasks/TaskRow";
 import { useToggleTask } from "@/features/tasks/useTasks";
 import { getIntlLocale, t } from "@/i18n";
-import { haptics } from "@/lib/haptics";
 import { dateTime, money } from "@/lib/format";
 import { openContactForm, openDeal, openDealForm, openInvoiceForm, openMeeting, openMeetingForm, openTaskForm } from "@/lib/navigate";
 import { useCan, useModuleEnabled } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { channelColors, gutter, radius, space, type Palette } from "@/theme/tokens";
-import { Avatar } from "@/ui/Avatar";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Badge } from "@/ui/Badge";
+import { ActionTiles, type TileAction } from "@/ui/ActionTiles";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
-import { Briefcase, Building, CalendarDays, CalendarPlus, ChevronRight, Factory, ICON_STROKE, KanbanSquare, ListTodo, Mail, MapPin, MessageSquare, Pencil, Phone, Plus, Receipt, type IconComponent } from "@/ui/icons";
+import { Briefcase, Building, CalendarDays, CalendarPlus, ChevronRight, ICON_STROKE, KanbanSquare, ListTodo, Mail, MessageSquare, Pencil, Phone, Plus, Receipt, StickyNote, type IconComponent } from "@/ui/icons";
 import { IconButton } from "@/ui/IconButton";
 import { Input } from "@/ui/Input";
 import { PressableScale } from "@/ui/PressableScale";
@@ -30,20 +30,22 @@ import { Divider } from "@/ui/Section";
 import { DelayedFallback, Skeleton, SkeletonList } from "@/ui/Skeleton";
 import { ErrorState } from "@/ui/States";
 import { Text } from "@/ui/Text";
+import { UnderlineTabs } from "@/ui/UnderlineTabs";
+import { Segments } from "@/ui/Meters";
+import { accentGradient } from "@/ui/Gloss";
+import { scoreTone } from "@/ui/scoreTone";
 import { WhatsAppIcon } from "@/ui/BrandIcons";
 
 type Tab = "activity" | "deals" | "meetings" | "tasks";
-type Reach = { key: string; label: string; icon?: IconComponent; glyph?: ReactNode; run: () => void };
 
 /**
- * Everything about one person on one screen: who they are and three numbers at the top, the details, then
- * Activity / Deals / Meetings / Tasks as tabs — and the best way to reach them pinned at the bottom, a thumb away.
+ * Everything about one person on one screen: their name large, the ways to reach them as tiles, the score, the
+ * details, then Activity / Deals / Meetings / Tasks as pill tabs.
  */
 export default function ContactScreen() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = Number(raw) || 0;
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const locale = getIntlLocale();
   const { contact, timeline, tasks, deals } = useContact(id);
   const crm = useModuleEnabled("crm");
@@ -60,6 +62,9 @@ export default function ContactScreen() {
   const addNote = useAddNote(id);
   const [note, setNote] = useState("");
   const [tab, setTab] = useState<Tab>("activity");
+  // Bumped by the Note tile: remounts the note box focused.
+  const [noteFocus, setNoteFocus] = useState(0);
+  const headerTint = useAreaHeaderStyle("contacts");
   // Read once per visit so render stays pure ("overdue" is about now-ish, not the exact millisecond).
   const [now] = useState(() => Date.now());
   const [nowDate] = useState(() => new Date(now));
@@ -83,32 +88,36 @@ export default function ContactScreen() {
   ];
   // Only the ones with something in them: three big zeros say nothing (the tabs say "none yet" with a button).
   const stats = tabs.filter((x) => (x.count ?? 0) > 0);
+  // Beside the score: meetings when the workspace books them, else deals.
+  const accentStat = tabs.find((x) => x.key === "meetings") ?? tabs.find((x) => x.key === "deals");
+  const chipList = c ? [c.region, c.industry].filter((x): x is string => !!x && !!x.trim()) : [];
+  const scoreWord = c?.score != null ? (c.tier ? tierWord(c.tier) : t(SCORE_WORD[scoreTone(c.score)])) : "";
 
-  // Ways to reach them, best first: the first is the big ink button, the next three are round buttons beside it.
+  // Ways to reach them, best first: the first tile is ink, the rest white.
   const reach = (
     [
       phone && { key: "call", label: t("contacts.call"), icon: Phone, run: () => dial(phone, id, name) },
       c?.email && { key: "email", label: t("contacts.email"), icon: Mail, run: () => void Linking.openURL(`mailto:${c.email}`) },
-      phone && { key: "text", label: t("contacts.text"), icon: MessageSquare, run: () => void Linking.openURL(`sms:${phone}`) },
       wa && { key: "whatsapp", label: t("contacts.whatsapp"), glyph: <WhatsAppIcon size={22} color={channelColors.whatsapp} />, run: () => void Linking.openURL(wa) },
+      crm && canNote && { key: "note", label: t("contacts.note"), icon: StickyNote, run: () => { setTab("activity"); setNoteFocus((n) => n + 1); } },
+      phone && { key: "text", label: t("contacts.text"), icon: MessageSquare, run: () => void Linking.openURL(`sms:${phone}`) },
       !phone && canEdit && { key: "phone", label: t("contacts.addPhone"), icon: Plus, run: () => openContactForm(id) },
       canInvoice && { key: "invoice", label: t("contacts.invoice"), icon: Receipt, run: () => openInvoiceForm({ leadId: id }) },
-    ] as (Reach | false | null | undefined | "")[]
-  ).filter((r): r is Reach => !!r);
-  const [main, ...more] = reach;
+    ] as (TileAction | false | null | undefined | "")[]
+  ).filter((r): r is TileAction => !!r);
 
   return (
     <>
       <Stack.Screen
         options={{
           title: "",
+          headerStyle: headerTint,
           headerRight: () => (c && canEdit ? <IconButton icon={Pencil} label={t("contacts.edit")} circle size={19} onPress={() => openContactForm(id)} /> : null),
         }}
       />
       <Screen
         onRefresh={() => void Promise.all([contact.refetch(), timeline.refetch(), tasks.refetch(), deals.refetch()])}
         refreshing={contact.isRefetching}
-        contentContainerStyle={{ paddingBottom: BAR_SPACE + insets.bottom }}
       >
         {!c ? (
           contact.isPending ? (
@@ -122,39 +131,85 @@ export default function ContactScreen() {
           )
         ) : (
           <>
+            {/* Who they are: the name very large, their role, and where / what as small white pills. */}
             <View style={styles.profile}>
-              <View style={[styles.avatarLift, { boxShadow: colors.cardShadow }]}>
-                <Avatar name={name} size={92} />
-              </View>
-              <View style={styles.nameRow}>
-                <Text variant="title" align="center" numberOfLines={2} accessibilityRole="header" style={styles.name}>
-                  {name}
-                </Text>
-                {c.tier ? <Badge label={c.tier} tone="success" /> : null}
-              </View>
+              <Text variant="largeTitle" numberOfLines={3} accessibilityRole="header" style={styles.name}>
+                {name}
+              </Text>
               {headline(c) ? (
-                <Text variant="callout" tone="secondary" align="center" numberOfLines={1}>
+                <Text variant="callout" tone="muted" numberOfLines={2}>
                   {headline(c)}
                 </Text>
               ) : null}
+              {chipList.length > 0 || (c.tier && c.score == null) ? (
+                <View style={styles.chips}>
+                  {chipList.map((x) => (
+                    <View key={x} style={[styles.chip, { backgroundColor: colors.surface }]}>
+                      <Text variant="footnote" numberOfLines={1}>
+                        {x}
+                      </Text>
+                    </View>
+                  ))}
+                  {c.tier && c.score == null ? <Badge label={tierWord(c.tier)} tone={tierTone(c.tier) ?? "neutral"} /> : null}
+                </View>
+              ) : null}
             </View>
 
-            {/* Up to three numbers at a glance; each opens its tab. */}
-            {stats.length > 0 ? (
-              <View style={styles.stats}>
-                {stats.map((s) => (
-                  <PressableScale
-                    key={s.key}
-                    onPress={() => setTab(s.key)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${s.label}: ${s.count ?? 0}`}
-                    style={[styles.stat, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]}
-                  >
-                    <Text variant="metric" numeric numberOfLines={1}>
-                      {s.count ?? 0}
+            {/* The ways to reach them, best first, as big tiles right under the name (nothing pinned at the bottom). */}
+            <ActionTiles actions={reach} style={styles.tiles} />
+
+            {/* The score (ten segments and a word) beside the meetings count in the accent; without a score, up to
+                three counts that each open their tab. */}
+            {c.score != null ? (
+              <View style={styles.bento}>
+                <View style={[styles.scoreTile, { backgroundColor: colors.surface }]} accessible accessibilityLabel={`${t("contacts.score")}: ${Math.round(c.score)}, ${scoreWord}`}>
+                  <View style={styles.between}>
+                    <Text variant="footnote" tone="muted">
+                      {t("contacts.score")}
                     </Text>
-                    <Text variant="footnote" tone="muted" weight="medium" numberOfLines={1}>
-                      {s.label}
+                    <Text variant="footnote" tone="muted">
+                      {scoreWord}
+                    </Text>
+                  </View>
+                  <Text variant="metric" numeric>
+                    {Math.round(c.score)}
+                    <Text variant="subhead" tone="muted">
+                      {" /100"}
+                    </Text>
+                  </Text>
+                  <Segments value={c.score} on={colors.primaryFill} off={colors.surfaceTertiary} height={8} />
+                </View>
+                {accentStat ? (
+                  <PressableScale
+                    onPress={() => setTab(accentStat.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${accentStat.label}: ${accentStat.count ?? 0}`}
+                    style={[styles.accentTile, { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}
+                  >
+                    <Text variant="footnote" style={{ color: colors.onPrimaryMuted }} numberOfLines={1}>
+                      {accentStat.label}
+                    </Text>
+                    <Text variant="metric" numeric style={{ color: colors.onPrimary }}>
+                      {accentStat.count ?? 0}
+                    </Text>
+                  </PressableScale>
+                ) : null}
+              </View>
+            ) : stats.length > 0 ? (
+              <View style={styles.stats}>
+                {stats.map((x, i) => (
+                  <PressableScale
+                    key={x.key}
+                    onPress={() => setTab(x.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${x.label}: ${x.count ?? 0}`}
+                    style={[styles.stat, i === 0 ? { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) } : { backgroundColor: colors.surface }]}
+                  >
+                    <Text variant="metric" numeric numberOfLines={1} style={i === 0 ? { color: colors.onPrimary } : undefined}>
+                      {x.count ?? 0}
+                    </Text>
+                    <Text variant="footnote" weight="medium" numberOfLines={1} style={{ color: i === 0 ? colors.onPrimaryMuted : colors.textMuted }}>
+                      {x.label}
                     </Text>
                   </PressableScale>
                 ))}
@@ -163,15 +218,13 @@ export default function ContactScreen() {
 
             <Reveal index={0}>
               <Card padded={false} style={styles.card}>
-                {/* Only filled-in fields, each with its own colour; dividers go between the rows actually shown. */}
+                {/* Only filled-in fields; dividers go between the rows actually shown. */}
                 {(
                   [
                     { icon: Mail, tone: TONES.info, label: t("contacts.email"), value: c.email, onPress: c.email ? () => void Linking.openURL(`mailto:${c.email}`) : undefined },
                     { icon: Phone, tone: TONES.success, label: t("contacts.phone"), value: c.phone, onPress: phone ? () => dial(phone, id, name) : undefined },
                     { icon: Building, tone: TONES.warning, label: t("contacts.company"), value: c.company },
                     { icon: Briefcase, tone: TONES.primary, label: t("contacts.role"), value: c.role },
-                    { icon: MapPin, tone: TONES.danger, label: t("contacts.region"), value: c.region },
-                    { icon: Factory, tone: TONES.neutral, label: t("contacts.industry"), value: c.industry },
                   ] as { icon: IconComponent; tone: Tone; label: string; value: string | null; onPress?: () => void }[]
                 )
                   .filter((d) => d.value && d.value.trim())
@@ -183,35 +236,14 @@ export default function ContactScreen() {
 
             {/* Tabs: one list at a time instead of four stacked sections. */}
             <Reveal index={1}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.tabs, { borderBottomColor: colors.border }]} accessibilityRole="tablist">
-                {tabs.map((x) => {
-                  const active = x.key === tab;
-                  return (
-                    <PressableScale
-                      key={x.key}
-                      onPress={() => {
-                        if (!active) haptics.selection();
-                        setTab(x.key);
-                      }}
-                      accessibilityRole="tab"
-                      accessibilityState={{ selected: active }}
-                      scaleTo={0.97}
-                      style={[styles.tab, { borderBottomColor: active ? colors.primary : "transparent" }]}
-                    >
-                      <Text variant="callout" weight={active ? "bold" : "medium"} tone={active ? "default" : "muted"} numberOfLines={1}>
-                        {x.label}
-                      </Text>
-                    </PressableScale>
-                  );
-                })}
-              </ScrollView>
+              <UnderlineTabs tabs={tabs} value={tab} onChange={setTab} style={styles.tabs} />
 
               <View style={styles.block}>
                 {tab === "activity" ? (
                   <>
                     {crm && canNote ? (
                       <Card contentStyle={styles.noteBox}>
-                        <Input value={note} onChangeText={setNote} placeholder={t("contacts.addNote")} multiline style={styles.noteInput} />
+                        <Input key={noteFocus} autoFocus={noteFocus > 0} value={note} onChangeText={setNote} placeholder={t("contacts.addNote")} multiline style={styles.noteInput} />
                         {note.trim() ? (
                           <Button
                             label={t("contacts.saveNote")}
@@ -271,8 +303,8 @@ export default function ContactScreen() {
                           <View key={m.id}>
                             {i > 0 ? <Divider inset={space.lg + 36 + space.md} /> : null}
                             <PressableScale onPress={() => openMeeting(m.id)} accessibilityLabel={m.title} scaleTo={0.99} style={styles.row}>
-                              <View style={[styles.detailIcon, { backgroundColor: colors.warningSurface }]}>
-                                <CalendarDays size={17} color={colors.warning} strokeWidth={ICON_STROKE} />
+                              <View style={[styles.detailIcon, { backgroundColor: colors.surfaceTertiary }]}>
+                                <CalendarDays size={17} color={colors.text} strokeWidth={ICON_STROKE} />
                               </View>
                               <View style={styles.flex}>
                                 <Text variant="callout" weight="semibold" numberOfLines={1}>
@@ -323,42 +355,6 @@ export default function ContactScreen() {
         )}
       </Screen>
 
-      {/* The best way to reach them, pinned at the bottom over a soft fade: one ink pill and up to three round buttons. */}
-      {c && main ? (
-        <View style={[styles.bar, { paddingBottom: insets.bottom + space.md }]} pointerEvents="box-none">
-          <View style={[StyleSheet.absoluteFill, { backgroundImage: `linear-gradient(180deg, transparent, ${colors.background} 42%)` }]} pointerEvents="none" />
-          <PressableScale
-            onPress={() => {
-              haptics.light();
-              main.run();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={main.label}
-            scaleTo={0.97}
-            style={[styles.mainAction, { backgroundColor: colors.ink }]}
-          >
-            {main.glyph ?? (main.icon ? <main.icon size={19} color={colors.onInk} strokeWidth={ICON_STROKE + 0.25} /> : null)}
-            <Text variant="callout" weight="semibold" style={{ color: colors.onInk }} numberOfLines={1}>
-              {main.label}
-            </Text>
-          </PressableScale>
-          {more.slice(0, 3).map((r) => (
-            <PressableScale
-              key={r.key}
-              onPress={() => {
-                haptics.selection();
-                r.run();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={r.label}
-              scaleTo={0.94}
-              style={[styles.round, { backgroundColor: colors.surface, boxShadow: colors.cardShadow }]}
-            >
-              {r.glyph ?? (r.icon ? <r.icon size={21} color={colors.text} strokeWidth={ICON_STROKE + 0.25} /> : null)}
-            </PressableScale>
-          ))}
-        </View>
-      ) : null}
     </>
   );
 }
@@ -384,14 +380,18 @@ function TabList({ children, empty, action, loading }: { children: ReactNode; em
   );
 }
 
+/** How warm a lead is, in one word, by the same thresholds as the score's colour. */
+const SCORE_WORD = { danger: "contacts.cold", warning: "contacts.warm", success: "contacts.hot" } as const;
+
+
 type Tone = { bg: keyof Palette; fg: keyof Palette };
+// Mono look: every detail icon on the same calm grey.
+const NEUTRAL: Tone = { bg: "primarySubtle", fg: "primary" };
 const TONES = {
-  info: { bg: "infoSurface", fg: "info" },
-  success: { bg: "successSurface", fg: "success" },
-  warning: { bg: "warningSurface", fg: "warning" },
-  primary: { bg: "primarySubtle", fg: "primary" },
-  danger: { bg: "dangerSurface", fg: "danger" },
-  neutral: { bg: "surfaceTertiary", fg: "textSecondary" },
+  info: NEUTRAL,
+  success: NEUTRAL,
+  warning: NEUTRAL,
+  primary: NEUTRAL,
 } as const satisfies Record<string, Tone>;
 
 function Detail({ icon: Icon, tone, label, value, onPress, last }: { icon: IconComponent; tone: Tone; label: string; value: string | null; onPress?: () => void; last?: boolean }) {
@@ -420,26 +420,26 @@ function Detail({ icon: Icon, tone, label, value, onPress, last }: { icon: IconC
 function ProfileSkeleton() {
   return (
     <View style={styles.profile}>
-      <Skeleton width={92} height={92} round />
-      <Skeleton width={180} height={22} />
-      <Skeleton width={120} height={14} />
+      <Skeleton width={220} height={40} />
+      <Skeleton width={160} height={16} />
     </View>
   );
 }
 
-/** Room under the content for the pinned action bar. */
-const BAR_SPACE = 104;
-
 const styles = StyleSheet.create({
-  profile: { alignItems: "center", gap: space.xs + 2, paddingTop: space.sm, paddingBottom: space.xl, paddingHorizontal: gutter },
-  avatarLift: { borderRadius: 46, marginBottom: space.sm },
-  nameRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.sm, flexWrap: "wrap" },
-  name: { letterSpacing: -0.4 },
-  stats: { flexDirection: "row", gap: space.sm + 2, paddingHorizontal: gutter, marginBottom: space.md },
-  stat: { flex: 1, minWidth: 0, borderRadius: radius.xl, paddingVertical: space.md, paddingHorizontal: space.md + 2, gap: 2 },
+  profile: { gap: space.xs + 2, paddingTop: space.md, paddingBottom: space.xl, paddingHorizontal: gutter },
+  name: { fontSize: 40, lineHeight: 44 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: space.xs + 2, marginTop: space.sm },
+  chip: { height: 30, paddingHorizontal: space.md, borderRadius: radius.pill, justifyContent: "center", maxWidth: "100%" },
+  tiles: { marginBottom: space.sm },
+  bento: { flexDirection: "row", gap: space.sm, paddingHorizontal: gutter, marginBottom: space.md },
+  scoreTile: { flex: 2, borderRadius: radius.xl, padding: space.lg, gap: space.xs },
+  accentTile: { flex: 1, borderRadius: radius.xl, padding: space.lg, gap: space.xs },
+  between: { flexDirection: "row", justifyContent: "space-between", gap: space.sm },
+  stats: { flexDirection: "row", gap: space.sm, paddingHorizontal: gutter, marginBottom: space.md },
+  stat: { flex: 1, minWidth: 0, borderRadius: radius.xl, paddingVertical: space.md + 2, paddingHorizontal: space.lg, gap: 2 },
   card: { marginHorizontal: gutter },
-  tabs: { flexDirection: "row", gap: space.xl, paddingHorizontal: gutter, marginTop: space.xxl, marginBottom: space.md, borderBottomWidth: StyleSheet.hairlineWidth },
-  tab: { paddingBottom: space.sm + 2, borderBottomWidth: 2.5, marginBottom: -StyleSheet.hairlineWidth },
+  tabs: { marginTop: space.xl, marginBottom: space.md },
   block: { paddingHorizontal: gutter, gap: space.md },
   tabList: { gap: space.md },
   taskList: { marginHorizontal: -gutter },
@@ -452,7 +452,4 @@ const styles = StyleSheet.create({
   noteInput: { minHeight: 44 },
   noteSave: { alignSelf: "flex-end" },
   errorPad: { paddingTop: space.xxl },
-  bar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", gap: space.sm + 2, paddingHorizontal: gutter, paddingTop: space.xxl },
-  mainAction: { flex: 1, height: 56, borderRadius: radius.pill, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.sm },
-  round: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
 });

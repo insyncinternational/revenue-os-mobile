@@ -147,7 +147,7 @@ export const useSession = create<SessionState>((set, get) => {
       // The lock belongs to whoever turned it on; the next person signing in here starts without it.
       useAppLock.getState().setEnabled(false);
       clearTodayWidget();
-      // The sign-in screen is Revenue OS's, not the last agency's (its colour came back on the button).
+      // The sign-in screen is GrowthReach.ai's, not the last agency's (its colour came back on the button).
       useBrandColor.getState().setWorkspace(null);
       set({ token: null, user: null, expiresAt: null, activeBaseId: null, status: "signedOut", gate: "ok", endedReason: reason ?? null });
     },

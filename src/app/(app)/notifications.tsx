@@ -15,6 +15,7 @@ import { useOnline } from "@/query/useOnline";
 import { useSession } from "@/session/sessionStore";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space, type Palette } from "@/theme/tokens";
+import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { NotificationRow } from "@/types/notifications";
 import { FilterChips } from "@/ui/Chip";
 import { BellOff, Building, Calendar, CheckCheck, CircleAlert, ICON_STROKE, KanbanSquare, Link, MessageCircle, Receipt, ShieldCheck, Sparkles, Users, type IconComponent } from "@/ui/icons";
@@ -25,22 +26,23 @@ import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
 
 const CATEGORY: Record<string, { icon: IconComponent; bg: keyof Palette; fg: keyof Palette }> = {
-  inbox: { icon: MessageCircle, bg: "infoSurface", fg: "info" },
+  inbox: { icon: MessageCircle, bg: "primarySubtle", fg: "primary" },
   assignment: { icon: Users, bg: "primarySubtle", fg: "primary" },
   meeting: { icon: Calendar, bg: "primarySubtle", fg: "primary" },
-  crm: { icon: KanbanSquare, bg: "successSurface", fg: "success" },
-  lead: { icon: Users, bg: "successSurface", fg: "success" },
+  crm: { icon: KanbanSquare, bg: "primarySubtle", fg: "primary" },
+  lead: { icon: Users, bg: "primarySubtle", fg: "primary" },
   ai_sdr: { icon: Sparkles, bg: "primarySubtle", fg: "primary" },
   ai_studio: { icon: Sparkles, bg: "primarySubtle", fg: "primary" },
   team: { icon: Building, bg: "surfaceTertiary", fg: "textSecondary" },
   // Your account (sign-in, password, email verified): not a warning, just news about you.
-  account: { icon: ShieldCheck, bg: "infoSurface", fg: "info" },
-  integration: { icon: Link, bg: "warningSurface", fg: "warning" },
-  billing: { icon: Receipt, bg: "warningSurface", fg: "warning" },
+  account: { icon: ShieldCheck, bg: "primarySubtle", fg: "primary" },
+  integration: { icon: Link, bg: "primarySubtle", fg: "primary" },
+  billing: { icon: Receipt, bg: "primarySubtle", fg: "primary" },
   system: { icon: CircleAlert, bg: "surfaceTertiary", fg: "textSecondary" },
 };
 
 export default function Notifications() {
+  const headerTint = useAreaHeaderStyle("account");
   const { colors } = useTheme();
   const online = useOnline();
   const [filter, setFilter] = useState<NotifFilter>("all");
@@ -75,7 +77,7 @@ export default function Notifications() {
   return (
     <>
       <Stack.Screen
-        options={{
+        options={{ headerStyle: headerTint,
           headerRight: () =>
             unread > 0 ? (
               <IconButton
@@ -106,6 +108,7 @@ export default function Notifications() {
           }}
           ListHeaderComponent={
             <View style={styles.filters}>
+              <Backdrop area="account" underBar />
               <FilterChips<NotifFilter>
                 value={filter}
                 onChange={setFilter}
@@ -128,7 +131,7 @@ export default function Notifications() {
             ) : feed.isError ? (
               <ErrorState offline={!online} message={online ? userMessage(feed.error) : undefined} onRetry={() => void feed.refetch()} />
             ) : (
-              <EmptyState icon={BellOff} title={t("notif.emptyTitle")} message={filter === "unread" ? t("notif.emptyUnread") : t("notif.emptyMessage")} />
+              <EmptyState area="account" icon={BellOff} title={t("notif.emptyTitle")} message={filter === "unread" ? t("notif.emptyUnread") : t("notif.emptyMessage")} />
             )
           }
           ListFooterComponent={feed.isFetchingNextPage ? <SkeletonList rows={2} /> : <View style={styles.footer} />}
@@ -157,7 +160,8 @@ function NotificationItem({ row, locale, onPress }: { row: NotificationRow; loca
       onPress={() => onPress(row)}
       scaleTo={0.985}
       accessibilityLabel={[unread ? t("state.unread") : null, row.title, row.message].filter(Boolean).join(". ")}
-      style={[styles.item, { backgroundColor: unread ? colors.surface : "transparent", borderColor: unread ? colors.border : "transparent" }]}
+      // Unread rows on a soft brand tint (with the dot); read ones sit flat on the page.
+      style={[styles.item, { backgroundColor: unread ? colors.primarySubtle : "transparent", borderColor: "transparent" }]}
     >
       <View style={[styles.icon, { backgroundColor: colors[c.bg] }]}>
         <Icon size={18} color={colors[c.fg]} strokeWidth={ICON_STROKE + 0.25} />

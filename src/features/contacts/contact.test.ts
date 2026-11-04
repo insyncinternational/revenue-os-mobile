@@ -1,4 +1,4 @@
-import { contactPatch, dialable, fullName, headline, whatsappLink } from "./contact";
+import { contactPatch, dialable, fullName, headline, letterOf, whatsappLink, withLetters } from "./contact";
 
 describe("contactPatch", () => {
   it("never lets paid actions or unknown fields through", () => {
@@ -27,5 +27,27 @@ describe("names and numbers", () => {
     expect(dialable("ext 12")).toBeNull();
     expect(whatsappLink("+971 50 123 4567")).toBe("https://wa.me/971501234567");
     expect(whatsappLink(null)).toBeNull();
+  });
+});
+
+describe("letterOf", () => {
+  it("files names under their first letter, in any alphabet, and the rest under #", () => {
+    expect(letterOf(" sara")).toBe("S");
+    expect(letterOf("Ömer")).toBe("Ö");
+    expect(letterOf("سارة")).toBe("س");
+    expect(letterOf("+971 50")).toBe("#");
+    expect(letterOf("")).toBe("#");
+  });
+});
+
+describe("withLetters", () => {
+  it("puts a heading before each letter's run and says where the headings are", () => {
+    const people = [{ id: 1, n: "Asad" }, { id: 2, n: "Amal" }, { id: 3, n: "Sara" }];
+    const { rows, headings } = withLetters(people, (p) => p.n);
+    expect(rows.map((r) => (r.type === "letter" ? r.letter : r.contact.id))).toEqual(["A", 1, 2, "S", 3]);
+    expect(headings).toEqual([0, 3]);
+  });
+  it("is empty for no contacts", () => {
+    expect(withLetters([], () => "")).toEqual({ rows: [], headings: [] });
   });
 });

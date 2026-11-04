@@ -2,19 +2,20 @@ import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSpring, withTiming } from "react-native-reanimated";
 import { useTheme } from "@/theme/ThemeProvider";
-import { gutter, radius, space, type Palette } from "@/theme/tokens";
+import { gutter, radius, space, type Area, type Palette } from "@/theme/tokens";
 import { t } from "@/i18n";
 import { Button } from "./Button";
-import { Bell, BellOff, CalendarCheck, CalendarDays, CheckCheck, CircleAlert, FileText, ICON_STROKE, KanbanSquare, ListTodo, Lock, RefreshCw, Send, Sparkles, WifiOff, type IconComponent } from "./icons";
+import { CircleAlert, ICON_STROKE, RefreshCw, Sparkles, WifiOff, type IconComponent } from "./icons";
 import { Text } from "./Text";
 
-type EmptyProps = { icon: IconComponent; title: string; message?: string; actionLabel?: string; onAction?: () => void };
+/** `area`: which part of the app this is (every scene uses the one accent). */
+type EmptyProps = { icon: IconComponent; title: string; message?: string; actionLabel?: string; onAction?: () => void; area?: Area };
 
 /** Empty list or screen: always says what to do next. */
-export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }: EmptyProps) {
+export function EmptyState({ icon: Icon, title, message, actionLabel, onAction, area }: EmptyProps) {
   return (
     <View style={styles.wrap}>
-      <Illustration Icon={Icon} />
+      <Illustration Icon={Icon} area={area} />
       <Text variant="headline" align="center">
         {title}
       </Text>
@@ -30,29 +31,20 @@ export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }
 
 type Tone = { bg: keyof Palette; fg: keyof Palette };
 
-/** Each screen's empty state in its own colour, so they don't all look alike. */
-const TONES = new Map<IconComponent, Tone>([
-  [BellOff, { bg: "warningSurface", fg: "warning" }],
-  [Bell, { bg: "warningSurface", fg: "warning" }],
-  [CalendarDays, { bg: "infoSurface", fg: "info" }],
-  [CalendarCheck, { bg: "infoSurface", fg: "info" }],
-  [KanbanSquare, { bg: "successSurface", fg: "success" }],
-  [CheckCheck, { bg: "successSurface", fg: "success" }],
-  [ListTodo, { bg: "successSurface", fg: "success" }],
-  [FileText, { bg: "warningSurface", fg: "warning" }],
-  [Send, { bg: "infoSurface", fg: "info" }],
-  [Lock, { bg: "surfaceTertiary", fg: "textMuted" }],
-]);
 const BRAND: Tone = { bg: "primarySubtle", fg: "primary" };
 
 /**
  * The empty state's little scene: a soft colour blob, two tilted cards with the icon on the front one, and a
  * sparkle and dots that drift at their own pace. Still when Reduce Motion is on.
  */
-function Illustration({ Icon }: { Icon: IconComponent }) {
+function Illustration({ Icon, area }: { Icon: IconComponent; area?: Area }) {
   const { colors } = useTheme();
   const reduce = useReducedMotion();
-  const tone = TONES.get(Icon) ?? BRAND;
+  // One accent across the app (Mono look): the brand tint for every scene.
+  const tone = BRAND;
+  // The area's accent when given, else the icon's own tone.
+  const fg = colors[tone.fg];
+  const bg = colors[tone.bg];
   const a = useSharedValue(0);
   const b = useSharedValue(0);
   const enter = useSharedValue(reduce ? 1 : 0);
@@ -70,21 +62,21 @@ function Illustration({ Icon }: { Icon: IconComponent }) {
   const dotB = useAnimatedStyle(() => ({ opacity: enter.value * 0.7, transform: [{ translateX: -4 * b.value }] }));
   return (
     <View style={styles.scene} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Animated.View style={[styles.blob, { backgroundColor: colors[tone.bg] }, blob]} />
+      <Animated.View style={[styles.blob, { backgroundColor: bg }, blob]} />
       <Animated.View style={[styles.card, styles.backCard, { backgroundColor: colors.surface, borderColor: colors.border }, back]}>
         <View style={[styles.line, { backgroundColor: colors.surfaceTertiary, width: 34 }]} />
         <View style={[styles.line, { backgroundColor: colors.surfaceTertiary, width: 22 }]} />
       </Animated.View>
       <Animated.View style={[styles.card, styles.frontCard, { backgroundColor: colors.surface, borderColor: colors.border, boxShadow: colors.cardShadow }, front]}>
-        <View style={[styles.iconDisc, { backgroundColor: colors[tone.bg] }]}>
-          <Icon size={26} color={colors[tone.fg]} strokeWidth={ICON_STROKE} />
+        <View style={[styles.iconDisc, { backgroundColor: bg }]}>
+          <Icon size={26} color={fg} strokeWidth={ICON_STROKE} />
         </View>
         <View style={[styles.line, { backgroundColor: colors.surfaceTertiary, width: 40 }]} />
       </Animated.View>
       <Animated.View style={[styles.spark, spark]}>
-        <Sparkles size={16} color={colors[tone.fg]} strokeWidth={ICON_STROKE} />
+        <Sparkles size={16} color={fg} strokeWidth={ICON_STROKE} />
       </Animated.View>
-      <Animated.View style={[styles.dotA, { backgroundColor: colors[tone.fg] }, dotA]} />
+      <Animated.View style={[styles.dotA, { backgroundColor: fg }, dotA]} />
       <Animated.View style={[styles.dotB, { backgroundColor: colors.primaryBorder }, dotB]} />
     </View>
   );

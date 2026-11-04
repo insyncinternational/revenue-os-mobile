@@ -20,7 +20,7 @@ export function ActionCircle({ icon: Icon, glyph, label, onPress, disabled }: Pr
   const { colors } = useTheme();
   return (
     <PressableScale onPress={onPress} disabled={disabled} accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} scaleTo={0.92} style={[styles.wrap, disabled && styles.off]}>
-      <View style={[styles.circle, { backgroundColor: colors.surface, borderColor: colors.border, boxShadow: colors.cardShadow }]}>
+      <View style={[styles.circle, { backgroundColor: colors.surface, borderColor: "transparent" }]}>
         {glyph ?? (Icon ? <Icon size={22} color={disabled ? colors.textSubtle : colors.primary} strokeWidth={ICON_STROKE + 0.25} /> : null)}
       </View>
       <Text variant="caption" tone={disabled ? "subtle" : "secondary"} numberOfLines={1}>

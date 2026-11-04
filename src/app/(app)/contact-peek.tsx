@@ -6,6 +6,7 @@ import { userMessage } from "@/api/errors";
 import { getIntlLocale, t, type TranslationKey } from "@/i18n";
 import { money, relativeTime } from "@/lib/format";
 import { openContact, openDeal } from "@/lib/navigate";
+import { tierTone, tierWord } from "@/features/contacts/tier";
 import { useActiveBaseId, useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
@@ -20,6 +21,7 @@ import { PressableScale } from "@/ui/PressableScale";
 import { Divider } from "@/ui/Section";
 import { Skeleton } from "@/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/ui/States";
+import { scoreTone } from "@/ui/scoreTone";
 import { Text } from "@/ui/Text";
 
 const CHANNELS = new Set<string>(["email", "whatsapp", "linkedin", "sms", "call"]);
@@ -70,8 +72,9 @@ export default function ContactPeek() {
                 </Text>
               ) : null}
               <View style={styles.badges}>
-                {lead.tier ? <Badge label={lead.tier} tone="brand" /> : null}
-                {lead.score != null ? <Badge label={t("peek.score", { score: lead.score })} tone="neutral" /> : null}
+                {/* Coloured like everywhere else: green hot, amber warm, red cold. */}
+                {lead.tier ? <Badge label={tierWord(lead.tier)} tone={tierTone(lead.tier) ?? "neutral"} /> : null}
+                {lead.score != null ? <Badge label={t("peek.score", { score: lead.score })} tone={scoreTone(lead.score)} dot /> : null}
                 {ctx.data?.owner ? <Badge label={t("peek.owner", { name: ctx.data.owner.name })} tone="neutral" /> : null}
               </View>
               <View style={styles.actions}>

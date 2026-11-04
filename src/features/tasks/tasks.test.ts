@@ -1,5 +1,5 @@
 import type { CrmTask, TaskInput } from "@/types/contact";
-import { bucketOf, groupDone, groupTasks, taskBody, taskContact } from "./tasks";
+import { bucketOf, groupDone, groupTasks, taskBody, taskContact, todayProgress } from "./tasks";
 
 const now = new Date(2026, 10, 3, 14, 0); // Tue 3 Nov 2026, 14:00 local
 const at = (d: number, h = 9) => new Date(2026, 10, d, h, 0).toISOString();
@@ -42,5 +42,18 @@ describe("tasks", () => {
     const edited = taskBody({ ...input, due_at: at(5) }, "edit");
     expect(edited.ok && edited.body.description).toBeNull();
     expect(edited.ok && edited.body.due_at).toBe(at(5));
+  });
+});
+
+describe("todayProgress", () => {
+  const now = new Date(2026, 10, 3, 18, 0);
+  const at = (h: number, day = 3) => new Date(2026, 10, day, h, 0).toISOString();
+  it("counts open tasks due today or overdue, plus those finished today", () => {
+    const open = [{ due_at: at(9) }, { due_at: at(21) }, { due_at: at(10, 5) }, { due_at: null }];
+    const done = [{ completed_at: at(12) }, { completed_at: at(12, 1) }, { completed_at: null }];
+    expect(todayProgress(open, done, now)).toEqual({ done: 1, total: 3 });
+  });
+  it("is empty when nothing is due and nothing was done", () => {
+    expect(todayProgress([], [], now)).toEqual({ done: 0, total: 0 });
   });
 });

@@ -1,21 +1,22 @@
 import { memo } from "react";
-import { StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 import { t } from "@/i18n";
 import { relativeTime } from "@/lib/format";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
 import type { Contact } from "@/types/contact";
 import { Avatar } from "@/ui/Avatar";
-import { IconButton } from "@/ui/IconButton";
-import { Phone } from "@/ui/icons";
+import { Mail, Phone } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
+import { ScoreBar } from "@/ui/Meters";
+import { RowAction } from "@/ui/RowAction";
 import { Text } from "@/ui/Text";
 import { dial } from "./callFollowUp";
 import { dialable, fullName, headline } from "./contact";
 
 type Props = { contact: Contact; locale: string; onPress: (c: Contact) => void; onCall?: (c: Contact) => void };
 
-/** A contact: who, what they do, when you last touched them — and a one-tap call (its own button, beside the row). */
+/** A contact: who, what they do, when you last touched them — and one quick way to reach them (call, else email). */
 export const ContactRow = memo(function ContactRow({ contact, locale, onPress, onCall }: Props) {
   const { colors } = useTheme();
   const name = fullName(contact);
@@ -41,23 +42,29 @@ export const ContactRow = memo(function ContactRow({ contact, locale, onPress, o
           <Text variant="subhead" tone="muted" numberOfLines={1}>
             {sub || " "}
           </Text>
+          {/* The lead score, when the workspace scores leads: warm or cold at a glance. */}
+          {contact.score != null ? (
+            <View style={styles.score}>
+              <ScoreBar value={contact.score} label={t("contacts.score")} />
+            </View>
+          ) : null}
         </View>
       </PressableScale>
-      {/* The call button keeps its slot on every row, so names and times line up down the list. */}
+      {/* One quick action in a slot every row keeps, so names and times line up down the list. */}
       {phone ? (
-        <IconButton
+        <RowAction
           icon={Phone}
           label={`${t("contacts.call")} ${name}`}
-          tone="primary"
-          filled
-          size={20}
+          tone="success"
           onPress={() => {
             onCall?.(contact);
             dial(phone, contact.id, name);
           }}
         />
+      ) : contact.email ? (
+        <RowAction icon={Mail} label={`${t("contacts.email")} ${name}`} tone="info" onPress={() => void Linking.openURL(`mailto:${contact.email}`)} />
       ) : (
-        <View style={styles.callSlot} />
+        <View style={styles.actionSlot} />
       )}
     </View>
   );
@@ -69,6 +76,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, minWidth: 0, gap: 2 },
   line: { flexDirection: "row", alignItems: "center", gap: space.sm },
   flex: { flex: 1, minWidth: 0 },
-  // Same width as the call button (IconButton's 44 pt target).
-  callSlot: { width: 44 },
+  // Same width as RowAction.
+  actionSlot: { width: 40 },
+  score: { marginTop: 4, maxWidth: 180 },
 });

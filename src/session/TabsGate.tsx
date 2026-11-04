@@ -1,26 +1,46 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { router } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { workspacesApi } from "@/api/workspaces";
+import { Redirect, router } from "expo-router";
+import { AGENCY_HOME } from "@/features/agency/navigate";
+import { useMyAgencies } from "@/features/agency/useAgency";
 import { t } from "@/i18n";
 import { Button } from "@/ui/Button";
 import { Building, LogOut } from "@/ui/icons";
 import { Screen } from "@/ui/Screen";
 import { SkeletonList } from "@/ui/Skeleton";
 import { EmptyState } from "@/ui/States";
+import { initialMode, pickAgency } from "@/features/agency/agency";
+import { useAppMode } from "./mode";
 import { useSession } from "./sessionStore";
-import { useWorkspaceBootstrap, workspaceKeys } from "./workspace";
+import { useWorkspaceBootstrap } from "./workspace";
 
-/** Shows the tabs once a workspace is selected; otherwise a loading state or "no workspace yet". */
+/**
+ * In front of the workspace tabs. Agency members land in their agency's area (unless they chose a client's
+ * workspace); everyone else sees the tabs once a workspace is selected, or "no workspace yet".
+ */
 export function TabsGate({ children }: { children: ReactNode }) {
   const { noWorkspace, loading } = useWorkspaceBootstrap();
   const signOut = useSession((s) => s.signOut);
-  // Agency staff without a workspace of their own just need to pick a client.
-  const agencies = useQuery({ queryKey: workspaceKeys.agencies(), queryFn: ({ signal }) => workspacesApi.myAgencies(signal), enabled: noWorkspace, staleTime: 10 * 60_000 });
-  const agencyStaff = (agencies.data?.agencies.length ?? 0) > 0;
+  const mode = useAppMode((s) => s.mode);
+  const remembered = useAppMode((s) => s.agencyId);
+  const agencies = useMyAgencies();
+  const list = agencies.data?.agencies;
+  const agencyId = list ? pickAgency(remembered, list) : null;
 
-  if (loading) {
+  // First time on this phone: agency members start in their agency. A person no longer in any agency goes
+  // back to their workspace.
+  useEffect(() => {
+    if (!list) return;
+    const { enterAgency, enterWorkspace } = useAppMode.getState();
+    if (mode == null) {
+      if (initialMode(list.length) === "agency" && agencyId) enterAgency(agencyId);
+      else enterWorkspace();
+    } else if (mode === "agency" && !agencyId) enterWorkspace();
+  }, [list, mode, agencyId]);
+
+  if (mode === "agency" && agencyId) return <Redirect href={AGENCY_HOME} />;
+
+  if (loading || (mode == null && agencies.isPending)) {
     return (
       <Screen fixed>
         <SkeletonList rows={6} />
@@ -28,7 +48,8 @@ export function TabsGate({ children }: { children: ReactNode }) {
     );
   }
   if (noWorkspace) {
-    // No workspace of their own (agency staff before opening a client, or an invite not accepted yet).
+    // No workspace of their own (an agency member before opening a client, or an invite not accepted yet).
+    const agencyStaff = (list?.length ?? 0) > 0;
     return (
       <Screen fixed>
         <View style={styles.center}>
@@ -36,8 +57,11 @@ export function TabsGate({ children }: { children: ReactNode }) {
             icon={Building}
             title={agencyStaff ? t("workspace.pickClientTitle") : t("workspace.noWorkspaceTitle")}
             message={agencyStaff ? t("workspace.pickClientMessage") : t("workspace.noWorkspaceMessage")}
-            actionLabel={t("workspace.title")}
-            onAction={() => router.push("/switcher")}
+            actionLabel={agencyStaff ? t("agency.backToAgency") : t("workspace.title")}
+            onAction={() => {
+              if (agencyStaff && agencyId) useAppMode.getState().enterAgency(agencyId);
+              else router.push("/switcher");
+            }}
           />
           <Button label={t("more.signOut")} variant="ghost" icon={LogOut} onPress={() => void signOut()} style={styles.signOut} />
         </View>

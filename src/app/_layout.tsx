@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Stack } from "expo-router";
+import { Stack, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import Constants from "expo-constants";
@@ -13,6 +13,7 @@ import { syncLayoutDirection, useLanguage } from "@/i18n";
 import { isOlderThan } from "@/lib/version";
 import { queryClient } from "@/query/queryClient";
 import { persistOnBackground, restoreQueryCache } from "@/query/persist";
+import { useActivePortal, usePortalSession } from "@/portal/portalSession";
 import { useSession } from "@/session/sessionStore";
 import { useStatusBarOverride } from "@/theme/statusBar";
 import { useBrandColor } from "@/theme/brandStore";
@@ -41,18 +42,22 @@ function hideSplash(): void {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    [fonts.regular]: require("../../assets/fonts/Inter_400Regular.ttf"),
-    [fonts.medium]: require("../../assets/fonts/Inter_500Medium.ttf"),
-    [fonts.semibold]: require("../../assets/fonts/Inter_600SemiBold.ttf"),
-    [fonts.bold]: require("../../assets/fonts/Inter_700Bold.ttf"),
-    [fonts.extrabold]: require("../../assets/fonts/Inter_800ExtraBold.ttf"),
+    [fonts.regular]: require("../../assets/fonts/Geist_400Regular.ttf"),
+    [fonts.medium]: require("../../assets/fonts/Geist_500Medium.ttf"),
+    [fonts.semibold]: require("../../assets/fonts/Geist_600SemiBold.ttf"),
+    [fonts.bold]: require("../../assets/fonts/Geist_700Bold.ttf"),
+    [fonts.extrabold]: require("../../assets/fonts/Geist_800ExtraBold.ttf"),
+    [fonts.mono]: require("../../assets/fonts/GeistMono_500Medium.ttf"),
   });
   const status = useSession((s) => s.status);
   const hydrate = useSession((s) => s.hydrate);
+  const portalStatus = usePortalSession((s) => s.status);
   const language = useLanguage((s) => s.language);
 
   useEffect(() => {
     void hydrate();
+    // Customers (a business's portal) sign in separately from staff.
+    void usePortalSession.getState().hydrate();
   }, [hydrate]);
 
   useEffect(() => persistOnBackground(queryClient), []);
@@ -65,7 +70,7 @@ export default function RootLayout() {
     void queryClient.invalidateQueries();
   }, [language]);
 
-  const ready = (fontsLoaded || fontError != null) && status !== "loading";
+  const ready = (fontsLoaded || fontError != null) && status !== "loading" && portalStatus !== "loading";
   // The intro says when its cover is drawn; the timer is a backstop so the splash can never stay up.
   useEffect(() => {
     if (!ready) return;
@@ -102,11 +107,16 @@ function BrandedTheme({ children }: { children: React.ReactNode }) {
   const workspace = useBrandColor((s) => s.workspace);
   const branding = useSession((s) => s.user?.branding);
   const fromUser = branding?.source === "agency" ? branding.primary_color : null;
-  return <ThemeProvider brandColor={preview ?? workspace ?? fromUser}>{children}</ThemeProvider>;
+  // A customer sees their business's colour (staff sign-in, when there is one, wins).
+  const staff = useSession((s) => s.status === "signedIn");
+  const fromPortal = useActivePortal()?.branding?.primary_color ?? null;
+  return <ThemeProvider brandColor={preview ?? workspace ?? fromUser ?? (staff ? null : fromPortal)}>{children}</ThemeProvider>;
 }
 
 /** Today, the first tab. */
 const HOME = "/" as const;
+/** A customer's home in their business's portal. */
+const CUSTOMER_HOME = "/customer" as Href;
 
 /** Versions older than the server's minimum must update (checked once per launch; never blocks offline). */
 function useUpdateRequired(): boolean {
@@ -121,6 +131,8 @@ function RootStack() {
   const gate = useSession((s) => s.gate);
   const updateRequired = useUpdateRequired();
   const signedIn = status === "signedIn";
+  // A customer signed in to a business's portal (only when no staff account is signed in on this phone).
+  const customer = usePortalSession((s) => s.sessions.length > 0) && !signedIn;
 
   return (
     <>
@@ -134,10 +146,13 @@ function RootStack() {
         <Stack.Protected guard={updateRequired}>
           <Stack.Screen name="update" />
         </Stack.Protected>
-        <Stack.Protected guard={!updateRequired && !signedIn} redirectTo={HOME}>
+        <Stack.Protected guard={!updateRequired && !signedIn && !customer} redirectTo={customer ? CUSTOMER_HOME : HOME}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={!updateRequired && signedIn && gate === "ok"} redirectTo={!signedIn ? "/sign-in" : gate === "paused" ? "/paused" : "/verify-email"}>
+        <Stack.Protected guard={!updateRequired && customer} redirectTo={signedIn ? HOME : "/sign-in"}>
+          <Stack.Screen name="customer" />
+        </Stack.Protected>
+        <Stack.Protected guard={!updateRequired && signedIn && gate === "ok"} redirectTo={!signedIn ? (customer ? CUSTOMER_HOME : "/sign-in") : gate === "paused" ? "/paused" : "/verify-email"}>
           <Stack.Screen name="(app)" />
         </Stack.Protected>
         <Stack.Protected guard={!updateRequired && signedIn && gate === "verifyEmail"} redirectTo={signedIn ? HOME : "/sign-in"}>

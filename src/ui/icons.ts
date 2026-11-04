@@ -3,15 +3,25 @@
  * carries only these, not all ~1,600 icons. Add new icons here; never import from "lucide-react-native" directly.
  */
 import ArrowLeftIcon from "lucide-react-native/icons/arrow-left";
+import ArrowRightIcon from "lucide-react-native/icons/arrow-right";
 import ChevronRightIcon from "lucide-react-native/icons/chevron-right";
 import SendIcon from "lucide-react-native/icons/send";
 import { mirroredInRtl } from "./rtlIcon";
 
 // Direction icons face the other way in Arabic (right-to-left).
 export const ArrowLeft = mirroredInRtl(ArrowLeftIcon);
+export const ArrowRight = mirroredInRtl(ArrowRightIcon);
 export const ChevronRight = mirroredInRtl(ChevronRightIcon);
 export const Send = mirroredInRtl(SendIcon);
 export { default as Bell } from "lucide-react-native/icons/bell";
+export { default as BarChart } from "lucide-react-native/icons/chart-column";
+export { default as Coins } from "lucide-react-native/icons/coins";
+export { default as Copy } from "lucide-react-native/icons/copy";
+export { default as CreditCard } from "lucide-react-native/icons/credit-card";
+export { default as Activity } from "lucide-react-native/icons/activity";
+export { default as CircleMinus } from "lucide-react-native/icons/circle-minus";
+export { default as MailCheck } from "lucide-react-native/icons/mail-check";
+export { default as Power } from "lucide-react-native/icons/power";
 export { default as Building } from "lucide-react-native/icons/building";
 export { default as Calendar } from "lucide-react-native/icons/calendar";
 export { default as Check } from "lucide-react-native/icons/check";
@@ -96,6 +106,11 @@ export { default as Rocket } from "lucide-react-native/icons/rocket";
 export { default as Ban } from "lucide-react-native/icons/ban";
 export { default as Receipt } from "lucide-react-native/icons/receipt";
 export { default as Share2 } from "lucide-react-native/icons/share-2";
+export { default as Reply } from "lucide-react-native/icons/reply";
+export { default as ThumbsUp } from "lucide-react-native/icons/thumbs-up";
+export { default as ThumbsDown } from "lucide-react-native/icons/thumbs-down";
+export { default as Voicemail } from "lucide-react-native/icons/voicemail";
+export { default as PhoneMissed } from "lucide-react-native/icons/phone-missed";
 export type { LucideIcon as IconComponent } from "lucide-react-native";
 
 /** Default stroke for every icon (thinner than lucide's 2 — matches the web). */

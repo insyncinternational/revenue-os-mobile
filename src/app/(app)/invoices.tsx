@@ -12,13 +12,16 @@ import { dayKey } from "@/lib/when";
 import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
-import { gutter, radius, space } from "@/theme/tokens";
+import { gutter, space } from "@/theme/tokens";
+import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { InvoiceStatus } from "@/types/invoice";
 import { Banner } from "@/ui/Banner";
-import { Card } from "@/ui/Card";
+import { Badge } from "@/ui/Badge";
+import { ContrastBlock, contrastStatus } from "@/ui/ContrastBlock";
 import { FilterChips } from "@/ui/Chip";
-import { Fab } from "@/ui/Fab";
+import { HeaderAction } from "@/ui/HeaderAction";
 import { ListReveal } from "@/ui/ListReveal";
+import { Ring } from "@/ui/Ring";
 import { FileText } from "@/ui/icons";
 import { DelayedFallback, Skeleton, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
@@ -29,6 +32,7 @@ type Filter = InvoiceStatus | "all";
 
 /** What's owed and what came in, then every invoice by status. New ones from the ＋ button, a deal, or the web. */
 export default function InvoicesScreen() {
+  const headerTint = useAreaHeaderStyle("invoices");
   const { colors } = useTheme();
   const online = useOnline();
   const locale = getIntlLocale();
@@ -52,7 +56,7 @@ export default function InvoicesScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t("invoice.title") }} />
+      <Stack.Screen options={{ headerStyle: headerTint, title: t("invoice.title"), headerRight: () => (canEdit ? <HeaderAction size={40} label={t("invoiceForm.title")} onPress={() => openInvoiceForm()} /> : null) }} />
       <View style={[styles.fill, { backgroundColor: colors.background }]}>
         {!online ? <OfflineBanner /> : null}
         <FlashList
@@ -66,38 +70,38 @@ export default function InvoicesScreen() {
           refreshing={list.isRefetching}
           ListHeaderComponent={
             <View style={styles.header}>
-              <Card elevated style={styles.card} contentStyle={styles.summary}>
+              <Backdrop area="invoices" underBar />
+              {/* The screen's one highlight: what came in (green), what's still owed, and the paid share as a ring. */}
+              <ContrastBlock style={styles.card}>
                 {summary ? (
-                  // What came in leads (the good news), what's still owed beside it, and a bar of paid vs owed.
                   <>
                     <View style={styles.amounts}>
                       <View style={styles.flex}>
-                        <Text variant="footnote" tone="muted">
+                        <Text variant="footnote" style={{ color: colors.onContrastMuted }}>
                           {t("invoice.collectedLabel")}
                         </Text>
-                        <Text variant="title" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: collected ? colors.success : colors.text }}>
+                        <Text variant="title" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: collected ? contrastStatus("success") : colors.onContrast }}>
                           {collected ?? (currency ? cents(0, currency, locale) : "—")}
                         </Text>
-                      </View>
-                      <View style={styles.flex}>
-                        <Text variant="footnote" tone="muted">
+                        <Text variant="footnote" style={[styles.owedLabel, { color: colors.onContrastMuted }]}>
                           {t("invoice.outstanding")}
                         </Text>
-                        <Text variant="title" numeric numberOfLines={1} adjustsFontSizeToFit>
+                        <Text variant="headline" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.onContrast }}>
                           {outstanding ?? (currency ? cents(0, currency, locale) : "—")}
                         </Text>
                       </View>
+                      {paidShare != null ? (
+                        <View style={styles.ring} accessible accessibilityLabel={`${t("invoice.paid")}: ${Math.round(paidShare * 100)}%`}>
+                          <Ring value={paidShare} size={76} stroke={7} color={contrastStatus("success")} track={colors.contrastTrack}>
+                            <Text variant="callout" weight="semibold" numeric style={{ color: colors.onContrast }}>{`${Math.round(paidShare * 100)}%`}</Text>
+                          </Ring>
+                          <Text variant="caption" style={{ color: colors.onContrastMuted }}>
+                            {t("invoice.paid")}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
-                    {paidShare != null ? (
-                      <View style={[styles.track, { backgroundColor: summary.overdue ? colors.warningSurface : colors.surfaceTertiary }]}>
-                        <View style={[styles.paid, { width: `${Math.max(paidShare, 0.02) * 100}%`, backgroundColor: colors.success }]} />
-                      </View>
-                    ) : null}
-                    {summary.overdue ? (
-                      <Text variant="footnote" tone="warning" weight="semibold">
-                        {t("invoice.overdueCount", { count: summary.overdue })}
-                      </Text>
-                    ) : null}
+                    {summary.overdue ? <Badge label={t("invoice.overdueCount", { count: summary.overdue })} tone="danger" dot /> : null}
                   </>
                 ) : (
                   <>
@@ -106,7 +110,7 @@ export default function InvoicesScreen() {
                     <Skeleton width={140} height={14} />
                   </>
                 )}
-              </Card>
+              </ContrastBlock>
               {notConnected ? (
                 <View style={styles.block}>
                   <Banner kind="info" message={t("invoice.connectStripe")} />
@@ -134,7 +138,7 @@ export default function InvoicesScreen() {
             ) : list.isError ? (
               <ErrorState offline={!online} message={online ? userMessage(list.error) : undefined} onRetry={() => void list.refetch()} />
             ) : (
-              <EmptyState
+              <EmptyState area="invoices"
                 icon={FileText}
                 title={filter === "all" ? t("invoice.none") : t("invoice.noneHere")}
                 message={filter === "all" ? t("invoice.noneMessage") : undefined}
@@ -156,7 +160,6 @@ export default function InvoicesScreen() {
             </ListReveal>
           )}
         />
-        {canEdit ? <Fab inStack label={t("invoiceForm.title")} onPress={() => openInvoiceForm()} /> : null}
       </View>
     </>
   );
@@ -167,11 +170,10 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   header: { paddingTop: space.sm, paddingBottom: space.md, gap: space.md },
   card: { marginHorizontal: gutter },
-  summary: { gap: space.md },
-  amounts: { flexDirection: "row", gap: space.lg },
+  amounts: { flexDirection: "row", alignItems: "center", gap: space.lg },
+  owedLabel: { marginTop: space.sm },
+  ring: { alignItems: "center", gap: space.xs },
   flex: { flex: 1, minWidth: 0, gap: 2 },
-  track: { height: 8, borderRadius: radius.pill, overflow: "hidden" },
-  paid: { height: 8, borderRadius: radius.pill },
   block: { paddingHorizontal: gutter },
   footer: { minHeight: space.huge, paddingTop: space.lg, paddingHorizontal: gutter },
 });

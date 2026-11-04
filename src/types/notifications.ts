@@ -33,6 +33,9 @@ export type NotificationRow = {
     task_id?: number;
     meeting_id?: number;
     pending_action_id?: number;
+    /** Agency alerts (backend services/agencyBilling/shared.ts notifyAgencyAdmins). */
+    agency_id?: number;
+    client_id?: number;
   } | null;
   base_id: number | null;
   read_at: string | null;

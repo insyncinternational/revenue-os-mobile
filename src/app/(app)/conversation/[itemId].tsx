@@ -18,6 +18,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { RewriteMode, WhatsAppAccountOption } from "@/types/inbox";
 import { Avatar } from "@/ui/Avatar";
+import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Banner } from "@/ui/Banner";
 import { Button } from "@/ui/Button";
 import { ChannelGlyph, channelLabel } from "@/ui/ChannelIcon";
@@ -32,9 +33,10 @@ import { Text } from "@/ui/Text";
 import { useToast } from "@/ui/Toast";
 
 export default function Conversation() {
-  const { itemId = "" } = useLocalSearchParams<{ itemId: string }>();
+  const { itemId = "", reply } = useLocalSearchParams<{ itemId: string; reply?: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const headerStyle = useAreaHeaderStyle("inbox");
   const toast = useToast();
   const locale = getIntlLocale();
   const conv = useConversation(itemId);
@@ -120,6 +122,7 @@ export default function Conversation() {
     <>
       <Stack.Screen
         options={{
+          headerStyle,
           headerTitle: () => title,
           headerTitleAlign: "center",
           headerRight: () =>
@@ -196,6 +199,7 @@ export default function Conversation() {
             <Notice text={t("inbox.cannotReply")} />
           ) : (
             <Composer
+              focusOnOpen={reply === "1"}
               onSend={(text, files) => sendText(text, undefined, files)}
               canAttach={item?.channel === "email"}
               onRewrite={baseId ? rewrite : undefined}
@@ -232,6 +236,7 @@ function ContactHeader({ name, email, phone, subject, onDetails }: { name: strin
   const { colors } = useTheme();
   return (
     <View style={styles.contactWrap}>
+      <Backdrop area="inbox" underBar />
       <View style={[styles.contact, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Avatar name={name} size={44} />
         <View style={styles.contactText}>
@@ -333,7 +338,8 @@ const styles = StyleSheet.create({
   headerTitle: { alignItems: "center", maxWidth: 240 },
   headerSub: { flexDirection: "row", alignItems: "center", gap: 4 },
   sticky: { position: "absolute", left: 0, right: 0, bottom: 0 },
-  contactWrap: { gap: space.sm, paddingBottom: space.sm },
+  // Edge to edge and up to the bar (out of the thread's padding), so the inbox wash runs on from the top bar.
+  contactWrap: { gap: space.sm, paddingBottom: space.sm, marginHorizontal: -gutter, paddingHorizontal: gutter, marginTop: -space.lg, paddingTop: space.lg },
   contact: { flexDirection: "row", alignItems: "center", gap: space.sm, padding: space.sm, paddingLeft: space.md, borderRadius: radius.xl, borderWidth: StyleSheet.hairlineWidth },
   contactText: { flex: 1, minWidth: 0, marginLeft: space.xs },
   day: { alignItems: "center", marginTop: space.lg },

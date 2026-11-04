@@ -4,9 +4,10 @@ import { Stack } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
 import { userMessage } from "@/api/errors";
 import { MeetingRow } from "@/features/calendar/MeetingRow";
-import { agenda, countByDay, type AgendaItem } from "@/features/calendar/schedule";
+import { agenda, countByDay, withNowLine, type AgendaItem } from "@/features/calendar/schedule";
 import { STRIP_DAYS, useMeetingList, useMeetingStrip, useMeetingsSummary } from "@/features/calendar/useMeetings";
 import { getIntlLocale, t } from "@/i18n";
+import { timeOfDay } from "@/lib/format";
 import { haptics } from "@/lib/haptics";
 import { openMeeting, openMeetingForm, openMeetingOutcome } from "@/lib/navigate";
 import { dayKey, nextDays } from "@/lib/when";
@@ -14,8 +15,9 @@ import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
+import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { Meeting, MeetingView } from "@/types/calendar";
-import { Fab } from "@/ui/Fab";
+import { HeaderAction } from "@/ui/HeaderAction";
 import { CalendarCheck, CalendarDays, CalendarPlus } from "@/ui/icons";
 import { SegmentedControl } from "@/ui/SegmentedControl";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
@@ -27,6 +29,7 @@ type Tab = Exclude<MeetingView, "cancelled">;
 
 /** Agenda (two-week day strip + upcoming), meetings waiting for an outcome, and past ones. */
 export default function CalendarScreen() {
+  const headerTint = useAreaHeaderStyle("calendar");
   const { colors } = useTheme();
   const online = useOnline();
   const locale = getIntlLocale();
@@ -44,7 +47,8 @@ export default function CalendarScreen() {
   const counts = useMemo(() => countByDay(strip.data?.meetings ?? []), [strip.data]);
   const dayMeetings = useMemo(() => (day ? (strip.data?.meetings ?? []).filter((m) => m.due_at && dayKey(new Date(m.due_at)) === day) : []), [day, strip.data]);
   const shown = tab === "upcoming" && day ? dayMeetings : list.meetings;
-  const items = useMemo(() => agenda(shown, new Date(now)), [shown, now]);
+  // Upcoming reads as a timeline: a red "now" line sits just before the next meeting.
+  const items = useMemo(() => (tab === "upcoming" ? withNowLine(agenda(shown, new Date(now)), now) : agenda(shown, new Date(now))), [shown, now, tab]);
   const loading = tab === "upcoming" && day ? strip.isPending : list.isPending;
   const failed = tab === "upcoming" && day ? strip.isError : list.isError;
   const needs = summary.data?.needs_outcome ?? 0;
@@ -79,7 +83,7 @@ export default function CalendarScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t("calendar.title") }} />
+      <Stack.Screen options={{ headerStyle: headerTint, title: t("calendar.title"), headerRight: () => (canEdit ? <HeaderAction size={40} label={t("meeting.new")} icon={CalendarPlus} onPress={() => openMeetingForm()} /> : null) }} />
       <View style={[styles.fill, { backgroundColor: colors.background }]}>
         {!online ? <OfflineBanner /> : null}
         <FlashList
@@ -95,6 +99,7 @@ export default function CalendarScreen() {
           }}
           ListHeaderComponent={
             <View style={styles.header}>
+              <Backdrop area="calendar" underBar />
               <View style={styles.block}>
                 <SegmentedControl<Tab>
                   value={tab}
@@ -142,7 +147,7 @@ export default function CalendarScreen() {
             ) : failed ? (
               <ErrorState offline={!online} message={online ? userMessage(list.error ?? strip.error) : undefined} onRetry={refresh} />
             ) : (
-              <EmptyState
+              <EmptyState area="calendar"
                 icon={empty.icon}
                 title={empty.title}
                 message={empty.message}
@@ -164,7 +169,9 @@ export default function CalendarScreen() {
             )
           }
           renderItem={({ item }) =>
-            item.type === "header" ? (
+            item.type === "now" ? (
+              <NowLine now={now} locale={locale} />
+            ) : item.type === "header" ? (
               <Text variant="footnote" weight="semibold" tone="muted" style={styles.day} accessibilityRole="header">
                 {headerLabel(item).toUpperCase()}
               </Text>
@@ -173,14 +180,30 @@ export default function CalendarScreen() {
             )
           }
         />
-        {canEdit ? <Fab inStack label={t("meeting.new")} icon={CalendarPlus} onPress={() => openMeetingForm()} /> : null}
       </View>
     </>
   );
 }
 
+/** Where "now" falls in the agenda: a red dot and line with the time, like a calendar's current-time marker. */
+function NowLine({ now, locale }: { now: number; locale: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.now} accessibilityLabel={`${t("calendar.now")} ${timeOfDay(new Date(now), locale)}`}>
+      <Text variant="caption" weight="semibold" numeric style={{ color: colors.danger }}>
+        {`${t("calendar.now")} · ${timeOfDay(new Date(now), locale)}`}
+      </Text>
+      <View style={[styles.nowDot, { backgroundColor: colors.danger }]} />
+      <View style={[styles.nowLine, { backgroundColor: colors.danger }]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  now: { flexDirection: "row", alignItems: "center", gap: space.sm, paddingHorizontal: gutter + space.xs, paddingTop: space.md, paddingBottom: space.xs },
+  nowDot: { width: 8, height: 8, borderRadius: 4 },
+  nowLine: { flex: 1, height: 1.5, borderRadius: 1 },
   header: { paddingTop: space.sm, gap: space.md },
   block: { paddingHorizontal: gutter },
   strip: { paddingHorizontal: gutter, gap: space.sm },

@@ -7,6 +7,8 @@ import { workspacesApi } from "@/api/workspaces";
 import { t } from "@/i18n";
 import { haptics } from "@/lib/haptics";
 import { useDebounced } from "@/lib/useDebounced";
+import { backToAgency, openClientWorkspace } from "@/features/agency/openClient";
+import { useAppMode } from "@/session/mode";
 import { useSession } from "@/session/sessionStore";
 import { useActiveBaseId, useWorkspaceAccess, useWorkspaceList, workspaceKeys } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -15,7 +17,7 @@ import type { AgencyClient, AgencyMembership, Workspace } from "@/types/workspac
 import { Avatar } from "@/ui/Avatar";
 import { Badge } from "@/ui/Badge";
 import { Card } from "@/ui/Card";
-import { Check, ICON_STROKE, X } from "@/ui/icons";
+import { Building, Check, ICON_STROKE, X } from "@/ui/icons";
 import { IconButton } from "@/ui/IconButton";
 import { ListRow } from "@/ui/ListRow";
 import { SearchBar } from "@/ui/SearchBar";
@@ -35,10 +37,15 @@ export default function Switcher() {
   const agencies = useQuery({ queryKey: workspaceKeys.agencies(), queryFn: ({ signal }) => workspacesApi.myAgencies(signal), staleTime: 10 * 60_000 });
   const ownIds = useMemo(() => new Set((list.data?.bases ?? []).map((b) => b.id)), [list.data]);
 
+  const mode = useAppMode((s) => s.mode);
+  const currentAgency = useAppMode((s) => s.agencyId);
+
   const choose = (ws: Pick<Workspace, "id" | "name">) => {
     haptics.selection();
-    setActiveBase(ws.id);
     toast.show(t("workspace.switched", { name: ws.name }), { kind: "success" });
+    // From the agency area, a workspace switches the app to the workspace tabs.
+    if (mode === "agency") return openClientWorkspace(ws.id);
+    setActiveBase(ws.id);
     router.back();
   };
 
@@ -51,6 +58,33 @@ export default function Switcher() {
         <IconButton icon={X} label={t("common.close")} onPress={() => router.back()} />
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+        {/* The agency area of each agency the person is in (home, clients, credits). */}
+        {agencies.data && agencies.data.agencies.length > 0 ? (
+          <>
+            <SectionHeader title={t("agency.switcher.agency")} />
+            <Card padded={false} style={styles.card}>
+              {agencies.data.agencies.map((a, i) => (
+                <View key={a.id}>
+                  {i > 0 ? <Divider inset={gutter + 36 + space.md} /> : null}
+                  <ListRow
+                    title={a.name}
+                    subtitle={t("agency.switcher.agencyHint")}
+                    onPress={() => {
+                      haptics.selection();
+                      backToAgency(a.id);
+                    }}
+                    leading={
+                      <View style={[styles.agencyIcon, { backgroundColor: colors.primarySubtle }]}>
+                        <Building size={18} color={colors.primary} strokeWidth={ICON_STROKE} />
+                      </View>
+                    }
+                    trailing={mode === "agency" && currentAgency === a.id ? <Check size={20} color={colors.primary} strokeWidth={ICON_STROKE + 0.5} /> : undefined}
+                  />
+                </View>
+              ))}
+            </Card>
+          </>
+        ) : null}
         {list.isPending ? (
           <SkeletonList rows={3} />
         ) : list.isError ? (
@@ -66,7 +100,7 @@ export default function Switcher() {
                     title={ws.name}
                     onPress={() => choose(ws)}
                     leading={<Avatar name={ws.name} size={36} />}
-                    trailing={ws.id === activeBaseId ? <Check size={20} color={colors.primary} strokeWidth={ICON_STROKE + 0.5} /> : undefined}
+                    trailing={mode !== "agency" && ws.id === activeBaseId ? <Check size={20} color={colors.primary} strokeWidth={ICON_STROKE + 0.5} /> : undefined}
                   />
                 </View>
               ))}
@@ -96,7 +130,10 @@ function AgencyClients({ agency, activeBaseId, ownIds, onChoose }: AgencyClients
   const query = useDebounced(q);
   const [expanded, setExpanded] = useState<{ clientId: number; bases: Workspace[] } | null>(null);
   // The client open right now gets the same tick as the current workspace above.
-  const currentClientId = useWorkspaceAccess().data?.client?.id;
+  // Only while inside a client's workspace: in the agency area no client is "current".
+  const inWorkspace = useAppMode((s) => s.mode) !== "agency";
+  const accessClientId = useWorkspaceAccess().data?.client?.id;
+  const currentClientId = inWorkspace ? accessClientId : undefined;
   const clients = useQuery({
     queryKey: workspaceKeys.agencyClients(agency.id, query),
     queryFn: ({ signal }) => workspacesApi.agencyClients(agency.id, query, signal),
@@ -195,4 +232,5 @@ const styles = StyleSheet.create({
   empty: { padding: space.xl },
   more: { paddingHorizontal: gutter, paddingTop: space.md },
   indent: { width: 36 },
+  agencyIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
 });

@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
 import { userMessage } from "@/api/errors";
-import { campaignChannels, campaignStatus, campaignTotals, guardPaused, reachedShare, sortCampaigns, STATUS_TONE } from "@/features/campaigns/campaign";
+import { campaignChannels, campaignStatus, campaignTotals, guardPaused, sortCampaigns, STATUS_TONE } from "@/features/campaigns/campaign";
 import { useCampaigns, usePauseCampaign } from "@/features/campaigns/useCampaigns";
 import { getIntlLocale, t, type TranslationKey } from "@/i18n";
 import { confirm } from "@/lib/confirm";
@@ -11,6 +11,7 @@ import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
+import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { Campaign, CampaignStatus } from "@/types/campaign";
 import { Badge } from "@/ui/Badge";
 import { Button } from "@/ui/Button";
@@ -25,6 +26,7 @@ type Filter = "live" | "all";
 
 /** How campaigns are doing, at a glance — and Pause when one needs stopping now. Building and resuming stay on the web. */
 export default function CampaignsScreen() {
+  const headerTint = useAreaHeaderStyle("campaigns");
   const { colors } = useTheme();
   const online = useOnline();
   const locale = getIntlLocale();
@@ -43,7 +45,7 @@ export default function CampaignsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t("campaigns.title") }} />
+      <Stack.Screen options={{ headerStyle: headerTint, title: t("campaigns.title") }} />
       <View style={[styles.fill, { backgroundColor: colors.background }]}>
         {!online ? <OfflineBanner /> : null}
         <FlashList
@@ -54,6 +56,7 @@ export default function CampaignsScreen() {
           refreshing={list.isRefetching}
           ListHeaderComponent={
             <View style={styles.filters}>
+              <Backdrop area="campaigns" underBar />
               <FilterChips<Filter>
                 value={filter}
                 onChange={setFilter}
@@ -75,7 +78,7 @@ export default function CampaignsScreen() {
             ) : list.isError ? (
               <ErrorState offline={!online} message={online ? userMessage(list.error) : undefined} onRetry={() => void list.refetch()} />
             ) : (
-              <EmptyState icon={Send} title={filter === "live" ? t("campaigns.noneLive") : t("campaigns.none")} message={t("campaigns.noneMessage")} />
+              <EmptyState area="campaigns" icon={Send} title={filter === "live" ? t("campaigns.noneLive") : t("campaigns.none")} message={t("campaigns.noneMessage")} />
             )
           }
           ListFooterComponent={<View style={styles.footer} />}
@@ -92,7 +95,6 @@ function CampaignCard({ campaign: c, locale, canPause, pausing, onPause }: { cam
   const { colors } = useTheme();
   const status = campaignStatus(c);
   const { leads, sent, replies, replyRate } = campaignTotals(c);
-  const share = reachedShare(c);
   const fmt = (n: number) => n.toLocaleString(locale);
   const stats: { label: string; value: string }[] =
     status === "draft"
@@ -103,8 +105,10 @@ function CampaignCard({ campaign: c, locale, canPause, pausing, onPause }: { cam
           // Below 10 sends a rate is noise ("100%" from two emails): the count says enough.
           { label: t("campaigns.replies"), value: replies && replyRate != null && sent >= 10 ? `${fmt(replies)} · ${replyRate.toLocaleString(locale)}%` : fmt(replies) },
         ];
+  const top = Math.max(leads, sent, 1);
+  const funnel = stats.map((st, i) => ({ label: st.label, value: st.value, share: [leads, sent, replies][i]! / top }));
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]} accessible={!canPause} accessibilityLabel={`${c.name}. ${t(`campaigns.status_${status}` as TranslationKey)}`}>
+    <View style={[styles.card, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]} accessible={!canPause} accessibilityLabel={`${c.name}. ${t(`campaigns.status_${status}` as TranslationKey)}`}>
       <View style={styles.head}>
         <Text variant="callout" weight="semibold" numberOfLines={2} style={styles.flex}>
           {c.name}
@@ -116,33 +120,37 @@ function CampaignCard({ campaign: c, locale, canPause, pausing, onPause }: { cam
           <ChannelGlyph key={ch} channel={ch} size={14} />
         ))}
       </View>
-      <View style={styles.stats}>
-        {stats.map((s) => (
-          <View key={s.label} style={styles.stat}>
-            <Text variant="caption" tone="muted">
-              {s.label}
-            </Text>
-            <Text variant="headline" numeric numberOfLines={1}>
-              {s.value}
-            </Text>
-          </View>
-        ))}
-      </View>
-      {share != null ? (
-        <View style={styles.progressWrap}>
-          <View style={styles.progressHead}>
-            <Text variant="caption" tone="muted">
-              {t("campaigns.reached")}
-            </Text>
-            <Text variant="caption" weight="semibold" numeric>
-              {`${Math.round(share * 100)}%`}
-            </Text>
-          </View>
-          <View style={[styles.track, { backgroundColor: colors.surfaceTertiary }]}>
-            <View style={[styles.fillBar, { width: `${share > 0 ? Math.max(4, Math.round(share * 100)) : 0}%`, backgroundColor: status === "paused" ? colors.warning : colors.primaryFill }]} />
-          </View>
+      {status === "draft" ? (
+        <View style={styles.stats}>
+          {stats.map((s) => (
+            <View key={s.label} style={styles.stat}>
+              <Text variant="caption" tone="muted">
+                {s.label}
+              </Text>
+              <Text variant="headline" numeric numberOfLines={1}>
+                {s.value}
+              </Text>
+            </View>
+          ))}
         </View>
-      ) : null}
+      ) : (
+        // A mini funnel: leads → sent → replied, each bar against the leads, deeper pink as it narrows.
+        <View style={styles.funnel}>
+          {funnel.map((f, i) => (
+            <View key={f.label} style={styles.funnelRow} accessible accessibilityLabel={`${f.label}: ${f.value}`}>
+              <Text variant="caption" tone="muted" numberOfLines={1} style={styles.funnelLabel}>
+                {f.label}
+              </Text>
+              <View style={[styles.track, styles.flex, { backgroundColor: colors.surfaceTertiary }]}>
+                <View style={[styles.fillBar, { width: `${f.share > 0 ? Math.max(3, Math.round(f.share * 100)) : 0}%`, backgroundColor: colors.primaryFill, opacity: 0.45 + 0.275 * i }]} />
+              </View>
+              <Text variant="caption" weight="semibold" numeric numberOfLines={1} style={styles.funnelValue}>
+                {f.value}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
       {guardPaused(c) ? (
         <Text variant="footnote" tone="warning">
           {t("campaigns.guardPaused")}
@@ -162,14 +170,16 @@ const styles = StyleSheet.create({
   filters: { paddingTop: space.xs, paddingBottom: space.sm, gap: space.sm },
   hint: { paddingHorizontal: gutter },
   footer: { height: 48 },
-  card: { marginHorizontal: gutter, marginBottom: space.sm, padding: space.md, borderRadius: radius.lg, borderWidth: 1, gap: space.sm },
+  card: { marginHorizontal: gutter, marginBottom: space.sm, padding: space.lg, borderRadius: radius.xl, gap: space.md },
   head: { flexDirection: "row", alignItems: "flex-start", gap: space.sm },
   flex: { flex: 1, minWidth: 0 },
   channels: { flexDirection: "row", gap: space.sm },
   stats: { flexDirection: "row", gap: space.lg },
   stat: { flex: 1, minWidth: 0, gap: 2 },
-  progressWrap: { gap: 6 },
-  progressHead: { flexDirection: "row", justifyContent: "space-between" },
-  track: { height: 6, borderRadius: 3, overflow: "hidden" },
-  fillBar: { height: 6, borderRadius: 3 },
+  funnel: { gap: space.sm },
+  funnelRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  funnelLabel: { width: 64 },
+  funnelValue: { minWidth: 56, textAlign: "right" },
+  track: { height: 8, borderRadius: 4, overflow: "hidden" },
+  fillBar: { height: 8, borderRadius: 4 },
 });

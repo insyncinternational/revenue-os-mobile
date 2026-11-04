@@ -1,9 +1,10 @@
 /**
- * Revenue OS design tokens for mobile.
+ * GrowthReach.ai design tokens for mobile — the "Mono" look (2026-11-04 redesign).
  *
- * Colours are copied from the web's semantic tokens (revenue-os-frontend/styles/ds/tokens.css) so both apps
- * read as one product. Components use these semantic names only — never raw hex values.
- * Type and spacing are sized for phones (the web's 13px base is too small on a handset).
+ * A warm grey page, white cards, the logo's charcoal and ONE accent: the GrowthReach.ai orange (the web's brand
+ * ramp, revenue-os-frontend/styles/ds/tokens.css), replaced by an agency's own colour at runtime (theme/brand.ts).
+ * Like the logo, text on the orange is charcoal, not white (7:1 instead of 2.6:1).
+ * Components use these semantic names only — never raw hex values.
  */
 
 export type ColorScheme = "light" | "dark";
@@ -26,11 +27,15 @@ export type Palette = {
   borderFocus: string;
   /** Links, icons, active tab, selected states. */
   primary: string;
-  /** Solid fills (primary button). */
+  /** The accent fill: the one highlight card per screen, the active tab pill, the main chart bar. */
   primaryFill: string;
   primaryFillPressed: string;
   /** Text and icons placed on `primaryFill`. */
   onPrimary: string;
+  /** Secondary text on `primaryFill`. */
+  onPrimaryMuted: string;
+  /** Translucent pieces on `primaryFill` (a round button, the empty part of a meter). */
+  primaryTrack: string;
   primarySubtle: string;
   primarySubtlePressed: string;
   primaryBorder: string;
@@ -53,110 +58,125 @@ export type Palette = {
   skeleton: string;
   /** Pressed row / ghost button background. */
   pressed: string;
-  /** Brand gradient (deep brand → brand, a soft glow, readable content on top). Used by the home-screen widget; the in-app headers sit on `background` and keep the brand colour for accents. */
+  /** Brand gradient for the home-screen widget (deep brand → brand), with readable content on top. */
   heroFrom: string;
   heroTo: string;
   heroGlow: string;
   onHero: string;
   onHeroMuted: string;
-  /** Frosted tiles and pills on that gradient. */
   heroGlass: string;
   heroGlassBorder: string;
-  /** CSS box-shadow under elevated cards ("none" in dark mode, where surfaces step up instead). */
+  /** Cards are flat in the Mono look: kept for the few lifted things (menus, the toast). */
   cardShadow: string;
-  /** The resting shadow every card sits on in light mode (cards carry no border there). "none" in dark mode. */
   cardShadowSoft: string;
-  /** The main action: a black pill in light mode, a white one in dark (high contrast, like the brand-neutral reference apps). */
+  /** A deep shade of the brand in light mode (not black), near-white in dark: main buttons, selected chips, the feature card. */
   ink: string;
   inkPressed: string;
   onInk: string;
+  /** The dark feature card (ContrastBlock): ink on the light page, a lifted grey on the dark one. */
+  contrast: string;
+  onContrast: string;
+  onContrastMuted: string;
+  /** Empty part of a bar or meter on that card. */
+  contrastTrack: string;
 };
 
+/** The logo's orange (#f7820f light, #ff9a1a dark) with charcoal text on it, like the logo; #b8530b for orange text on white. */
+const BRAND = { light: "#f7820f", lightPressed: "#e06a0a", dark: "#ff9a1a", darkPressed: "#ffad3d", text: "#b8530b", charcoal: "#14181e" } as const;
+
 const light: Palette = {
-  // A cool light grey page with pure white cards on it: the cards stand out without outlines.
-  background: "#f2f2f4",
+  background: "#eeeee9",
   surface: "#ffffff",
-  surfaceSecondary: "#f5f5f7",
-  surfaceTertiary: "#ececf0",
+  surfaceSecondary: "#f6f6f2",
+  surfaceTertiary: "#e4e4de",
   surfaceRaised: "#ffffff",
-  surfaceInverse: "#111114",
-  text: "#111114",
-  textSecondary: "#3f3f46",
-  textMuted: "#6b6b76",
-  textSubtle: "#9a9aa3",
+  surfaceInverse: "#0e0e0c",
+  text: "#0e0e0c",
+  textSecondary: "#3a3a36",
+  textMuted: "#5c5c57",
+  textSubtle: "#8e8e87",
   textInverse: "#ffffff",
-  border: "#e4e4e9",
-  borderLight: "#efeff2",
-  borderStrong: "#d4d4db",
-  borderFocus: "#6366f1",
-  primary: "#4f46e5",
-  primaryFill: "#4338ca",
-  primaryFillPressed: "#3730a3",
-  onPrimary: "#ffffff",
-  primarySubtle: "#eef2ff",
-  primarySubtlePressed: "#e0e7ff",
-  primaryBorder: "#c7d2fe",
-  primaryText: "#4338ca",
-  success: "#008c36",
-  successSurface: "#e6fee9",
-  successText: "#006f26",
-  warning: "#b35600",
-  warningSurface: "#fff2e0",
-  warningText: "#8f4100",
-  danger: "#d32021",
-  dangerSurface: "#ffebe6",
-  dangerText: "#aa0c13",
+  border: "#e2e2dc",
+  borderLight: "#eeeee9",
+  borderStrong: "#cfcfc8",
+  borderFocus: BRAND.light,
+  primary: BRAND.text,
+  primaryFill: BRAND.light,
+  primaryFillPressed: BRAND.lightPressed,
+  onPrimary: BRAND.charcoal,
+  onPrimaryMuted: "rgba(20, 24, 30, 0.72)",
+  primaryTrack: "rgba(20, 24, 30, 0.1)",
+  primarySubtle: "#fff1e2",
+  primarySubtlePressed: "#ffe4c7",
+  primaryBorder: "#ffd3a6",
+  primaryText: BRAND.text,
+  success: "#0f8a3c",
+  successSurface: "#e3f5e8",
+  successText: "#0b6b2f",
+  warning: "#a16207",
+  warningSurface: "#fef9c3",
+  warningText: "#854d0e",
+  danger: "#d0281c",
+  dangerSurface: "#fbe7e3",
+  dangerText: "#a8150c",
   info: "#2a67ec",
-  infoSurface: "#e6f8ff",
+  infoSurface: "#e6efff",
   infoText: "#1c4fc0",
-  scrim: "rgba(15, 23, 42, 0.4)",
-  skeleton: "#e9e9ed",
-  pressed: "#efeff2",
-  heroFrom: "#312e81",
-  heroTo: "#4f46e5",
-  heroGlow: "#818cf8",
-  onHero: "#ffffff",
-  onHeroMuted: "rgba(255, 255, 255, 0.78)",
-  heroGlass: "rgba(255, 255, 255, 0.14)",
-  heroGlassBorder: "rgba(255, 255, 255, 0.22)",
-  cardShadow: "0px 1px 2px rgba(17, 17, 20, 0.03), 0px 10px 28px rgba(17, 17, 20, 0.07)",
-  cardShadowSoft: "0px 1px 2px rgba(17, 17, 20, 0.03)",
-  ink: "#111114",
-  inkPressed: "#2a2a30",
+  scrim: "rgba(14, 14, 12, 0.42)",
+  skeleton: "#e4e4de",
+  pressed: "#e9e9e3",
+  heroFrom: "#e06a0a",
+  heroTo: BRAND.light,
+  heroGlow: "#ffb347",
+  onHero: BRAND.charcoal,
+  onHeroMuted: "rgba(20, 24, 30, 0.72)",
+  heroGlass: "rgba(20, 24, 30, 0.08)",
+  heroGlassBorder: "rgba(20, 24, 30, 0.14)",
+  cardShadow: "0px 1px 2px rgba(14, 14, 12, 0.04), 0px 12px 32px rgba(14, 14, 12, 0.10)",
+  cardShadowSoft: "0px 1px 2px rgba(20, 24, 30, 0.04), 0px 10px 28px rgba(20, 24, 30, 0.07)",
+  // The logo's near-black: main buttons and selected pills, with the orange kept for highlights.
+  ink: BRAND.charcoal,
+  inkPressed: "#2a303a",
   onInk: "#ffffff",
+  contrast: "#1b2029",
+  onContrast: "#ffffff",
+  onContrastMuted: "rgba(255, 255, 255, 0.62)",
+  contrastTrack: "rgba(255, 255, 255, 0.16)",
 };
 
 const dark: Palette = {
-  // Cards a clear step above the page, so they separate without borders.
-  background: "#0b0b0f",
-  surface: "#18181d",
-  surfaceSecondary: "#1f1f25",
-  surfaceTertiary: "#26262d",
-  surfaceRaised: "#1e1e24",
-  surfaceInverse: "#f4f4f6",
-  text: "#f4f4f6",
-  textSecondary: "#c9c9d1",
-  textMuted: "#a1a1ab",
-  textSubtle: "#76767f",
-  textInverse: "#0b0b0f",
-  border: "#2a2a31",
-  borderLight: "#222228",
-  borderStrong: "#3a3a42",
-  borderFocus: "#818cf8",
-  primary: "#818cf8",
-  primaryFill: "#4f46e5",
-  primaryFillPressed: "#6366f1",
-  onPrimary: "#ffffff",
-  primarySubtle: "rgba(99, 102, 241, 0.12)",
-  primarySubtlePressed: "rgba(99, 102, 241, 0.2)",
-  primaryBorder: "rgba(99, 102, 241, 0.32)",
-  primaryText: "#a5b4fc",
+  background: "#0e0e0c",
+  surface: "#1a1a18",
+  surfaceSecondary: "#202020",
+  surfaceTertiary: "#2a2a27",
+  surfaceRaised: "#232321",
+  surfaceInverse: "#f2f2ee",
+  text: "#f2f2ee",
+  textSecondary: "#cfcfc8",
+  textMuted: "#a0a09a",
+  textSubtle: "#72726c",
+  textInverse: "#0e0e0c",
+  border: "#2a2a27",
+  borderLight: "#20201e",
+  borderStrong: "#3a3a36",
+  borderFocus: BRAND.dark,
+  primary: "#ffad3d",
+  primaryFill: BRAND.dark,
+  primaryFillPressed: BRAND.darkPressed,
+  // Bright orange can't carry white text: dark ink on it (8.7:1).
+  onPrimary: "#1a1206",
+  onPrimaryMuted: "rgba(26, 18, 6, 0.72)",
+  primaryTrack: "rgba(26, 18, 6, 0.12)",
+  primarySubtle: "rgba(255, 154, 26, 0.14)",
+  primarySubtlePressed: "rgba(255, 154, 26, 0.24)",
+  primaryBorder: "rgba(255, 154, 26, 0.36)",
+  primaryText: "#ffb870",
   success: "#57d377",
   successSurface: "rgba(87, 211, 119, 0.12)",
   successText: "#84e397",
-  warning: "#fe993f",
-  warningSurface: "rgba(254, 153, 63, 0.12)",
-  warningText: "#ffb471",
+  warning: "#facc15",
+  warningSurface: "rgba(250, 204, 21, 0.12)",
+  warningText: "#fcd34d",
   danger: "#ff7165",
   dangerSurface: "rgba(255, 113, 101, 0.12)",
   dangerText: "#ff9889",
@@ -164,20 +184,24 @@ const dark: Palette = {
   infoSurface: "rgba(105, 174, 255, 0.12)",
   infoText: "#8bc7ff",
   scrim: "rgba(0, 0, 0, 0.6)",
-  skeleton: "#1f1f25",
-  pressed: "#22222a",
-  heroFrom: "#1e1b4b",
-  heroTo: "#3730a3",
-  heroGlow: "#6366f1",
-  onHero: "#ffffff",
-  onHeroMuted: "rgba(255, 255, 255, 0.72)",
-  heroGlass: "rgba(255, 255, 255, 0.1)",
-  heroGlassBorder: "rgba(255, 255, 255, 0.16)",
+  skeleton: "#232321",
+  pressed: "#262624",
+  heroFrom: "#e06a0a",
+  heroTo: BRAND.dark,
+  heroGlow: "#ffc06b",
+  onHero: "#1a1206",
+  onHeroMuted: "rgba(26, 18, 6, 0.72)",
+  heroGlass: "rgba(26, 18, 6, 0.1)",
+  heroGlassBorder: "rgba(26, 18, 6, 0.16)",
   cardShadow: "none",
   cardShadowSoft: "none",
-  ink: "#ffffff",
-  inkPressed: "#e4e4e9",
-  onInk: "#111114",
+  ink: "#f2f2ee",
+  inkPressed: "#d9d9d3",
+  onInk: "#0e0e0c",
+  contrast: "#262624",
+  onContrast: "#f2f2ee",
+  onContrastMuted: "rgba(242, 242, 238, 0.6)",
+  contrastTrack: "rgba(242, 242, 238, 0.14)",
 };
 
 export const palettes: Record<ColorScheme, Palette> = { light, dark };
@@ -185,20 +209,23 @@ export const palettes: Record<ColorScheme, Palette> = { light, dark };
 /** Text and icons on saturated, theme-independent fills (swipe actions, channel tiles). */
 export const onSolid = "#ffffff";
 
-/** Text and icons on a white pill that sits on colour or ink (the hero button, the active tab), in both themes. */
-export const onWhite = "#111114";
-
-/** The floating tab bar in dark mode: a lifted grey (ink-black would vanish into the page). */
-export const tabBarDark = "#24242b";
+/** Text and icons on a white pill that sits on colour or ink, in both themes. */
+export const onWhite = "#0e0e0c";
 
 /**
- * Revenue OS's own front door — native splash, launch intro and sign-in hero. Fixed brand indigo in both themes
+ * The app's areas. In the Mono look they no longer get their own colours (that read as an old dashboard): every
+ * area shares the page, ink and the one accent. Kept as names for empty-state scenes and analytics.
+ */
+export type Area = "today" | "inbox" | "contacts" | "pipeline" | "won" | "calendar" | "tasks" | "invoices" | "campaigns" | "account";
+
+/**
+ * GrowthReach.ai's own front door — native splash, launch intro and sign-in hero. Fixed brand colours in both themes: the logo's near-black with an orange glow
  * (no agency colour applies before sign-in). `splash` must match app.json's expo-splash-screen backgroundColor.
  */
-export const launchBrand = { splash: "#312e81", to: "#4f46e5", glow: "#818cf8", glowSoft: "#a5b4fc" } as const;
+export const launchBrand = { splash: "#14181e", to: "#3a2410", glow: "#ff9a1a", glowSoft: "#ffb870" } as const;
 
-/** Shadow colours: neutral for raised surfaces, a brand-tinted one for the floating "+" button. */
-export const shadows = { neutral: "#000000", brand: "#1e1b4b" } as const;
+/** Shadow colours: neutral for raised surfaces, a brand-tinted one for lifted brand things. */
+export const shadows = { neutral: "#000000", brand: "#431407" } as const;
 
 /** One colour per conversation channel, the same in both themes (Email follows the brand). */
 export const channelColors = {
@@ -212,30 +239,32 @@ export const channelColors = {
 } as const;
 
 /**
- * Initials avatars: eight clearly different gradients (top-left → bottom-right) with white initials, the same in
- * light and dark — like modern messengers, so people are told apart at a glance.
+ * Initials avatars: a soft accent tint, a calm grey, or the glossy accent (no black, no rainbow), picked by name
+ * so a person keeps theirs. `fg` is the initials colour.
  */
-export const avatarGradients: readonly { from: string; to: string }[] = [
-  { from: "#818cf8", to: "#4f46e5" }, // indigo
-  { from: "#38bdf8", to: "#0369a1" }, // sky
-  { from: "#34d399", to: "#047857" }, // emerald
-  { from: "#fbbf24", to: "#c2410c" }, // amber
-  { from: "#f472b6", to: "#be185d" }, // pink
-  { from: "#a78bfa", to: "#6d28d9" }, // violet
-  { from: "#2dd4bf", to: "#0f766e" }, // teal
-  { from: "#fb923c", to: "#b91c1c" }, // sunset
-];
+export type AvatarTone = { bg: string; fg: string; glossy?: boolean };
+export function avatarTones(c: Palette, scheme: ColorScheme): readonly AvatarTone[] {
+  return scheme === "dark"
+    ? [
+        { bg: c.surfaceTertiary, fg: c.primary },
+        { bg: c.surfaceTertiary, fg: c.text },
+        { bg: c.borderStrong, fg: c.text },
+      ]
+    : [
+        { bg: c.primarySubtle, fg: c.primaryText },
+        { bg: c.surfaceTertiary, fg: c.textSecondary },
+        { bg: c.primaryFill, fg: c.onPrimary, glossy: true },
+      ];
+}
 
-/**
- * Inter, bundled in five weights (800 for the logo wordmark and the big metric numbers). Each weight is its own family so iOS, Android
- * and web render identically.
- */
+/** Geist in five weights (each its own family so iOS, Android and web render identically), plus Geist Mono for small labels. */
 export const fonts = {
-  regular: "Inter-Regular",
-  medium: "Inter-Medium",
-  semibold: "Inter-SemiBold",
-  bold: "Inter-Bold",
-  extrabold: "Inter-ExtraBold",
+  regular: "Geist-Regular",
+  medium: "Geist-Medium",
+  semibold: "Geist-SemiBold",
+  bold: "Geist-Bold",
+  extrabold: "Geist-ExtraBold",
+  mono: "GeistMono-Medium",
 } as const;
 
 export type TextVariant =
@@ -248,31 +277,35 @@ export type TextVariant =
   | "callout"
   | "subhead"
   | "footnote"
-  | "caption";
+  | "caption"
+  | "eyebrow";
 
-export const typography: Record<TextVariant, { fontFamily: string; fontSize: number; lineHeight: number; letterSpacing?: number }> = {
-  /** The one number a screen is about (Today's highlight card). */
-  display: { fontFamily: fonts.extrabold, fontSize: 36, lineHeight: 42, letterSpacing: -1.2 },
-  /** Numbers in metric tiles: heavy and tight, so they read before their labels. */
-  metric: { fontFamily: fonts.extrabold, fontSize: 26, lineHeight: 32, letterSpacing: -0.8 },
-  largeTitle: { fontFamily: fonts.bold, fontSize: 30, lineHeight: 36, letterSpacing: -0.4 },
-  title: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, letterSpacing: -0.2 },
-  headline: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 22 },
+export const typography: Record<TextVariant, { fontFamily: string; fontSize: number; lineHeight: number; letterSpacing?: number; textTransform?: "uppercase" }> = {
+  /** The one number a screen is about: big, tight, confident. */
+  display: { fontFamily: fonts.semibold, fontSize: 48, lineHeight: 52, letterSpacing: -2 },
+  /** Numbers in tiles and cards. */
+  metric: { fontFamily: fonts.semibold, fontSize: 28, lineHeight: 34, letterSpacing: -1 },
+  /** Every main screen's title. */
+  largeTitle: { fontFamily: fonts.semibold, fontSize: 40, lineHeight: 44, letterSpacing: -1.6 },
+  title: { fontFamily: fonts.semibold, fontSize: 22, lineHeight: 28, letterSpacing: -0.5 },
+  headline: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 22, letterSpacing: -0.1 },
   body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 22 },
   callout: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20 },
   subhead: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 19 },
   footnote: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
   caption: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16 },
+  /** Small spaced capitals in Geist Mono: section labels and status tags ("UP NEXT", "THIS WEEK"). */
+  eyebrow: { fontFamily: fonts.mono, fontSize: 11, lineHeight: 14, letterSpacing: 1, textTransform: "uppercase" },
 };
 
 /** 4-point grid. */
 export const space = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32, huge: 40 } as const;
 
 /** Side padding of every screen. */
-export const gutter = space.lg;
+export const gutter = space.xl;
 
-// Generous, soft corners: cards 22, hero cards 28, controls 14 (inputs, search), everything tappable on its own a pill.
-export const radius = { sm: 8, md: 14, lg: 16, xl: 22, xxl: 28, pill: 999 } as const;
+// Big soft corners: cards 24, feature cards 32, controls 16, everything tappable on its own a pill.
+export const radius = { sm: 10, md: 16, lg: 20, xl: 24, xxl: 32, pill: 999 } as const;
 
 /** Minimum touch target (iOS 44pt; Android's 48dp is met with hitSlop). */
 export const touchTarget = 44;

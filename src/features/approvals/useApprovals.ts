@@ -6,6 +6,7 @@ import { haptics } from "@/lib/haptics";
 import { keys } from "@/query/keys";
 import { useActiveBaseId, useCan, useModuleEnabled } from "@/session/workspace";
 import type { AiAgentAction, AiDraft } from "@/types/approvals";
+import { useCelebrate } from "@/ui/Celebrate";
 import { useToast } from "@/ui/Toast";
 import { isApprovable } from "./approvals";
 
@@ -76,6 +77,7 @@ export function useDecideDraft() {
   const baseId = useActiveBaseId() ?? 0;
   const qc = useQueryClient();
   const toast = useToast();
+  const celebrate = useCelebrate();
   return useMutation({
     mutationFn: (v: { id: number; kind: "approve"; edited?: { body?: string; subject?: string } } | { id: number; kind: "reject"; reason?: string }) =>
       v.kind === "approve" ? draftsApi.approve(baseId, v.id, v.edited) : draftsApi.reject(baseId, v.id, v.reason),
@@ -87,9 +89,13 @@ export function useDecideDraft() {
       return { snapshot };
     },
     onSuccess: (r, v) => {
-      if (v.kind === "approve") haptics.success();
       // Approved but the send itself failed: the draft is still worth a look on the web.
       const failed = r.pending_action.status === "failed";
+      // A small burst when the AI's reply went out (not for a reject, nor a failed send).
+      if (v.kind === "approve" && !failed) {
+        haptics.success();
+        celebrate();
+      }
       toast.show(failed ? t("approvals.sendFailed") : v.kind === "approve" ? t("approvals.approved") : t("approvals.rejected"), { kind: failed ? "error" : "success" });
     },
     onError: async (e, v, ctx) => {

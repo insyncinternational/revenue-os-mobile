@@ -69,7 +69,7 @@ export function MeetingRow({
   const who = meetingWith(m);
 
   return (
-    <View style={[styles.item, { backgroundColor: colors.surface, borderColor: colors.border, boxShadow: colors.cardShadow }]}>
+    <View style={[styles.item, { backgroundColor: colors.surface, borderColor: "transparent" }]}>
       <View style={styles.top}>
         <PressableScale
           onPress={() => onOpen(m)}
@@ -78,7 +78,7 @@ export function MeetingRow({
           style={styles.main}
         >
           <View style={styles.time}>
-            <Text variant="callout" weight="semibold" numeric tone={closed ? "subtle" : "default"} numberOfLines={1}>
+            <Text variant="callout" weight="semibold" numeric tone={closed ? "subtle" : "default"} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               {m.due_at ? timeOfDay(m.due_at, locale) : "—"}
             </Text>
           </View>
@@ -124,7 +124,8 @@ const styles = StyleSheet.create({
   item: { marginHorizontal: gutter, marginBottom: space.sm, borderRadius: radius.lg, borderWidth: 1, overflow: "hidden" },
   top: { flexDirection: "row", alignItems: "center", paddingRight: space.xs },
   main: { flex: 1, flexDirection: "row", alignItems: "stretch", gap: space.md, paddingVertical: space.md, paddingLeft: space.md },
-  time: { width: 70, paddingTop: 1 },
+  // Wide enough for "11:00 AM"; a longer time (large text, other languages) shrinks a little rather than cut off.
+  time: { width: 88, paddingTop: 1 },
   edge: { width: 3, borderRadius: 2 },
   body: { flex: 1, minWidth: 0, gap: 2 },
   badges: { flexDirection: "row", marginTop: space.xs },

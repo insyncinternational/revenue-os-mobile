@@ -9,7 +9,7 @@ import { keys } from "@/query/keys";
 import { useSession } from "@/session/sessionStore";
 import { useActiveBaseId, useWorkspaceAccess } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
-import { radius, space } from "@/theme/tokens";
+import { space } from "@/theme/tokens";
 import { Avatar } from "./Avatar";
 import { useHeaderChip } from "./headerChip";
 import { Bell, ChevronDown, ICON_STROKE } from "./icons";
@@ -29,83 +29,82 @@ export function useUnreadNotifications(): number {
 }
 
 /**
- * The row on top of every tab header except Today: the workspace switcher pill, the bell and the person.
- * Today lays the same pieces out around its greeting (WorkspaceButton plain, HeaderActions).
+ * The row on top of every main screen: the person (opens Account) and the workspace name (opens the switcher) on
+ * the left, the bell on the right. `hideProfile`: the Account tab, which shows the person as its title.
  */
 export function HeroTopBar({ hideProfile }: { hideProfile?: boolean } = {}) {
   return (
     <View style={styles.row}>
+      {hideProfile ? null : <ProfileButton />}
       <WorkspaceButton />
-      <HeaderActions hideProfile={hideProfile} />
+      <View style={styles.spacer} />
+      <HeaderActions />
     </View>
   );
 }
 
-/** Opens the workspace switcher: a pill, or (`plain`) a line of text with a green dot, for under Today's greeting. */
-export function WorkspaceButton({ plain }: { plain?: boolean }) {
+/** The workspace name with a small chevron: opens the workspace switcher. */
+export function WorkspaceButton() {
   const { colors } = useTheme();
   const access = useWorkspaceAccess().data;
   const workspace = access?.client?.name ?? access?.workspace.name ?? "…";
-  const chip = useHeaderChip();
   return (
     <Pressable
       onPress={() => router.push("/switcher")}
       accessibilityRole="button"
       accessibilityLabel={`${workspace}. ${t("workspace.title")}`}
-      hitSlop={8}
-      style={({ pressed }) => [plain ? styles.plain : [styles.pill, chip], { opacity: pressed ? 0.7 : 1 }]}
+      hitSlop={10}
+      style={({ pressed }) => [styles.workspace, { opacity: pressed ? 0.6 : 1 }]}
     >
-      {plain ? <View style={[styles.live, { backgroundColor: colors.success }]} /> : null}
-      <Text variant={plain ? "callout" : "subhead"} weight={plain ? "medium" : "semibold"} numberOfLines={1} style={[styles.pillText, { color: plain ? colors.textSecondary : colors.text }]}>
+      <Text variant="subhead" weight="medium" numberOfLines={1} style={[styles.workspaceText, { color: colors.text }]}>
         {workspace}
       </Text>
-      <ChevronDown size={16} color={colors.textMuted} strokeWidth={ICON_STROKE + 0.25} />
+      <ChevronDown size={15} color={colors.textMuted} strokeWidth={ICON_STROKE + 0.25} />
     </Pressable>
   );
 }
 
-/** The bell (with an unread dot) and the person (opens Account), as round floating buttons. */
-export function HeaderActions({ hideProfile }: { hideProfile?: boolean }) {
-  const { colors } = useTheme();
+/** The signed-in person: their photo or initials; opens Account (profile, settings, sign out). */
+export function ProfileButton() {
   const user = useSession((s) => s.user);
+  return (
+    <PressableScale
+      onPress={() => {
+        haptics.selection();
+        router.navigate("/more");
+      }}
+      accessibilityLabel={t("more.openAccount", { name: user?.name || user?.email || "" })}
+    >
+      <Avatar name={user?.name || user?.email || "?"} uri={user?.avatar_url} size={40} accent />
+    </PressableScale>
+  );
+}
+
+/** The bell, a white circle with an ink dot when something is unread. */
+export function HeaderActions() {
+  const { colors } = useTheme();
   const unread = useUnreadNotifications();
   const chip = useHeaderChip();
   return (
-    <View style={styles.actions}>
-      <PressableScale
-        onPress={() => {
-          haptics.selection();
-          go("/notifications");
-        }}
-        accessibilityLabel={unread > 0 ? t("today.unreadNotifications", { count: unread }) : t("today.notifications")}
-        style={[styles.circle, chip]}
-      >
-        <Bell size={20} color={colors.text} strokeWidth={ICON_STROKE} />
-        {unread > 0 ? <View style={[styles.dot, { backgroundColor: colors.danger, borderColor: colors.surface }]} /> : null}
-      </PressableScale>
-      {/* The person: opens More (profile, settings, sign out). Their photo, else initials on their gradient. */}
-      {hideProfile ? null : (
-        <PressableScale
-          onPress={() => {
-            haptics.selection();
-            router.navigate("/more");
-          }}
-          accessibilityLabel={t("more.openAccount", { name: user?.name || user?.email || "" })}
-        >
-          <Avatar name={user?.name || user?.email || "?"} uri={user?.avatar_url} size={44} />
-        </PressableScale>
-      )}
-    </View>
+    <PressableScale
+      onPress={() => {
+        haptics.selection();
+        go("/notifications");
+      }}
+      accessibilityLabel={unread > 0 ? t("today.unreadNotifications", { count: unread }) : t("today.notifications")}
+      style={[styles.circle, chip]}
+    >
+      <Bell size={20} color={colors.text} strokeWidth={ICON_STROKE} />
+      {unread > 0 ? <View style={[styles.dot, { backgroundColor: colors.primaryFill, borderColor: colors.surface }]} /> : null}
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md },
-  pill: { flexDirection: "row", alignItems: "center", gap: space.xs, height: 34, paddingLeft: space.md, paddingRight: space.sm, borderRadius: radius.pill, borderWidth: 1, flexShrink: 1 },
-  pillText: { flexShrink: 1 },
-  actions: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  row: { flexDirection: "row", alignItems: "center", gap: space.sm + 2 },
+  spacer: { flex: 1 },
+  workspace: { flexDirection: "row", alignItems: "center", gap: space.xs, flexShrink: 1, minHeight: 40 },
+  workspaceText: { flexShrink: 1 },
   circle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  plain: { flexDirection: "row", alignItems: "center", gap: space.xs + 2, alignSelf: "flex-start" },
-  live: { width: 8, height: 8, borderRadius: 4 },
-  dot: { position: "absolute", top: 10, right: 11, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
+  dot: { position: "absolute", top: 10, right: 11, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
 });

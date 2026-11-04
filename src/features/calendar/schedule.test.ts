@@ -1,5 +1,5 @@
 import type { Meeting } from "@/types/calendar";
-import { agenda, canJoin, countByDay, meetingPhase, meetingWith } from "./schedule";
+import { agenda, canJoin, countByDay, hoursUntil, meetingPhase, meetingWith, withNowLine, type AgendaItem } from "./schedule";
 
 const NOW = new Date(2026, 10, 3, 14, 0);
 const now = NOW.getTime();
@@ -41,5 +41,39 @@ describe("schedule", () => {
   it("says who it's with", () => {
     expect(meetingWith({ contact_name: "Sara Ahmed", company: "Northwind" })).toBe("Sara Ahmed · Northwind");
     expect(meetingWith({ contact_name: null, company: null })).toBeNull();
+  });
+});
+
+describe("hoursUntil", () => {
+  const now = Date.parse("2026-11-03T15:00:00Z");
+  const at = (iso: string, status: "pending" | "completed" = "pending") => ({ due_at: iso, status });
+  it("counts whole hours for a pending meeting 1–23 h away", () => {
+    expect(hoursUntil(at("2026-11-04T06:00:00Z"), now)).toBe(15);
+    expect(hoursUntil(at("2026-11-03T16:10:00Z"), now)).toBe(1);
+  });
+  it("says nothing when it's under an hour, a day or more away, past, or not pending", () => {
+    expect(hoursUntil(at("2026-11-03T15:40:00Z"), now)).toBeNull();
+    expect(hoursUntil(at("2026-11-04T15:00:00Z"), now)).toBeNull();
+    expect(hoursUntil(at("2026-11-02T10:00:00Z"), now)).toBeNull();
+    expect(hoursUntil(at("2026-11-04T06:00:00Z", "completed"), now)).toBeNull();
+  });
+});
+
+describe("withNowLine", () => {
+  const row = (id: number, iso: string): AgendaItem => ({ type: "row", key: `m-${id}`, meeting: { id, due_at: iso } as never });
+  const head = (day: "today" | "tomorrow"): AgendaItem => ({ type: "header", key: `h-${day}`, day, date: "" });
+  const now = Date.parse("2026-11-03T15:00:00Z");
+  const keys = (items: AgendaItem[]) => items.map((i) => i.key);
+  it("goes inside today's group, before the next meeting", () => {
+    const items = [head("today"), row(1, "2026-11-03T10:00:00Z"), row(2, "2026-11-03T16:00:00Z")];
+    expect(keys(withNowLine(items, now))).toEqual(["h-today", "m-1", "now", "m-2"]);
+  });
+  it("goes above the next day's heading when nothing is left today", () => {
+    const items = [head("tomorrow"), row(3, "2026-11-04T06:00:00Z")];
+    expect(keys(withNowLine(items, now))).toEqual(["now", "h-tomorrow", "m-3"]);
+  });
+  it("adds nothing when nothing is ahead", () => {
+    expect(keys(withNowLine([head("today"), row(1, "2026-11-03T10:00:00Z")], now))).toEqual(["h-today", "m-1"]);
+    expect(withNowLine([], now)).toEqual([]);
   });
 });

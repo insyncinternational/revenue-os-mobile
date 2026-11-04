@@ -11,7 +11,7 @@ import { Text } from "@/ui/Text";
 export default function UpdateRequired() {
   const { colors } = useTheme();
   return (
-    <FormScreen footer={<Logo height={32} tagline={false} />}>
+    <FormScreen footer={<Logo height={40} />}>
       <View style={[styles.icon, { backgroundColor: colors.primarySubtle }]}>
         <ArrowUpCircle size={26} color={colors.primary} strokeWidth={ICON_STROKE} />
       </View>

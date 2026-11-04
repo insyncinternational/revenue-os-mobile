@@ -2,33 +2,33 @@ import { StyleSheet, View } from "react-native";
 import { t } from "@/i18n";
 import { relativeTime } from "@/lib/format";
 import { useTheme } from "@/theme/ThemeProvider";
-import { radius, space, type Palette } from "@/theme/tokens";
+import { space, type Palette } from "@/theme/tokens";
 import type { TimelineItem } from "@/types/contact";
-import { Calendar, CircleAlert, ExternalLink, ICON_STROKE, Mail, MailOpen, MessageCircle, Phone, Receipt, Send, StickyNote, type IconComponent } from "@/ui/icons";
+import { Calendar, CircleAlert, ExternalLink, Mail, MailOpen, MessageCircle, Phone, Receipt, Send, StickyNote, type IconComponent } from "@/ui/icons";
 import { Text } from "@/ui/Text";
 import { eventTitle } from "./timelineEvent";
 
 type Look = { icon: IconComponent; bg: keyof Palette; fg: keyof Palette };
 
 const KIND: Record<string, Look> = {
-  note: { icon: StickyNote, bg: "warningSurface", fg: "warning" },
-  call: { icon: Phone, bg: "successSurface", fg: "success" },
-  voice_call: { icon: Phone, bg: "successSurface", fg: "success" },
-  ai_voice_call: { icon: Phone, bg: "successSurface", fg: "success" },
+  note: { icon: StickyNote, bg: "surfaceTertiary", fg: "text" },
+  call: { icon: Phone, bg: "surfaceTertiary", fg: "text" },
+  voice_call: { icon: Phone, bg: "surfaceTertiary", fg: "text" },
+  ai_voice_call: { icon: Phone, bg: "surfaceTertiary", fg: "text" },
   email: { icon: Mail, bg: "primarySubtle", fg: "primary" },
   meeting: { icon: Calendar, bg: "primarySubtle", fg: "primary" },
-  whatsapp_message: { icon: MessageCircle, bg: "successSurface", fg: "success" },
-  linkedin_message: { icon: MessageCircle, bg: "infoSurface", fg: "info" },
+  whatsapp_message: { icon: MessageCircle, bg: "surfaceTertiary", fg: "text" },
+  linkedin_message: { icon: MessageCircle, bg: "surfaceTertiary", fg: "text" },
   invoice_sent: { icon: Receipt, bg: "primarySubtle", fg: "primary" },
-  invoice_paid: { icon: Receipt, bg: "successSurface", fg: "success" },
+  invoice_paid: { icon: Receipt, bg: "surfaceTertiary", fg: "text" },
 };
 
 /** Campaign events: blue while it's on its way, green for a reply, red for a bounce. */
 const CAMPAIGN: Record<string, Look> = {
-  sent: { icon: Send, bg: "infoSurface", fg: "info" },
-  opened: { icon: MailOpen, bg: "infoSurface", fg: "info" },
-  clicked: { icon: ExternalLink, bg: "infoSurface", fg: "info" },
-  replied: { icon: MessageCircle, bg: "successSurface", fg: "success" },
+  sent: { icon: Send, bg: "surfaceTertiary", fg: "text" },
+  opened: { icon: MailOpen, bg: "surfaceTertiary", fg: "text" },
+  clicked: { icon: ExternalLink, bg: "surfaceTertiary", fg: "text" },
+  replied: { icon: MessageCircle, bg: "surfaceTertiary", fg: "text" },
   bounced: { icon: CircleAlert, bg: "dangerSurface", fg: "danger" },
 };
 
@@ -41,7 +41,8 @@ function describe(it: TimelineItem): Look & { title: string } {
   return { ...look, title: "key" in name ? t(name.key) : name.text };
 }
 
-/** The contact's history, newest first, as a vertical line of events. */
+/** The contact's history, newest first: a thin line with a small dot per event (the newest in the accent), a
+ *  spaced date label, the event and its detail. */
 export function Timeline({ items, locale }: { items: TimelineItem[]; locale: string }) {
   const { colors } = useTheme();
   if (items.length === 0) {
@@ -55,34 +56,25 @@ export function Timeline({ items, locale }: { items: TimelineItem[]; locale: str
     <View>
       {items.map((it, i) => {
         const k = describe(it);
-        const Icon = k.icon;
+        const first = i === 0;
         const last = i === items.length - 1;
         return (
           <View key={`${it.source}-${it.id}`} style={styles.item}>
             <View style={styles.rail}>
-              <View style={[styles.dot, { backgroundColor: colors[k.bg] }]}>
-                <Icon size={15} color={colors[k.fg]} strokeWidth={ICON_STROKE + 0.25} />
-              </View>
-              {!last ? <View style={[styles.line, { backgroundColor: colors.border }]} /> : null}
+              <View style={[styles.dot, first ? { backgroundColor: colors.primaryFill, borderColor: colors.primarySubtle } : { backgroundColor: colors.surface, borderColor: colors.borderStrong }]} />
+              {!last ? <View style={[styles.line, { backgroundColor: colors.borderStrong }]} /> : null}
             </View>
             <View style={[styles.body, !last && styles.gap]}>
-              <View style={styles.head}>
-                {/* Two lines: "Invoice INV-0001 paid (AED 1,208.03)" shouldn't lose its amount. */}
-                <Text variant="callout" weight="semibold" numberOfLines={2} style={styles.flex}>
-                  {k.title}
-                </Text>
-                <Text variant="caption" tone="subtle" numeric>
-                  {relativeTime(it.occurred_at, locale)}
-                </Text>
-              </View>
+              <Text variant="eyebrow" tone="muted" numeric numberOfLines={1}>
+                {[relativeTime(it.occurred_at, locale), it.user?.name].filter(Boolean).join(" · ")}
+              </Text>
+              {/* Two lines: "Invoice INV-0001 paid (AED 1,208.03)" shouldn't lose its amount. */}
+              <Text variant="callout" weight="semibold" numberOfLines={2}>
+                {k.title}
+              </Text>
               {it.body ? (
-                <Text variant="subhead" tone="secondary" numberOfLines={4}>
+                <Text variant="footnote" tone="muted" numberOfLines={4}>
                   {it.body}
-                </Text>
-              ) : null}
-              {it.user?.name ? (
-                <Text variant="caption" tone="muted">
-                  {it.user.name}
                 </Text>
               ) : null}
             </View>
@@ -96,11 +88,9 @@ export function Timeline({ items, locale }: { items: TimelineItem[]; locale: str
 const styles = StyleSheet.create({
   empty: { paddingVertical: space.md },
   item: { flexDirection: "row", gap: space.md },
-  rail: { alignItems: "center", width: 30 },
-  dot: { width: 30, height: 30, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
-  line: { width: 2, flex: 1, marginVertical: 4, borderRadius: 1 },
-  body: { flex: 1, minWidth: 0, gap: 2, paddingTop: 4 },
-  gap: { paddingBottom: space.lg },
-  head: { flexDirection: "row", alignItems: "flex-start", gap: space.sm },
-  flex: { flex: 1, minWidth: 0 },
+  rail: { alignItems: "center", width: 16, paddingTop: 2 },
+  dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 3 },
+  line: { width: 2, flex: 1, marginVertical: 3, borderRadius: 1 },
+  body: { flex: 1, minWidth: 0, gap: 3 },
+  gap: { paddingBottom: space.lg + 2 },
 });

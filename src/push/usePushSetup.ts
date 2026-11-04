@@ -5,6 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { notificationsApi } from "@/api/notifications";
 import { go, openApproval, openContact, openConversation, openDeal, openMeeting, openTaskForm } from "@/lib/navigate";
 import { keys } from "@/query/keys";
+import { openAgencyAlert } from "@/features/agency/openAlert";
+import { agencyIdInLink } from "@/features/agency/agency";
+import { useAppMode } from "@/session/mode";
 import { useSession } from "@/session/sessionStore";
 import { registerForPush, setAppBadge } from "./push";
 import { routeForPush, type PushData } from "./routing";
@@ -12,8 +15,13 @@ import { routeForPush, type PushData } from "./routing";
 /** Opens what a tapped notification is about — in the right workspace first. */
 function openFromPush(response: Notifications.NotificationResponse | null | undefined) {
   if (!response) return;
-  const { baseId, conversation, meeting, approval, deal, task, contact, link } = routeForPush(response.notification.request.content.data as PushData);
+  const data = response.notification.request.content.data as PushData;
+  // An agency alert (new client, payment, credit pool): the agency area, on the screen it's about.
+  if (agencyIdInLink(data?.action_url)) return openAgencyAlert(data);
+  const { baseId, conversation, meeting, approval, deal, task, contact, link } = routeForPush(data);
   if (baseId) useSession.getState().setActiveBase(baseId);
+  // About a workspace while in the agency area: open it in the workspace tabs.
+  if (baseId && useAppMode.getState().mode === "agency") useAppMode.getState().enterWorkspace();
   if (conversation) openConversation(conversation);
   else if (meeting) openMeeting(meeting);
   else if (approval) openApproval(approval);

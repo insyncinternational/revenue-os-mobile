@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Revenue OS",
+    "name": "GrowthReach.ai",
     "slug": "revenue-os-mobile",
     "version": "1.0.0",
     "scheme": "revenueos",
@@ -14,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#4f46e5",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -35,10 +35,10 @@
         {
           "image": "./assets/splash-mark.png",
           "imageWidth": 96,
-          "backgroundColor": "#312e81",
+          "backgroundColor": "#14181e",
           "dark": {
             "image": "./assets/splash-mark.png",
-            "backgroundColor": "#312e81"
+            "backgroundColor": "#14181e"
           }
         }
       ],
@@ -49,15 +49,15 @@
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
-          "color": "#4f46e5",
+          "color": "#f7820f",
           "enableBackgroundRemoteNotifications": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Revenue OS needs your photos to attach them to email replies.",
-          "cameraPermission": "Revenue OS needs the camera to take a photo for an email reply.",
+          "photosPermission": "GrowthReach.ai needs your photos to attach them to email replies.",
+          "cameraPermission": "GrowthReach.ai needs the camera to take a photo for an email reply.",
           "microphonePermission": false
         }
       ],
@@ -65,7 +65,7 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Revenue OS uses Face ID to unlock the app when you turn on the app lock."
+          "faceIDPermission": "GrowthReach.ai uses Face ID to unlock the app when you turn on the app lock."
         }
       ],
       [

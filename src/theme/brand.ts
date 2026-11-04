@@ -31,7 +31,7 @@ export function splitAlpha(color: string): { color: string; opacity: number } {
 
 /**
  * An opaque hex for `color` drawn over `base` — for surfaces that take no transparency (home-screen widgets).
- * "rgba(255, 255, 255, 0.14)" over "#312e81" → a lighter indigo. A hex colour comes back as it is.
+ * "rgba(255, 255, 255, 0.14)" over "#7c2d12" → a lighter brown-orange. A hex colour comes back as it is.
  */
 export function flattenOver(color: string, base: string): string {
   if (isHexColor(color)) return color;
@@ -103,8 +103,15 @@ function heroFor(base: Rgb, scheme: ColorScheme): Partial<Palette> {
   };
 }
 
+/** Secondary text and translucent pieces on the accent fill, matching the text colour chosen for it. */
+function onFill(on: string): Pick<Palette, "onPrimaryMuted" | "primaryTrack"> {
+  return on === WHITE
+    ? { onPrimaryMuted: "rgba(255, 255, 255, 0.78)", primaryTrack: "rgba(255, 255, 255, 0.18)" }
+    : { onPrimaryMuted: "rgba(11, 11, 13, 0.7)", primaryTrack: "rgba(11, 11, 13, 0.12)" };
+}
+
 /**
- * Palette overrides for an agency colour, or an empty object (keep Revenue OS colours) when the colour is
+ * Palette overrides for an agency colour, or an empty object (keep GrowthReach.ai colours) when the colour is
  * missing or invalid. Unlike the web, the text on a solid fill is chosen by contrast (white or near-black),
  * so a light agency colour in dark mode never ends up with unreadable white text.
  */
@@ -122,11 +129,16 @@ export function brandPalette(primary: string | null | undefined, scheme: ColorSc
       primaryFill: fillHex,
       primaryFillPressed: rgbToHex(shade(fill, 0.12)),
       onPrimary: WHITE,
+      ...onFill(WHITE),
       primarySubtle: `rgba(${rgb}, 0.1)`,
       primarySubtlePressed: `rgba(${rgb}, 0.18)`,
       primaryBorder: `rgba(${rgb}, 0.32)`,
       primaryText: fillHex,
       borderFocus: hex,
+      // Ink is a deep shade of the agency colour, not black (always readable under white text).
+      ink: rgbToHex(untilReadable(shade(base, 0.7), WHITE, 7, "darken")),
+      inkPressed: rgbToHex(shade(base, 0.58)),
+      contrast: rgbToHex(untilReadable(shade(base, 0.7), WHITE, 7, "darken")),
       ...heroFor(base, scheme),
     };
   }
@@ -139,6 +151,7 @@ export function brandPalette(primary: string | null | undefined, scheme: ColorSc
     primaryFill: fillHex,
     primaryFillPressed: rgbToHex(tint(base, 0.12)),
     onPrimary,
+    ...onFill(onPrimary),
     primarySubtle: `rgba(${rgb}, 0.14)`,
     primarySubtlePressed: `rgba(${rgb}, 0.22)`,
     primaryBorder: `rgba(${rgb}, 0.32)`,

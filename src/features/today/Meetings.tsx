@@ -5,6 +5,7 @@ import { timeOfDay } from "@/lib/format";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { MeetingRow } from "@/types/home";
+import { Avatar } from "@/ui/Avatar";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { Video } from "@/ui/icons";
@@ -36,9 +37,13 @@ export function Meetings({ meetings }: { meetings: MeetingRow[] }) {
               <Text variant="headline" numberOfLines={1}>
                 {m.title}
               </Text>
-              <Text variant="subhead" tone="muted" numberOfLines={1}>
-                {[m.contact_name, m.company].filter(Boolean).join(" · ") || " "}
-              </Text>
+              {/* Who it's with, with their face, so the card is recognisable before the name is read. */}
+              <View style={styles.who}>
+                {m.contact_name ? <Avatar name={m.contact_name} size={22} /> : null}
+                <Text variant="subhead" tone="muted" numberOfLines={1} style={styles.flex}>
+                  {[m.contact_name, m.company].filter(Boolean).join(" · ") || " "}
+                </Text>
+              </View>
             </PressableScale>
             {m.join_url ? (
               <Button label={t("today.join")} icon={Video} size="sm" variant={soon ? "primary" : "secondary"} onPress={() => void Linking.openURL(m.join_url!)} style={styles.join} />
@@ -58,6 +63,8 @@ const styles = StyleSheet.create({
   body: { gap: space.xs },
   timeRow: { flexDirection: "row", marginBottom: space.xs },
   timeBadge: { paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.sm },
+  who: { flexDirection: "row", alignItems: "center", gap: space.xs + 2 },
+  flex: { flex: 1, minWidth: 0 },
   join: { marginTop: space.sm },
   joinSpace: { height: 36 + space.sm },
 });

@@ -49,7 +49,12 @@ export const Bubble = memo(function Bubble({ message: m, firstInGroup, lastInGro
       style={[
         styles.bubble,
         shape,
-        mine ? { backgroundColor: m.failed ? colors.dangerSurface : colors.primaryFill, alignSelf: "flex-end" } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, alignSelf: "flex-start" },
+        // Yours in a soft brand gradient (fill to its pressed shade: both dark enough for white text in either theme).
+        mine
+          ? m.failed
+            ? { backgroundColor: colors.dangerSurface, alignSelf: "flex-end" }
+            : { backgroundColor: colors.primaryFill, backgroundImage: `linear-gradient(135deg, ${colors.primaryFill}, ${colors.primaryFillPressed})`, alignSelf: "flex-end" }
+          : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, alignSelf: "flex-start" },
         m.pending && styles.pending,
       ]}
     >

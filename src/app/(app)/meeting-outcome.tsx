@@ -14,9 +14,9 @@ import { Button } from "@/ui/Button";
 import { Chip } from "@/ui/Chip";
 import { Field } from "@/ui/Field";
 import { FormScreen } from "@/ui/FormScreen";
-import { Check, ICON_STROKE, RefreshCw } from "@/ui/icons";
+import { ChoiceTiles } from "@/ui/ChoiceTiles";
+import { Check, CheckCircle2, ICON_STROKE, RefreshCw, UserX } from "@/ui/icons";
 import { Input } from "@/ui/Input";
-import { SegmentedControl } from "@/ui/SegmentedControl";
 import { Text } from "@/ui/Text";
 
 type Outcome = "attended" | "no_show";
@@ -71,15 +71,13 @@ export default function MeetingOutcome() {
       </View>
       {action.error ? <Banner message={userMessage(action.error)} /> : null}
 
-      <SegmentedControl<Outcome>
+      {/* Two big tiles: green for "it happened", amber for "they didn't come". */}
+      <ChoiceTiles<Outcome>
         value={outcome}
-        onChange={(v) => {
-          haptics.selection();
-          setOutcome(v);
-        }}
-        options={[
-          { key: "attended", label: t("meeting.attended") },
-          { key: "no_show", label: t("meeting.noShow") },
+        onChange={setOutcome}
+        choices={[
+          { key: "attended", label: t("meeting.attended"), icon: CheckCircle2, tone: "success" },
+          { key: "no_show", label: t("meeting.noShow"), icon: UserX, tone: "warning" },
         ]}
       />
 

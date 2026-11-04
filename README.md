@@ -1,4 +1,4 @@
-# Revenue OS mobile
+# GrowthReach.ai mobile
 
 The phone app for agency staff and client users (Expo SDK 58, React Native, Expo Router). Plan and audit:
 `../MOBILE_APP_PLAN.md`, `../MOBILE_AUDIT_2026-11-01.md`.

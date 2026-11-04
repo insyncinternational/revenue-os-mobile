@@ -1,19 +1,21 @@
 /**
- * The Revenue OS logo — the "spark bars" mark and the REVENUE OS wordmark, drawn from the same geometry as the web
- * (revenue-os-frontend/components/ui/AppBrandLogo.tsx).
+ * The GrowthReach.ai logo — the "G" mark (dark G, three rising orange bars, orange arrow) and the
+ * GrowthReach.ai wordmark, drawn from the same outlined geometry as the web
+ * (revenue-os-frontend/components/ui/AppBrandLogo.tsx, lib/brandGeometry.ts).
  */
-import { StyleSheet, Text as RNText, View } from "react-native";
-import Svg, { Circle, Rect } from "react-native-svg";
+import { useId } from "react";
+import { View } from "react-native";
+import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { useTheme } from "@/theme/ThemeProvider";
-import { fonts } from "@/theme/tokens";
 import { APP_BRAND_NAME, APP_BRAND_TAGLINE } from "@/lib/brand";
+import { BRAND_COLORS, BRAND_GEOMETRY as G } from "./brandGeometry";
 
-/** Same colours as the web wordmark (not themeable: this is the Revenue OS brand, not an agency's). */
+/** Same colours as the web logo (not themeable: this is the GrowthReach.ai brand, not an agency's). */
 export const LOGO = {
-  light: { ink: "#0f172a", accent: "#4f46e5", sub: "#475569" },
-  dark: { ink: "#f1f5f9", accent: "#818cf8", sub: "#a5b4fc" },
-  /** On the indigo splash, launch and sign-in hero: white with a light-indigo accent, in both themes. */
-  onBrand: { ink: "#ffffff", accent: "#c7d2fe", sub: "rgba(255, 255, 255, 0.72)" },
+  light: { ink: BRAND_COLORS.ink, accent: BRAND_COLORS.orange, sub: BRAND_COLORS.ink },
+  dark: { ink: BRAND_COLORS.inkOnDark, accent: BRAND_COLORS.orange, sub: BRAND_COLORS.taglineOnDark },
+  /** On the indigo splash, launch and sign-in hero: a white G with the orange accents, in both themes. */
+  onBrand: { ink: "#ffffff", accent: BRAND_COLORS.orange, sub: "rgba(255, 255, 255, 0.78)" },
 } as const;
 
 /** "auto" follows light/dark; "onBrand" is for indigo backgrounds. */
@@ -24,47 +26,68 @@ function useLogoColors(tone: LogoTone) {
   return LOGO[tone === "onBrand" ? "onBrand" : scheme];
 }
 
+/** The orange top-to-bottom fill used by the bars, arrow, ".ai" and dashes. */
+export function BrandOrange({ id }: { id: string }) {
+  return (
+    <Defs>
+      <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor={BRAND_COLORS.orangeTop} />
+        <Stop offset="1" stopColor={BRAND_COLORS.orangeBottom} />
+      </LinearGradient>
+    </Defs>
+  );
+}
+
+function useGradId() {
+  return `gro${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+}
+
 export function BrandMark({ size = 32, tone = "auto" }: { size?: number; tone?: LogoTone }) {
   const c = useLogoColors(tone);
+  const id = useGradId();
+  const fill = `url(#${id})`;
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40">
-      <Rect x={6} y={23} width={7} height={11} rx={3.5} fill={c.ink} />
-      <Rect x={15.5} y={17} width={7} height={17} rx={3.5} fill={c.ink} />
-      <Rect x={25} y={15} width={7} height={19} rx={3.5} fill={c.accent} />
-      <Circle cx={28.5} cy={7.5} r={3.6} fill={c.accent} />
+    <Svg width={size} height={size} viewBox={G.markViewBox}>
+      <BrandOrange id={id} />
+      <Path d={G.g} fill={c.ink} />
+      {G.bars.map((d) => (
+        <Path key={d} d={d} fill={fill} />
+      ))}
+      <Path d={G.arrow} fill={fill} />
     </Svg>
   );
 }
 
-/** Mark + "REVENUE OS" (+ tagline spread under the name when there is room). */
+const [, , LW, LH] = G.lockupViewBox.split(" ").map(Number) as [number, number, number, number];
+
+/** Mark | "GrowthReach.ai" + "— INTELLIGENCE AT SCALE —" under the name. */
 export function Logo({ height = 40, tagline = true, tone = "auto" }: { height?: number; tagline?: boolean; tone?: LogoTone }) {
   const c = useLogoColors(tone);
-  const mark = Math.round(height * 0.78);
-  const nameSize = Math.round(mark * 0.56);
-  const tagSize = Math.max(8, Math.round(nameSize * 0.4));
-  const showTag = tagline && height >= 30;
+  const id = useGradId();
+  const fill = `url(#${id})`;
+  // The tagline is part of the logo: always drawn unless a caller turns it off.
+  const showTag = tagline;
   return (
-    <View style={styles.row} accessible accessibilityRole="image" accessibilityLabel={`${APP_BRAND_NAME}, ${APP_BRAND_TAGLINE}`}>
-      <BrandMark size={mark} tone={tone} />
-      <View style={{ marginLeft: Math.round(mark * 0.32) }}>
-        <RNText allowFontScaling={false} style={{ fontFamily: fonts.extrabold, fontSize: nameSize, lineHeight: Math.round(nameSize * 1.1), color: c.ink, letterSpacing: nameSize * 0.005 }}>
-          REVENUE <RNText style={{ color: c.accent }}>OS</RNText>
-        </RNText>
+    <View accessible accessibilityRole="image" accessibilityLabel={`${APP_BRAND_NAME}, ${APP_BRAND_TAGLINE}`}>
+      <Svg width={Math.round((height * LW) / LH)} height={height} viewBox={G.lockupViewBox}>
+        <BrandOrange id={id} />
+        <Path d={G.g} fill={c.ink} />
+        {G.bars.map((d) => (
+          <Path key={d} d={d} fill={fill} />
+        ))}
+        <Path d={G.arrow} fill={fill} />
+        <Path d={G.divider} fill={c.ink} />
+        <Path d={G.name} fill={c.ink} />
+        <Path d={G.ai} fill={fill} />
         {showTag ? (
-          <View style={[styles.tag, { marginTop: Math.max(3, Math.round(nameSize * 0.3)) }]}>
-            {Array.from(APP_BRAND_TAGLINE.toUpperCase()).map((ch, i) => (
-              <RNText key={i} allowFontScaling={false} style={{ fontFamily: fonts.semibold, fontSize: tagSize, lineHeight: tagSize + 2, color: c.sub }}>
-                {ch}
-              </RNText>
+          <>
+            {G.dashes.map((d) => (
+              <Path key={d} d={d} fill={fill} />
             ))}
-          </View>
+            <Path d={G.tagline} fill={c.sub} />
+          </>
         ) : null}
-      </View>
+      </Svg>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center" },
-  tag: { flexDirection: "row", justifyContent: "space-between" },
-});

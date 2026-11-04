@@ -1,9 +1,18 @@
 import type { InboxItem, InboxMessage } from "@/types/inbox";
-import { bubbleText, contactName, mergePages, originalHtml, splitPreview, splitQuote, threadRows } from "./list";
+import { bubbleText, contactName, groupByDay, mergePages, waitingOnYou, originalHtml, splitPreview, splitQuote, threadRows } from "./list";
 
 const item = (id: string, extra: Partial<InboxItem> = {}) => ({ id, contact_label: id, ...extra }) as InboxItem;
 const msg = (id: string, at: string, direction: "inbound" | "outbound" = "inbound", kind: "message" | "activity" = "message") =>
   ({ id, created_at: at, direction, message_kind: kind, body_text: id, body_html: null, from_label: null }) as InboxMessage;
+
+describe("groupByDay", () => {
+  it("adds a header per group and marks where each group starts and ends", () => {
+    const now = new Date(2026, 10, 4, 15, 0);
+    const at = (d: number, h = 9) => new Date(2026, 10, d, h).toISOString();
+    const rows = groupByDay([item("a", { last_message_at: at(4) }), item("b", { last_message_at: at(2) }), item("c", { last_message_at: at(1) }), item("d", { last_message_at: new Date(2026, 9, 20, 9).toISOString() })], now);
+    expect(rows.map((r) => (r.kind === "header" ? r.group : `${r.key}${r.first ? "^" : ""}${r.last ? "$" : ""}`))).toEqual(["today", "a^$", "week", "b^", "c$", "earlier", "d^$"]);
+  });
+});
 
 describe("mergePages", () => {
   it("keeps the first copy of a conversation that moved between pages", () => {
@@ -70,5 +79,13 @@ describe("quoted mail", () => {
   it("leaves plain messages and quote-only bodies alone", () => {
     expect(splitQuote("Just a message")).toEqual({ own: "Just a message", quote: null });
     expect(splitQuote("> only a quote\n> here").quote).toBeNull();
+  });
+});
+
+describe("waitingOnYou", () => {
+  it("keeps unread conversations, one per person", () => {
+    const list = [item("a", { unread_count: 2, contact_label: "Nina" }), item("b", { unread_count: 0, contact_label: "Omar" }), item("c", { unread_count: 1, contact_label: "Nina" }), item("d", { unread_count: 1, contact_label: "Sara" })];
+    expect(waitingOnYou(list).map((i) => i.id)).toEqual(["a", "d"]);
+    expect(waitingOnYou(list, 1)).toHaveLength(1);
   });
 });

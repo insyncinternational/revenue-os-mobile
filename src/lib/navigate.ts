@@ -40,8 +40,9 @@ export function openMoveDeal(id: number, opts: { lost?: boolean } = {}): void {
 }
 
 /** Opens one conversation (inbox item id such as "email:145"). */
-export function openConversation(itemId: string): void {
-  router.push({ pathname: "/conversation/[itemId]", params: { itemId } });
+/** `reply`: open with the reply box focused (the inbox row's Reply button). */
+export function openConversation(itemId: string, opts?: { reply?: boolean }): void {
+  router.push({ pathname: "/conversation/[itemId]", params: opts?.reply ? { itemId, reply: "1" } : { itemId } });
 }
 
 export function openCalendar(): void {

@@ -28,7 +28,7 @@ export function canJoin(m: Pick<Meeting, "status" | "due_at" | "outcome" | "join
   return Boolean(m.join_url) && (phase === "soon" || phase === "now");
 }
 
-export type AgendaItem = { type: "header"; key: string; day: "today" | "tomorrow" | "yesterday" | "date"; date: string } | { type: "row"; key: string; meeting: Meeting };
+export type AgendaItem = { type: "header"; key: string; day: "today" | "tomorrow" | "yesterday" | "date"; date: string } | { type: "row"; key: string; meeting: Meeting } | { type: "now"; key: string };
 
 /** Pure: meetings in list order → a flat list with a header before each new local day. */
 export function agenda(meetings: Meeting[], now: Date): AgendaItem[] {
@@ -68,4 +68,23 @@ export function countByDay(meetings: Pick<Meeting, "due_at" | "status">[]): Map<
 /** Who the meeting is with, for rows and titles. */
 export function meetingWith(m: Pick<Meeting, "contact_name" | "company">): string | null {
   return [m.contact_name, m.company].filter(Boolean).join(" · ") || null;
+}
+
+/** Pure: whole hours until a pending meeting starts, when that's 1–23 h away (sooner, the "in N min" badge says it; later, the date does). */
+export function hoursUntil(m: Pick<Meeting, "due_at" | "status">, now: number): number | null {
+  if (m.status !== "pending" || !m.due_at) return null;
+  const h = Math.floor((Date.parse(m.due_at) - now) / 3_600_000);
+  return h >= 1 && h < 24 ? h : null;
+}
+
+/**
+ * Pure: the agenda with a "now" marker just before the next meeting — inside today's group, or above the next
+ * day's heading when nothing else is left today. Nothing ahead (or nothing at all): no marker.
+ */
+export function withNowLine(items: AgendaItem[], now: number): AgendaItem[] {
+  const next = items.findIndex((i) => i.type === "row" && i.meeting.due_at != null && Date.parse(i.meeting.due_at) >= now);
+  if (next < 0) return items;
+  const before = items[next - 1];
+  const at = before && before.type === "header" && before.day !== "today" ? next - 1 : next;
+  return [...items.slice(0, at), { type: "now", key: "now" }, ...items.slice(at)];
 }
