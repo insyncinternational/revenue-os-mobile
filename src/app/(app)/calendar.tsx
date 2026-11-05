@@ -172,8 +172,8 @@ export default function CalendarScreen() {
             item.type === "now" ? (
               <NowLine now={now} locale={locale} />
             ) : item.type === "header" ? (
-              <Text variant="footnote" weight="semibold" tone="muted" style={styles.day} accessibilityRole="header">
-                {headerLabel(item).toUpperCase()}
+              <Text variant="eyebrow" tone="muted" style={styles.day} accessibilityRole="header">
+                {headerLabel(item)}
               </Text>
             ) : (
               <MeetingRow meeting={item.meeting} now={now} locale={locale} onOpen={(m) => openMeeting(m.id)} onOutcome={canEdit ? outcome : undefined} />
@@ -208,6 +208,6 @@ const styles = StyleSheet.create({
   block: { paddingHorizontal: gutter },
   strip: { paddingHorizontal: gutter, gap: space.sm },
   hint: { paddingHorizontal: gutter },
-  day: { paddingHorizontal: gutter + space.xs, paddingTop: space.lg, paddingBottom: space.sm, letterSpacing: 0.4 },
+  day: { paddingHorizontal: gutter + space.xs, paddingTop: space.lg, paddingBottom: space.sm },
   footer: { minHeight: 96, paddingTop: space.lg, paddingHorizontal: gutter },
 });

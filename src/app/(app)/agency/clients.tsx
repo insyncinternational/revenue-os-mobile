@@ -13,10 +13,10 @@ import { useOnline } from "@/query/useOnline";
 import { gutter, space } from "@/theme/tokens";
 import type { ClientStatusFilter } from "@/types/agency";
 import { FilterChips } from "@/ui/Chip";
+import { CardCell } from "@/ui/CardCell";
 import { Users } from "@/ui/icons";
 import { ListReveal } from "@/ui/ListReveal";
 import { SearchBar } from "@/ui/SearchBar";
-import { Divider } from "@/ui/Section";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
@@ -70,7 +70,6 @@ export default function AgencyClients() {
         onEndReached={() => {
           if (list.hasNextPage && !list.isFetchingNextPage) void list.fetchNextPage();
         }}
-        ItemSeparatorComponent={RowDivider}
         ListHeaderComponent={
           <View style={styles.header}>
             <AgencyHeader action={canCreate ? { label: t("agency.quick.addClient"), onPress: openNewClient } : undefined} area="contacts" title={t("agency.tabs.clients")} summary={list.data ? t("agency.clients.total", { count: count(total, locale) }) : null} />
@@ -92,7 +91,9 @@ export default function AgencyClients() {
         ListFooterComponent={list.isFetchingNextPage ? <SkeletonList rows={2} /> : <View style={styles.footer} />}
         renderItem={({ item, index }) => (
           <ListReveal index={index}>
-            <ClientRowItem client={item} />
+            <CardCell first={index === 0} last={index === rows.length - 1} inset={ROW_INSET}>
+              <ClientRowItem client={item} />
+            </CardCell>
           </ListReveal>
         )}
       />
@@ -101,9 +102,8 @@ export default function AgencyClients() {
   );
 }
 
-function RowDivider() {
-  return <Divider inset={gutter + 40 + space.md} />;
-}
+/** The hairline between clients starts under the name (row padding + avatar + gap). */
+const ROW_INSET = gutter + 40 + space.md;
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },

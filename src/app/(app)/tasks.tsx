@@ -126,8 +126,8 @@ export default function TasksScreen() {
           renderItem={({ item }) =>
             item.type === "header" ? (
               <View style={styles.header}>
-                <Text variant="footnote" weight="semibold" tone={item.bucket === "overdue" ? "danger" : "muted"} accessibilityRole="header" style={styles.headerText}>
-                  {header(item).toUpperCase()}
+                <Text variant="eyebrow" tone={item.bucket === "overdue" ? "danger" : "muted"} accessibilityRole="header">
+                  {header(item)}
                 </Text>
                 <Text variant="footnote" tone="subtle" numeric>
                   {item.count}
@@ -151,6 +151,5 @@ const styles = StyleSheet.create({
   progressBody: { flexDirection: "row", alignItems: "center", gap: space.lg },
   flex: { flex: 1, minWidth: 0, gap: 2 },
   header: { flexDirection: "row", alignItems: "center", gap: space.sm, paddingHorizontal: gutter + space.xs, paddingTop: space.lg, paddingBottom: space.sm },
-  headerText: { letterSpacing: 0.4 },
   footer: { height: 96, paddingTop: space.md },
 });

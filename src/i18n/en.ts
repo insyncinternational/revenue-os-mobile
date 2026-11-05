@@ -889,6 +889,7 @@ export const en = {
   "agency.kpi.replies": "Replies",
   "agency.kpi.meetings": "Meetings booked",
   "agency.kpi.dealsWon": "Deals won",
+  "agency.kpi.fullReport": "Full report",
   "agency.top.replies": "{count} replies",
   "agency.top.won": "{amount} won",
   "agency.health.healthy": "Healthy",

@@ -154,7 +154,7 @@ export default function AgencyHome() {
             }
           />
           <View style={styles.block}>
-            {metrics.length ? <Kpis metrics={metrics} currency={AGENCY_CURRENCY} /> : reports.isError ? <ErrorState message={userMessage(reports.error)} onRetry={() => void reports.refetch()} /> : <SkeletonList rows={2} />}
+            {metrics.length ? <Kpis metrics={metrics} currency={AGENCY_CURRENCY} more={{ label: t("agency.kpi.fullReport"), hint: t("agency.reports.title"), onPress: () => openAgencyReports() }} /> : reports.isError ? <ErrorState message={userMessage(reports.error)} onRetry={() => void reports.refetch()} /> : <SkeletonList rows={2} />}
           </View>
         </Reveal>
 

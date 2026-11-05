@@ -365,6 +365,7 @@ export const az: Readonly<Record<string, string>> = {
   "From lead to win": "Potensial müştəridən qələbəyə",
   "From the contact": "Kontaktdan",
   "Full name": "Ad və soyad",
+  "Full report": "Tam hesabat",
   "Gave {count} credits": "{count} kredit verildi",
   "General": "Ümumi",
   "Get a notification when a lead replies, a meeting is booked or something is assigned to you.": "Lid cavab verəndə, görüş təyin olunanda və ya sizə nəsə təyin ediləndə bildiriş alın.",

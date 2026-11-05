@@ -9,7 +9,7 @@ import type { KpiMetric } from "@/types/home";
 import { AnimatedNumber } from "@/ui/AnimatedNumber";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
-import { CalendarCheck, ICON_STROKE, KanbanSquare, Plus, MessageCircle, Send, ShieldCheck, Target, TrendingDown, TrendingUp, Trophy, Users, type IconComponent } from "@/ui/icons";
+import { ArrowRight, BarChart, CalendarCheck, ICON_STROKE, KanbanSquare, Plus, MessageCircle, Send, ShieldCheck, Target, TrendingDown, TrendingUp, Trophy, Users, type IconComponent } from "@/ui/icons";
 import { Text } from "@/ui/Text";
 import { compareHeights, splitHighlight } from "./charts";
 
@@ -54,8 +54,12 @@ type Fmt = (n: number) => string;
  * The period's numbers as a bento: one wide, brand-tinted card for the number that moved most worth seeing
  * (money first), then compact tiles. Numbers that haven't started say so in words instead of a grey zero.
  */
-/** `onAddDeal`: offered on the pipeline card while there are no open deals (only when the user may add one). */
-export function Kpis({ metrics, currency, onAddDeal }: { metrics: KpiMetric[]; currency: string; onAddDeal?: () => void }) {
+/**
+ * `onAddDeal`: offered on the pipeline card while there are no open deals (only when the user may add one).
+ * `more`: with an odd number of tiles, a tile that opens the full report fills the empty slot, so no tile is
+ * left stretched across the whole row.
+ */
+export function Kpis({ metrics, currency, onAddDeal, more }: { metrics: KpiMetric[]; currency: string; onAddDeal?: () => void; more?: { label: string; hint: string; onPress: () => void } }) {
   const locale = getIntlLocale();
   const { highlight, tiles } = splitHighlight(metrics);
   const fmtFor =
@@ -69,6 +73,7 @@ export function Kpis({ metrics, currency, onAddDeal }: { metrics: KpiMetric[]; c
         {tiles.map((m, i) => (
           <Tile key={m.key} m={m} fmt={fmtFor(m)} index={i} />
         ))}
+        {more && tiles.length % 2 === 1 ? <MoreTile {...more} /> : null}
       </View>
     </View>
   );
@@ -160,6 +165,29 @@ function Tile({ m, fmt, index }: { m: KpiMetric; fmt: Fmt; index: number }) {
   );
 }
 
+/** The last slot of an odd grid: a quiet tile that opens the full report. */
+function MoreTile({ label, hint, onPress }: { label: string; hint: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Card style={styles.cell} contentStyle={[styles.body, styles.more]} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label}. ${hint}`}>
+      <View style={styles.top}>
+        <View style={[styles.icon, { backgroundColor: colors.surfaceTertiary }]}>
+          <BarChart size={15} color={colors.textSecondary} strokeWidth={ICON_STROKE + 0.5} />
+        </View>
+        <Text variant="footnote" weight="medium" tone="muted" numberOfLines={1} style={styles.flex}>
+          {hint}
+        </Text>
+      </View>
+      <View style={styles.moreFoot}>
+        <Text variant="headline" tone="primary" numberOfLines={1} style={styles.flex}>
+          {label}
+        </Text>
+        <ArrowRight size={18} color={colors.primary} strokeWidth={ICON_STROKE + 0.5} />
+      </View>
+    </Card>
+  );
+}
+
 /** The change pill: green up, red down, grey flat. */
 function ChangeChip({ change }: { change: NonNullable<ReturnType<typeof changeLabel>> }) {
   const { colors } = useTheme();
@@ -235,6 +263,8 @@ const styles = StyleSheet.create({
   periods: { gap: space.sm, marginTop: space.xs },
   zeroRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   zeroHint: { marginTop: space.xs },
+  more: { flex: 1, justifyContent: "space-between" },
+  moreFoot: { flexDirection: "row", alignItems: "center", gap: space.xs },
   period: { gap: 4 },
   periodText: { flexDirection: "row", justifyContent: "space-between" },
   track: { height: 8, borderRadius: 4, overflow: "hidden" },

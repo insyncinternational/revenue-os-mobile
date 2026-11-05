@@ -94,8 +94,8 @@ export default function ContactPeek() {
 
             {ctx.data!.deals.length > 0 ? (
               <>
-                <Text variant="footnote" weight="semibold" tone="muted" style={styles.label}>
-                  {t("contacts.deals").toUpperCase()}
+                <Text variant="eyebrow" tone="muted" style={styles.label}>
+                  {t("contacts.deals")}
                 </Text>
                 <Card padded={false}>
                   {ctx.data!.deals.map((d, i) => {
@@ -138,8 +138,8 @@ export default function ContactPeek() {
 
             {ctx.data!.channels.length > 0 ? (
               <>
-                <Text variant="footnote" weight="semibold" tone="muted" style={styles.label}>
-                  {t("peek.lastContacted").toUpperCase()}
+                <Text variant="eyebrow" tone="muted" style={styles.label}>
+                  {t("peek.lastContacted")}
                 </Text>
                 <Card padded={false}>
                   {ctx.data!.channels.map((c, i) => (
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   head: { alignItems: "center", gap: space.sm, paddingBottom: space.lg },
   badges: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: space.xs },
   actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: space.sm, marginTop: space.sm },
-  label: { letterSpacing: 0.4, marginTop: space.md, paddingHorizontal: space.xs },
+  label: { marginTop: space.md, paddingHorizontal: space.xs },
   row: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.lg, borderRadius: radius.lg },
   flex: { flex: 1, minWidth: 0, gap: 2 },
 });

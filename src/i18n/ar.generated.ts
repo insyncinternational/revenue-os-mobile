@@ -365,6 +365,7 @@ export const ar: Readonly<Record<string, string>> = {
   "From lead to win": "من العميل المحتمل إلى الفوز",
   "From the contact": "من جهة الاتصال",
   "Full name": "الاسم الكامل",
+  "Full report": "التقرير الكامل",
   "Gave {count} credits": "تم منح {count} من الأرصدة",
   "General": "عام",
   "Get a notification when a lead replies, a meeting is booked or something is assigned to you.": "تلقَّ إشعارًا عندما يرد عميل محتمل، أو يُحجز اجتماع، أو يُعيَّن لك شيء.",

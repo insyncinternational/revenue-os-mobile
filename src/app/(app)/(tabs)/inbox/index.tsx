@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
+import { CardCell } from "@/ui/CardCell";
 import { showDialog } from "@/ui/Dialog";
 import { FlashList } from "@shopify/flash-list";
 import { userMessage } from "@/api/errors";
@@ -15,14 +16,13 @@ import { useDebounced } from "@/lib/useDebounced";
 import { useOnline } from "@/query/useOnline";
 import { useCan, useModuleEnabled } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
-import { gutter, radius, space } from "@/theme/tokens";
+import { gutter, space } from "@/theme/tokens";
 import type { InboxChannel, InboxFilter, InboxItem } from "@/types/inbox";
 import { channelLabel } from "@/ui/ChannelIcon";
 import { FilterChips, type FilterOption } from "@/ui/Chip";
 import { Archive, Inbox as InboxIcon, Lock, Mail, MailOpen, Search } from "@/ui/icons";
 import { Text } from "@/ui/Text";
 import { SearchBar } from "@/ui/SearchBar";
-import { Divider } from "@/ui/Section";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { ListReveal } from "@/ui/ListReveal";
@@ -222,12 +222,10 @@ function GroupLabel({ group }: { group: InboxGroup }) {
 
 /** A row inside its group's white card: rounded at the group's ends, a hairline between rows. */
 function GroupRow({ entry, children }: { entry: Extract<InboxListEntry<InboxItem>, { kind: "row" }>; children: React.ReactNode }) {
-  const { colors } = useTheme();
   return (
-    <View style={[styles.groupRow, { backgroundColor: colors.surface }, entry.first && styles.groupFirst, entry.last && styles.groupLast]}>
-      {entry.first ? null : <Divider inset={space.md + 2 + 48 + space.md} />}
+    <CardCell first={entry.first} last={entry.last} inset={space.md + 2 + 48 + space.md}>
       {children}
-    </View>
+    </CardCell>
   );
 }
 
@@ -237,7 +235,4 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: gutter },
   footer: { height: space.huge * 2 },
   groupLabel: { paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.sm + 2 },
-  groupRow: { marginHorizontal: gutter, overflow: "hidden" },
-  groupFirst: { borderTopLeftRadius: radius.xl + 4, borderTopRightRadius: radius.xl + 4, paddingTop: space.xs },
-  groupLast: { borderBottomLeftRadius: radius.xl + 4, borderBottomRightRadius: radius.xl + 4, paddingBottom: space.xs },
 });

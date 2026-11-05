@@ -9,13 +9,14 @@ import { getIntlLocale, t } from "@/i18n";
 import { count, relativeTime } from "@/lib/format";
 import { useOnline } from "@/query/useOnline";
 import { useTheme } from "@/theme/ThemeProvider";
-import { gutter, space } from "@/theme/tokens";
+import { gutter, radius, space } from "@/theme/tokens";
 import type { Transfer } from "@/types/agency";
 import { Button } from "@/ui/Button";
-import { ContrastBlock } from "@/ui/ContrastBlock";
+import { CardCell } from "@/ui/CardCell";
+import { accentGradient, Sheen } from "@/ui/Gloss";
 import { ArrowUpCircle, BarChart, CircleMinus, Coins, ICON_STROKE, Sparkles } from "@/ui/icons";
 import { ListRow } from "@/ui/ListRow";
-import { Divider, SectionHeader } from "@/ui/Section";
+import { SectionHeader } from "@/ui/Section";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
@@ -75,36 +76,38 @@ export default function AgencyCredits() {
         onEndReached={() => {
           if (credits.hasNextPage && !credits.isFetchingNextPage) void credits.fetchNextPage();
         }}
-        ItemSeparatorComponent={RowDivider}
         ListHeaderComponent={
           <View>
             <AgencyHeader area="invoices" title={t("agency.tabs.credits")} summary={t("agency.credits.summary")} />
             <View style={styles.pad}>
-              <ContrastBlock>
-                <Text variant="footnote" style={{ color: colors.onContrastMuted }}>
+              {/* The same glossy accent card as the pool on Home: one look for the same number. */}
+              <View style={[styles.pool, { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}>
+                <Sheen />
+                <Text variant="footnote" style={{ color: colors.onPrimaryMuted }}>
                   {t("agency.home.poolLabel")}
                 </Text>
-                <Text variant="display" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.onContrast }}>
+                <Text variant="display" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.onPrimary }}>
                   {pool != null ? count(pool, locale) : "—"}
                 </Text>
                 <View style={styles.actions}>
-                  {canBuy ? <Button label={t("agency.credits.buy")} icon={ArrowUpCircle} size="sm" variant="secondary" onPress={openBuyCredits} /> : null}
+                  {canBuy ? <Button label={t("agency.credits.buy")} icon={ArrowUpCircle} size="sm" onPress={openBuyCredits} /> : null}
                   {canGive ? <Button label={t("agency.credits.give")} icon={Sparkles} size="sm" variant="secondary" onPress={() => openMoveCredits()} /> : null}
                   <Button label={t("agency.credits.usage")} icon={BarChart} size="sm" variant="secondary" onPress={() => openAgencyReports("usage")} />
                 </View>
-              </ContrastBlock>
+              </View>
             </View>
             <SectionHeader title={t("agency.ledger.title")} />
           </View>
         }
         ListEmptyComponent={empty}
         ListFooterComponent={credits.isFetchingNextPage ? <SkeletonList rows={2} /> : <View style={styles.footer} />}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const kind = transferKind(item);
           const out = kind === "given";
           const Icon = kind === "takenBack" ? CircleMinus : out ? Sparkles : ArrowUpCircle;
           return (
-            <ListRow
+            <CardCell first={index === 0} last={index === rows.length - 1} inset={ROW_INSET}>
+              <ListRow
                 title={label(item)}
                 subtitle={[item.note, item.created_at ? relativeTime(item.created_at, locale) : null].filter(Boolean).join(" · ")}
                 leading={
@@ -121,6 +124,7 @@ export default function AgencyCredits() {
                 }
                 onPress={item.client ? () => openAgencyClient(item.client!.id) : undefined}
               />
+            </CardCell>
           );
         }}
       />
@@ -129,13 +133,13 @@ export default function AgencyCredits() {
   );
 }
 
-function RowDivider() {
-  return <Divider inset={gutter + 36 + space.md} />;
-}
+/** The hairline between ledger rows starts under the text (row padding + icon + gap). */
+const ROW_INSET = gutter + 36 + space.md;
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   pad: { paddingHorizontal: gutter },
+  pool: { borderRadius: radius.xxl, padding: space.xl, overflow: "hidden" },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.md },
   icon: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   footer: { height: 96 },

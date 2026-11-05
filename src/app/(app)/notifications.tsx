@@ -137,8 +137,8 @@ export default function Notifications() {
           ListFooterComponent={feed.isFetchingNextPage ? <SkeletonList rows={2} /> : <View style={styles.footer} />}
           renderItem={({ item }) =>
             item.type === "header" ? (
-              <Text variant="footnote" weight="semibold" tone="muted" style={styles.day} accessibilityRole="header">
-                {dayLabel(item).toUpperCase()}
+              <Text variant="eyebrow" tone="muted" style={styles.day} accessibilityRole="header">
+                {dayLabel(item)}
               </Text>
             ) : (
               <NotificationItem row={item.row} locale={locale} onPress={open} />
@@ -189,7 +189,7 @@ function NotificationItem({ row, locale, onPress }: { row: NotificationRow; loca
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   filters: { paddingTop: space.xs, paddingBottom: space.sm },
-  day: { paddingHorizontal: gutter + space.xs, paddingTop: space.lg, paddingBottom: space.sm, letterSpacing: 0.4 },
+  day: { paddingHorizontal: gutter + space.xs, paddingTop: space.lg, paddingBottom: space.sm },
   item: { flexDirection: "row", alignItems: "flex-start", gap: space.md, marginHorizontal: space.sm, marginBottom: space.xs, padding: space.md, borderRadius: radius.lg, borderWidth: 1 },
   icon: { width: 38, height: 38, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   body: { flex: 1, minWidth: 0, gap: 2 },

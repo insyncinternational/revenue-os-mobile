@@ -11,10 +11,10 @@ import { useDebounced } from "@/lib/useDebounced";
 import { useOnline } from "@/query/useOnline";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
+import { CardCell } from "@/ui/CardCell";
 import { Activity } from "@/ui/icons";
 import { ListRow } from "@/ui/ListRow";
 import { SearchBar } from "@/ui/SearchBar";
-import { Divider } from "@/ui/Section";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 
@@ -44,7 +44,6 @@ export default function AgencyActivityScreen() {
           onEndReached={() => {
             if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();
           }}
-          ItemSeparatorComponent={RowDivider}
           ListHeaderComponent={
             <View style={styles.search}>
               <SearchBar value={search} onChangeText={setSearch} placeholder={t("agency.activity.search")} />
@@ -62,24 +61,22 @@ export default function AgencyActivityScreen() {
             )
           }
           ListFooterComponent={feed.isFetchingNextPage ? <SkeletonList rows={2} /> : <View style={styles.footer} />}
-          renderItem={({ item }) => (
-            <ListRow
-              title={item.summary}
-              titleLines={2}
-              subtitle={[item.actor?.name || item.actor?.email, item.at ? dateTime(item.at, locale) : null].filter(Boolean).join(" · ")}
-              subtitleLines={1}
-              chevron={item.client_id != null}
-              onPress={item.client_id != null ? () => openAgencyClient(item.client_id!) : undefined}
-            />
+          renderItem={({ item, index }) => (
+            <CardCell first={index === 0} last={index === rows.length - 1} inset={gutter}>
+              <ListRow
+                title={item.summary}
+                titleLines={2}
+                subtitle={[item.actor?.name || item.actor?.email, item.at ? dateTime(item.at, locale) : null].filter(Boolean).join(" · ")}
+                subtitleLines={1}
+                chevron={item.client_id != null}
+                onPress={item.client_id != null ? () => openAgencyClient(item.client_id!) : undefined}
+              />
+            </CardCell>
           )}
         />
       </View>
     </>
   );
-}
-
-function RowDivider() {
-  return <Divider inset={gutter} />;
 }
 
 const styles = StyleSheet.create({
