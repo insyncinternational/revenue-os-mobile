@@ -96,6 +96,14 @@ export function dateTime(value: Date | string | number, locale = "en-US"): strin
   return new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(d);
 }
 
+/**
+ * Pure: a server message with a raw timestamp in it ("booked a meeting for 2026-11-06T05:00:00.000Z") reads as a
+ * date instead ("booked a meeting for Fri, 6 Nov, 9:00 AM"), in the phone's time zone.
+ */
+export function readableDates(text: string, locale = "en-US"): string {
+  return text.replace(/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})\b/g, (iso) => dateTime(iso, locale) || iso);
+}
+
 export function timeOfDay(value: Date | string | number, locale = "en-US"): string {
   const d = toDate(value);
   if (Number.isNaN(d.getTime())) return "";

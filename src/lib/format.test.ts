@@ -1,4 +1,4 @@
-import { count, initials, money, percentChange, relativeTime, sentenceCase, stableHash } from "./format";
+import { count, initials, money, percentChange, readableDates, relativeTime, sentenceCase, stableHash } from "./format";
 
 const now = new Date(2026, 10, 1, 15, 0, 0); // Sun 1 Nov 2026, 15:00 local
 
@@ -72,5 +72,16 @@ describe("sentenceCase", () => {
     expect(sentenceCase("Reply With AI")).toBe("Reply with AI");
     expect(sentenceCase("Open WhatsApp")).toBe("Open WhatsApp");
     expect(sentenceCase("Pipeline value")).toBe("Pipeline value");
+  });
+});
+
+describe("readableDates", () => {
+  it("turns a raw timestamp in a message into a date and time", () => {
+    const out = readableDates("Asad booked a meeting for 2026-11-06T05:00:00.000Z.", "en-US");
+    expect(out).not.toContain("2026-11-06T");
+    expect(out).toMatch(/^Asad booked a meeting for \w{3}, \w{3} \d{1,2}, \d{1,2}:\d{2}\s?[AP]M\.$/);
+  });
+  it("leaves other text alone", () => {
+    expect(readableDates("Invoice INV-0001 was paid on 2026-11-05", "en-US")).toBe("Invoice INV-0001 was paid on 2026-11-05");
   });
 });

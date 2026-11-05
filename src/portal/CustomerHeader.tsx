@@ -8,6 +8,8 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
 import { Avatar } from "@/ui/Avatar";
 import { Backdrop } from "@/ui/Backdrop";
+import { HeaderAction } from "@/ui/HeaderAction";
+import type { IconComponent } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Text } from "@/ui/Text";
 import { useActivePortal } from "./portalSession";
@@ -16,8 +18,23 @@ import { useActivePortal } from "./portalSession";
  * The header of every customer tab: the business's logo and name (the portal is theirs, not GrowthReach.ai's), the
  * customer on the right (opens Me), then a bold title and one line of status.
  */
-/** `greeting`: Home's "Good afternoon," with the first name large under it, instead of the plain title. */
-export function CustomerHeader({ title, summary, greeting, children }: { title: string; summary?: string | null; greeting?: { hello: string; name?: string }; children?: ReactNode }) {
+/**
+ * `greeting`: Home's "Good afternoon," with the first name large under it, instead of the plain title. `action`: the
+ * tab's main "add" as the round ink button beside the title, as on every staff tab (TabHeader).
+ */
+export function CustomerHeader({
+  title,
+  summary,
+  greeting,
+  action,
+  children,
+}: {
+  title: string;
+  summary?: string | null;
+  greeting?: { hello: string; name?: string };
+  action?: { label: string; onPress: () => void; icon?: IconComponent };
+  children?: ReactNode;
+}) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const portal = useActivePortal();
@@ -28,7 +45,11 @@ export function CustomerHeader({ title, summary, greeting, children }: { title: 
       <Backdrop area="today" />
       <View style={styles.row}>
         <View style={styles.business} accessible accessibilityLabel={business}>
-          <Avatar name={business || "?"} uri={portal?.branding?.logo_url} size={36} />
+          <Avatar
+            name={business || "?"}
+            uri={portal?.branding?.logo_url}
+            size={36}
+          />
           <Text variant="headline" numberOfLines={1} style={styles.flex}>
             {business}
           </Text>
@@ -43,28 +64,45 @@ export function CustomerHeader({ title, summary, greeting, children }: { title: 
           <Avatar name={me} size={40} accent />
         </PressableScale>
       </View>
-      <View style={styles.titles}>
-        {greeting ? (
-          <View accessible accessibilityRole="header" accessibilityLabel={title}>
-            <Text variant="callout" tone="muted">
-              {greeting.name ? `${greeting.hello},` : greeting.hello}
-            </Text>
-            {greeting.name ? (
-              <Text variant="display" numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.text }}>
-                {`${greeting.name}.`}
+      <View style={styles.titleRow}>
+        <View style={styles.titles}>
+          {greeting ? (
+            <View
+              accessible
+              accessibilityRole="header"
+              accessibilityLabel={title}
+            >
+              <Text variant="callout" tone="muted">
+                {greeting.name ? `${greeting.hello},` : greeting.hello}
               </Text>
-            ) : null}
-          </View>
-        ) : (
-          <Text variant="largeTitle" accessibilityRole="header" numberOfLines={2} style={{ color: colors.text }}>
-            {title}
-          </Text>
-        )}
-        {summary ? (
-          <Text variant="subhead" tone="muted" numberOfLines={2}>
-            {summary}
-          </Text>
-        ) : null}
+              {greeting.name ? (
+                <Text
+                  variant="display"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  style={{ color: colors.text }}
+                >
+                  {`${greeting.name}.`}
+                </Text>
+              ) : null}
+            </View>
+          ) : (
+            <Text
+              variant="largeTitle"
+              accessibilityRole="header"
+              numberOfLines={2}
+              style={{ color: colors.text }}
+            >
+              {title}
+            </Text>
+          )}
+          {summary ? (
+            <Text variant="subhead" tone="muted" numberOfLines={2}>
+              {summary}
+            </Text>
+          ) : null}
+        </View>
+        {action ? <HeaderAction {...action} /> : null}
       </View>
       {children}
     </View>
@@ -73,8 +111,20 @@ export function CustomerHeader({ title, summary, greeting, children }: { title: 
 
 const styles = StyleSheet.create({
   band: { paddingHorizontal: gutter, paddingBottom: space.lg, gap: space.lg },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md },
-  business: { flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1, minWidth: 0 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: space.md,
+  },
+  business: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
+    flex: 1,
+    minWidth: 0,
+  },
   flex: { flexShrink: 1 },
-  titles: { gap: 2 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: space.md },
+  titles: { flex: 1, minWidth: 0, gap: 2 },
 });

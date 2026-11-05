@@ -17,7 +17,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { channelColors, gutter, radius, space, type Palette } from "@/theme/tokens";
 import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Badge } from "@/ui/Badge";
-import { ActionTiles, type TileAction } from "@/ui/ActionTiles";
+import { ACTION_CIRCLE, ActionTiles, type TileAction } from "@/ui/ActionTiles";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { Briefcase, Building, CalendarDays, CalendarPlus, ChevronRight, ICON_STROKE, KanbanSquare, ListTodo, Mail, MessageSquare, Pencil, Phone, Plus, Receipt, StickyNote, type IconComponent } from "@/ui/icons";
@@ -93,7 +93,7 @@ export default function ContactScreen() {
   const chipList = c ? [c.region, c.industry].filter((x): x is string => !!x && !!x.trim()) : [];
   const scoreWord = c?.score != null ? (c.tier ? tierWord(c.tier) : t(SCORE_WORD[scoreTone(c.score)])) : "";
 
-  // Ways to reach them, best first: the first tile is ink, the rest white.
+  // Ways to reach them, best first.
   const reach = (
     [
       phone && { key: "call", label: t("contacts.call"), icon: Phone, run: () => dial(phone, id, name) },
@@ -385,8 +385,8 @@ const SCORE_WORD = { danger: "contacts.cold", warning: "contacts.warm", success:
 
 
 type Tone = { bg: keyof Palette; fg: keyof Palette };
-// Mono look: every detail icon on the same calm grey.
-const NEUTRAL: Tone = { bg: "primarySubtle", fg: "primary" };
+// Every detail icon on the same calm grey, as in More's rows.
+const NEUTRAL: Tone = { bg: "surfaceSecondary", fg: "text" };
 const TONES = {
   info: NEUTRAL,
   success: NEUTRAL,
@@ -407,7 +407,8 @@ function Detail({ icon: Icon, tone, label, value, onPress, last }: { icon: IconC
           <Text variant="caption" tone="muted">
             {label}
           </Text>
-          <Text variant="body" tone={onPress ? "primary" : "default"} onPress={onPress} selectable numberOfLines={2}>
+          {/* Plain text even when it can be tapped (email, phone): the brand colour is kept for highlights. */}
+          <Text variant="body" onPress={onPress} selectable numberOfLines={2}>
             {value}
           </Text>
         </View>
@@ -417,16 +418,50 @@ function Detail({ icon: Icon, tone, label, value, onPress, last }: { icon: IconC
   );
 }
 
+/** The contact page's own shape while it loads: name, role, the action card and the details card. */
 function ProfileSkeleton() {
+  const { colors } = useTheme();
   return (
-    <View style={styles.profile}>
-      <Skeleton width={220} height={40} />
-      <Skeleton width={160} height={16} />
+    <View accessibilityLabel={t("state.loading")} accessibilityRole="progressbar">
+      <View style={styles.profile}>
+        <Skeleton width={220} height={40} />
+        <Skeleton width={160} height={16} />
+        <View style={styles.skeletonChip}>
+          <Skeleton width={84} height={30} round />
+        </View>
+      </View>
+      <View style={[styles.skeletonCard, { backgroundColor: colors.surface }]}>
+        <View style={styles.skeletonActions}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={styles.skeletonAction}>
+              <Skeleton width={ACTION_CIRCLE} height={ACTION_CIRCLE} round />
+              <Skeleton width={48} height={10} />
+            </View>
+          ))}
+        </View>
+      </View>
+      <View style={[styles.skeletonCard, styles.skeletonDetails, { backgroundColor: colors.surface }]}>
+        {[0, 1, 2].map((i) => (
+          <View key={i} style={styles.skeletonRow}>
+            <Skeleton width={36} height={36} />
+            <View style={styles.flex}>
+              <Skeleton width={70} height={10} />
+              <Skeleton width="70%" height={16} />
+            </View>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  skeletonChip: { marginTop: space.sm },
+  skeletonCard: { marginHorizontal: gutter, borderRadius: radius.xl + 4, marginBottom: space.md },
+  skeletonActions: { flexDirection: "row", paddingVertical: space.lg },
+  skeletonAction: { flex: 1, alignItems: "center", gap: space.sm },
+  skeletonDetails: { paddingVertical: space.sm },
+  skeletonRow: { flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
   profile: { gap: space.xs + 2, paddingTop: space.md, paddingBottom: space.xl, paddingHorizontal: gutter },
   name: { fontSize: 40, lineHeight: 44 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.xs + 2, marginTop: space.sm },

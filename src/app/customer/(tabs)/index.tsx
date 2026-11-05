@@ -16,12 +16,11 @@ import { gutter, radius, space } from "@/theme/tokens";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { HeroCard } from "@/ui/HeroCard";
-import { CalendarPlus, FileText, ICON_STROKE, MessageCircle, Receipt, Video, type IconComponent } from "@/ui/icons";
-import { accentGradient, Sheen } from "@/ui/Gloss";
-import { PressableScale } from "@/ui/PressableScale";
+import { CalendarPlus, FileText, MessageCircle, Receipt, Video, type IconComponent } from "@/ui/icons";
 import { ListRow } from "@/ui/ListRow";
 import { Reveal } from "@/ui/Reveal";
 import { Screen } from "@/ui/Screen";
+import { Skeleton } from "@/ui/Skeleton";
 import { Divider, SectionHeader } from "@/ui/Section";
 import { OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
@@ -67,45 +66,32 @@ export default function CustomerHome() {
 
       <View style={styles.pad}>
         <Reveal index={section++}>
-          {next ? (
-            <HeroCard>
-              <Text variant="footnote" weight="semibold" style={{ color: colors.onHeroMuted }}>
-                {t("portal.home.next")}
-              </Text>
-              <Text variant="title" numberOfLines={2} style={{ color: colors.onHero }}>
-                {next.title}
-              </Text>
-              <Text variant="callout" style={{ color: colors.onHero }}>
-                {next.starts_at ? dateTime(next.starts_at, locale) : ""}
-              </Text>
-              <View style={styles.heroActions}>
-                {/* On the colour: the main action is the white pill, the other one glass (as on the credit pool card). */}
-                {next.join_url ? <Button label={t("portal.appt.join")} icon={Video} variant="onFill" size="sm" onPress={() => void Linking.openURL(next.join_url!)} /> : null}
-                <Button label={t("portal.appt.reschedule")} variant={next.join_url ? "glass" : "onFill"} size="sm" onPress={() => openBook(next.id)} />
-              </View>
-            </HeroCard>
+          {/* One card in both states: the same label pill, title, line and white button on the brand colour. */}
+          {!meetings.data && meetings.isPending ? (
+            <Skeleton width="100%" height={196} />
           ) : (
-            // No appointment yet: the glossy accent card (the screen's hero), inviting a booking.
-            <View style={[styles.accent, { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}>
-              <Sheen />
-              <View style={[styles.tag, { backgroundColor: colors.primaryTrack }]}>
-                <Text variant="eyebrow" style={{ color: colors.onPrimary }}>
+            <HeroCard>
+              <View style={[styles.tag, { backgroundColor: colors.heroGlass }]}>
+                <Text variant="eyebrow" style={{ color: colors.onHero }}>
                   {t("portal.home.next")}
                 </Text>
               </View>
-              <Text variant="title" style={[styles.accentTitle, { color: colors.onPrimary }]}>
-                {t("portal.home.noNext")}
+              <Text variant="title" numberOfLines={2} style={[styles.heroTitle, { color: colors.onHero }]}>
+                {next ? next.title : t("portal.home.noNext")}
               </Text>
-              <Text variant="subhead" style={{ color: colors.onPrimaryMuted }}>
-                {t("portal.home.noNextHint")}
+              <Text variant="callout" style={{ color: next ? colors.onHero : colors.onHeroMuted }}>
+                {next ? (next.starts_at ? dateTime(next.starts_at, locale) : "") : t("portal.home.noNextHint")}
               </Text>
-              <PressableScale onPress={() => openBook()} accessibilityRole="button" accessibilityLabel={t("portal.quick.book")} scaleTo={0.97} style={[styles.bookButton, { backgroundColor: colors.ink }]}>
-                <CalendarPlus size={18} color={colors.onInk} strokeWidth={ICON_STROKE + 0.5} />
-                <Text variant="callout" weight="semibold" style={{ color: colors.onInk }}>
-                  {t("portal.quick.book")}
-                </Text>
-              </PressableScale>
-            </View>
+              <View style={styles.heroActions}>
+                {/* On the colour: the main action is the white pill, the other one glass (as on the credit pool card). */}
+                {next?.join_url ? <Button label={t("portal.appt.join")} icon={Video} variant="onFill" size="sm" onPress={() => void Linking.openURL(next.join_url!)} /> : null}
+                {next ? (
+                  <Button label={t("portal.appt.reschedule")} variant={next.join_url ? "glass" : "onFill"} size="sm" onPress={() => openBook(next.id)} />
+                ) : (
+                  <Button label={t("portal.quick.book")} icon={CalendarPlus} variant="onFill" size="sm" onPress={() => openBook()} />
+                )}
+              </View>
+            </HeroCard>
           )}
         </Reveal>
         <Reveal index={section++}>
@@ -155,9 +141,7 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: gutter, gap: space.md },
   card: { marginHorizontal: gutter },
   heroActions: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.md },
-  accent: { borderRadius: radius.xxl, padding: space.xl, gap: space.xs, overflow: "hidden" },
-  tag: { alignSelf: "flex-start", paddingHorizontal: space.sm + 2, paddingVertical: 5, borderRadius: radius.pill, marginBottom: space.sm },
-  accentTitle: { fontSize: 26, lineHeight: 31, letterSpacing: -0.7 },
-  bookButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.sm, height: 52, borderRadius: radius.pill, marginTop: space.lg },
+  tag: { alignSelf: "flex-start", paddingHorizontal: space.sm + 2, paddingVertical: 5, borderRadius: radius.pill, marginBottom: space.xs },
+  heroTitle: { fontSize: 26, lineHeight: 31, letterSpacing: -0.7 },
   footer: { height: space.huge },
 });

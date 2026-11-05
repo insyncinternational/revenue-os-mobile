@@ -18,7 +18,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { RewriteMode, WhatsAppAccountOption } from "@/types/inbox";
 import { Avatar } from "@/ui/Avatar";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Banner } from "@/ui/Banner";
 import { Button } from "@/ui/Button";
 import { ChannelGlyph, channelLabel } from "@/ui/ChannelIcon";
@@ -236,7 +236,6 @@ function ContactHeader({ name, email, phone, subject, onDetails }: { name: strin
   const { colors } = useTheme();
   return (
     <View style={styles.contactWrap}>
-      <Backdrop area="inbox" underBar />
       <View style={[styles.contact, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Avatar name={name} size={44} />
         <View style={styles.contactText}>

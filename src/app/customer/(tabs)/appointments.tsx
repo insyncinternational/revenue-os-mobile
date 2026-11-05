@@ -16,6 +16,7 @@ import { Badge } from "@/ui/Badge";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { CalendarDays, CalendarPlus, Video } from "@/ui/icons";
+import { RowIcon } from "@/ui/RowIcon";
 import { ListRow } from "@/ui/ListRow";
 import { Screen } from "@/ui/Screen";
 import { Divider, SectionHeader } from "@/ui/Section";
@@ -37,9 +38,11 @@ export default function CustomerAppointments() {
 
   return (
     <Screen contentInsetAdjustmentBehavior="never" onRefresh={() => void meetings.refetch()} refreshing={meetings.isRefetching}>
-      <CustomerHeader title={t("portal.tabs.appointments")} summary={upcoming.length ? t("portal.appt.upcomingCount", { count: upcoming.length }) : t("portal.appt.summary")}>
-        <Button label={t("portal.quick.book")} icon={CalendarPlus} onPress={() => openBook()} />
-      </CustomerHeader>
+      <CustomerHeader
+        title={t("portal.tabs.appointments")}
+        summary={upcoming.length ? t("portal.appt.upcomingCount", { count: upcoming.length }) : t("portal.appt.summary")}
+        action={{ label: t("portal.quick.book"), icon: CalendarPlus, onPress: () => openBook() }}
+      />
       {!online ? <OfflineBanner /> : null}
 
       {!meetings.data ? (
@@ -54,11 +57,11 @@ export default function CustomerAppointments() {
               <View style={styles.list}>
                 {upcoming.map((m) => (
                   <Card key={m.id} contentStyle={styles.appt}>
-                    <ListRow title={m.title} subtitle={m.starts_at ? dateTime(m.starts_at, locale) : undefined} leading={<CalendarDays size={22} />} />
+                    <ListRow title={m.title} subtitle={m.starts_at ? dateTime(m.starts_at, locale) : undefined} leading={<RowIcon icon={CalendarDays} />} />
                     <View style={styles.actions}>
                       {m.join_url ? <Button label={t("portal.appt.join")} icon={Video} size="sm" onPress={() => void Linking.openURL(m.join_url!)} /> : null}
                       <Button label={t("portal.appt.reschedule")} size="sm" variant="secondary" onPress={() => openBook(m.id)} />
-                      <Button label={t("portal.appt.cancel")} size="sm" variant="ghost" loading={cancel.isPending && cancel.variables === m.id} onPress={() => void askCancel(m)} />
+                      <Button label={t("portal.appt.cancel")} size="sm" variant="danger" loading={cancel.isPending && cancel.variables === m.id} onPress={() => void askCancel(m)} />
                     </View>
                   </Card>
                 ))}

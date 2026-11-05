@@ -6,7 +6,7 @@ import { userMessage } from "@/api/errors";
 import { categoryOf, groupByDay, type FeedItem } from "@/features/notifications/group";
 import { useMarkAllRead, useMarkRead, useNotificationFeed, type NotifFilter } from "@/features/notifications/useNotifications";
 import { getIntlLocale, t } from "@/i18n";
-import { relativeTime } from "@/lib/format";
+import { relativeTime, readableDates } from "@/lib/format";
 import { haptics } from "@/lib/haptics";
 import { appLinkFor } from "@/lib/links";
 import { go, openApproval, openConversation, openMeeting } from "@/lib/navigate";
@@ -15,7 +15,7 @@ import { useOnline } from "@/query/useOnline";
 import { useSession } from "@/session/sessionStore";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space, type Palette } from "@/theme/tokens";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { NotificationRow } from "@/types/notifications";
 import { FilterChips } from "@/ui/Chip";
 import { BellOff, Building, Calendar, CheckCheck, CircleAlert, ICON_STROKE, KanbanSquare, Link, MessageCircle, Receipt, ShieldCheck, Sparkles, Users, type IconComponent } from "@/ui/icons";
@@ -27,19 +27,19 @@ import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
 
 const CATEGORY: Record<string, { icon: IconComponent; bg: keyof Palette; fg: keyof Palette }> = {
-  inbox: { icon: MessageCircle, bg: "primarySubtle", fg: "primary" },
-  assignment: { icon: Users, bg: "primarySubtle", fg: "primary" },
-  meeting: { icon: Calendar, bg: "primarySubtle", fg: "primary" },
-  crm: { icon: KanbanSquare, bg: "primarySubtle", fg: "primary" },
-  lead: { icon: Users, bg: "primarySubtle", fg: "primary" },
-  ai_sdr: { icon: Sparkles, bg: "primarySubtle", fg: "primary" },
-  ai_studio: { icon: Sparkles, bg: "primarySubtle", fg: "primary" },
-  team: { icon: Building, bg: "surfaceTertiary", fg: "textSecondary" },
+  inbox: { icon: MessageCircle, bg: "surfaceSecondary", fg: "text" },
+  assignment: { icon: Users, bg: "surfaceSecondary", fg: "text" },
+  meeting: { icon: Calendar, bg: "surfaceSecondary", fg: "text" },
+  crm: { icon: KanbanSquare, bg: "surfaceSecondary", fg: "text" },
+  lead: { icon: Users, bg: "surfaceSecondary", fg: "text" },
+  ai_sdr: { icon: Sparkles, bg: "surfaceSecondary", fg: "text" },
+  ai_studio: { icon: Sparkles, bg: "surfaceSecondary", fg: "text" },
+  team: { icon: Building, bg: "surfaceSecondary", fg: "text" },
   // Your account (sign-in, password, email verified): not a warning, just news about you.
-  account: { icon: ShieldCheck, bg: "primarySubtle", fg: "primary" },
-  integration: { icon: Link, bg: "primarySubtle", fg: "primary" },
-  billing: { icon: Receipt, bg: "primarySubtle", fg: "primary" },
-  system: { icon: CircleAlert, bg: "surfaceTertiary", fg: "textSecondary" },
+  account: { icon: ShieldCheck, bg: "surfaceSecondary", fg: "text" },
+  integration: { icon: Link, bg: "surfaceSecondary", fg: "text" },
+  billing: { icon: Receipt, bg: "surfaceSecondary", fg: "text" },
+  system: { icon: CircleAlert, bg: "surfaceSecondary", fg: "text" },
 };
 
 export default function Notifications() {
@@ -108,7 +108,6 @@ export default function Notifications() {
           }}
           ListHeaderComponent={
             <View style={styles.filters}>
-              <Backdrop area="account" underBar />
               <FilterChips<NotifFilter>
                 value={filter}
                 onChange={setFilter}
@@ -160,8 +159,8 @@ function NotificationItem({ row, locale, onPress }: { row: NotificationRow; loca
       onPress={() => onPress(row)}
       scaleTo={0.985}
       accessibilityLabel={[unread ? t("state.unread") : null, row.title, row.message].filter(Boolean).join(". ")}
-      // Unread rows on a soft brand tint (with the dot); read ones sit flat on the page.
-      style={[styles.item, { backgroundColor: unread ? colors.primarySubtle : "transparent", borderColor: "transparent" }]}
+      // Every row a white card (as in the other lists); unread shows as the bold title and the dot, not a tint.
+      style={[styles.item, { backgroundColor: colors.surface, borderColor: "transparent" }]}
     >
       <View style={[styles.icon, { backgroundColor: colors[c.bg] }]}>
         <Icon size={18} color={colors[c.fg]} strokeWidth={ICON_STROKE + 0.25} />
@@ -177,7 +176,7 @@ function NotificationItem({ row, locale, onPress }: { row: NotificationRow; loca
         </View>
         {row.message ? (
           <Text variant="subhead" tone="muted" numberOfLines={2}>
-            {row.message}
+            {readableDates(row.message, locale)}
           </Text>
         ) : null}
       </View>

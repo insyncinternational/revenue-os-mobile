@@ -78,7 +78,7 @@ export default function More() {
           <HeroCard onPress={() => router.push("/profile")} accessibilityLabel={[user?.name, user?.email, t("profile.edit")].filter(Boolean).join(". ")}>
             <View style={styles.profileTop}>
               <View style={[styles.avatarRing, { borderColor: colors.heroGlassBorder }]}>
-                <Avatar name={user?.name || user?.email || "?"} uri={user?.avatar_url} size={60} />
+                <Avatar name={user?.name || user?.email || "?"} uri={user?.avatar_url} size={60} onHero />
               </View>
               <View style={styles.profileText}>
                 <Text variant="title" numberOfLines={1} style={{ color: colors.onHero }}>

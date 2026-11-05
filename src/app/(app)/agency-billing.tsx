@@ -16,6 +16,7 @@ import { Badge } from "@/ui/Badge";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { ArrowUpCircle, CreditCard, ExternalLink } from "@/ui/icons";
+import { RowIcon } from "@/ui/RowIcon";
 import { ListRow } from "@/ui/ListRow";
 import { Screen } from "@/ui/Screen";
 import { Divider, SectionHeader } from "@/ui/Section";
@@ -130,7 +131,7 @@ export default function AgencyBillingScreen() {
               <ListRow
                 title={t("agency.billing.portal")}
                 subtitle={t("agency.billing.portalHint")}
-                leading={<CreditCard size={20} />}
+                leading={<RowIcon icon={CreditCard} />}
                 trailing={<ExternalLink size={18} />}
                 onPress={opening ? undefined : () => void openPortal()}
               />

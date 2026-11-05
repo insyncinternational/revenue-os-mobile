@@ -11,7 +11,7 @@ import { openApproval } from "@/lib/navigate";
 import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { gutter, space } from "@/theme/tokens";
 import { FilterChips } from "@/ui/Chip";
 import { ListReveal } from "@/ui/ListReveal";
@@ -63,7 +63,6 @@ export default function ApprovalsScreen() {
           ListHeaderComponent={
             draftsOn ? (
               <View style={styles.filters}>
-                <Backdrop area="today" underBar />
                 <FilterChips<Filter>
                   value={filter}
                   onChange={setFilter}

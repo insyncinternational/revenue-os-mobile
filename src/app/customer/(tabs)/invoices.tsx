@@ -13,6 +13,7 @@ import { Badge, type BadgeTone } from "@/ui/Badge";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { FileText, Receipt } from "@/ui/icons";
+import { RowIcon } from "@/ui/RowIcon";
 import { ListRow } from "@/ui/ListRow";
 import { Screen } from "@/ui/Screen";
 import { Divider, SectionHeader } from "@/ui/Section";
@@ -48,7 +49,7 @@ export default function CustomerInvoices() {
         <ListRow
           title={t("portal.inv.number", { number: i.number })}
           subtitle={[amount(i, i.total_cents), i.paid_at ? t("portal.inv.paidOn", { date: dateTime(i.paid_at, locale) }) : i.due_date ? t("portal.inv.due", { date: dateTime(i.due_date, locale) }) : null].filter(Boolean).join(" · ")}
-          leading={<Receipt size={22} />}
+          leading={<RowIcon icon={Receipt} />}
           trailing={<Badge label={t(badge.key)} tone={badge.tone} />}
           onPress={i.view_url ? () => open(i.view_url!) : i.pay_url ? () => open(i.pay_url!) : undefined}
         />

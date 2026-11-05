@@ -12,6 +12,7 @@ import { gutter, space } from "@/theme/tokens";
 import type { PortalDocument } from "@/types/portal";
 import { Card } from "@/ui/Card";
 import { FileText } from "@/ui/icons";
+import { RowIcon } from "@/ui/RowIcon";
 import { ListRow } from "@/ui/ListRow";
 import { Screen } from "@/ui/Screen";
 import { Divider } from "@/ui/Section";
@@ -76,7 +77,7 @@ export default function CustomerDocuments() {
                 <ListRow
                   title={d.file_name}
                   subtitle={[fileSize(d.file_size), d.created_at ? relativeTime(d.created_at, locale) : null].filter(Boolean).join(" · ")}
-                  leading={<FileText size={22} />}
+                  leading={<RowIcon icon={FileText} />}
                   trailing={busy === d.id ? <ActivityIndicator /> : undefined}
                   chevron={busy !== d.id}
                   onPress={busy ? undefined : () => void open(d)}

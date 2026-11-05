@@ -16,7 +16,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { Invoice } from "@/types/invoice";
 import { AnimatedNumber } from "@/ui/AnimatedNumber";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Badge } from "@/ui/Badge";
 import { Banner } from "@/ui/Banner";
 import { ActionTiles, type TileAction as BarAction } from "@/ui/ActionTiles";
@@ -63,7 +63,6 @@ export default function InvoiceScreen() {
           {query.isPending ? (
             <DelayedFallback>
               <View style={styles.hero}>
-                <Backdrop area="invoices" underBar />
                 <Skeleton width={80} height={20} />
                 <Skeleton width={200} height={34} />
                 <Skeleton width={150} height={16} />
@@ -134,7 +133,6 @@ export default function InvoiceScreen() {
         refreshing={query.isRefetching}
       >
         <View style={styles.hero}>
-          <Backdrop area="invoices" underBar />
           {/* The amount is the one highlight: a dark block with the status, who it's for and how much is paid. */}
           <ContrastBlock>
             <View style={styles.badgeRow}>

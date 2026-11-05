@@ -14,7 +14,7 @@ import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { CrmTask } from "@/types/contact";
 import { Card } from "@/ui/Card";
 import { FilterChips } from "@/ui/Chip";
@@ -71,7 +71,6 @@ export default function TasksScreen() {
           }
           ListHeaderComponent={
             <View style={styles.filters}>
-              <Backdrop area="tasks" underBar />
               {/* Today at a glance: a ring that fills as you tick things off. */}
               {progress && progress.total > 0 ? (
                 <Card style={styles.progress} contentStyle={styles.progressBody}>

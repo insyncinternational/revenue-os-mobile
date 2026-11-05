@@ -42,14 +42,27 @@ export function usePipelineBoard() {
   const enabled = baseId > 0;
   const pipelines = useQuery({ queryKey: keys.pipeline.pipelines(baseId), queryFn: ({ signal }) => pipelineApi.pipelines(baseId, signal), enabled, staleTime: 5 * 60_000 });
   const bootstrap = useQuery({ queryKey: [...keys.pipeline.bootstrap(baseId), pipelineId], queryFn: ({ signal }) => pipelineApi.bootstrap(baseId, pipelineId, signal), enabled, staleTime: 5 * 60_000 });
-  const board = useQuery({
+  const board = useQuery(boardQuery(baseId, pipelineId, enabled));
+  return { baseId, pipelineId: board.data?.pipeline_id ?? pipelineId, choose, pipelines, bootstrap, board };
+}
+
+/** The board query, shared by the Deals tab and Today's pipeline card (one cache, one request). */
+function boardQuery(baseId: number, pipelineId: number | null, enabled: boolean) {
+  return {
     queryKey: keys.pipeline.board(baseId, pipelineId),
-    queryFn: ({ signal }) => pipelineApi.board(baseId, pipelineId, null, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => pipelineApi.board(baseId, pipelineId, null, signal),
     enabled,
     staleTime: 30_000,
-    placeholderData: (prev) => prev,
-  });
-  return { baseId, pipelineId: board.data?.pipeline_id ?? pipelineId, choose, pipelines, bootstrap, board };
+    placeholderData: (prev: Board | undefined) => prev,
+  };
+}
+
+/** Just the board of the chosen pipeline (Today's pipeline card), without the Deals tab's other queries. */
+export function useBoard(enabled = true) {
+  const baseId = useActiveBaseId() ?? 0;
+  useSyncExternalStore(subscribeChoice, readChoiceVersion, readChoiceVersion);
+  const pipelineId = storage.getNumber(pipelineKey(baseId)) ?? null;
+  return useQuery(boardQuery(baseId, pipelineId, enabled && baseId > 0));
 }
 
 /** Moves a deal's card to its new stage in the cached board (and its totals), returning the previous board. */

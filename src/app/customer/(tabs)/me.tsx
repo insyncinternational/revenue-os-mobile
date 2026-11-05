@@ -7,12 +7,14 @@ import { portalToken, useActivePortal, usePortalSession } from "@/portal/portalS
 import { LANGUAGES, setLanguage, t, useLanguage, type AppLanguage } from "@/i18n";
 import { confirm } from "@/lib/confirm";
 import { useTheme, type ThemePreference } from "@/theme/ThemeProvider";
-import { gutter, radius, space } from "@/theme/tokens";
+import { gutter, space } from "@/theme/tokens";
 import { Avatar } from "@/ui/Avatar";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
+import { HeroCard } from "@/ui/HeroCard";
 import { Check, FileText, ICON_STROKE, KeyRound, LogOut, Plus } from "@/ui/icons";
 import { ListRow } from "@/ui/ListRow";
+import { RowIcon } from "@/ui/RowIcon";
 import { Screen } from "@/ui/Screen";
 import { Divider, SectionHeader } from "@/ui/Section";
 import { SegmentedControl } from "@/ui/SegmentedControl";
@@ -32,19 +34,26 @@ export default function CustomerMe() {
   return (
     <Screen contentInsetAdjustmentBehavior="never">
       <CustomerHeader title={t("portal.tabs.me")} />
-      <Card style={styles.card} contentStyle={styles.who}>
-        <Avatar name={name || "?"} size={56} />
-        <View style={styles.flex}>
-          <Text variant="headline" numberOfLines={1}>
-            {name}
-          </Text>
-          {portal?.customer.name ? (
-            <Text variant="subhead" tone="muted" numberOfLines={1}>
-              {portal.customer.email}
-            </Text>
-          ) : null}
-        </View>
-      </Card>
+      {/* Who is signed in, as the screen's one hero card (the same card as the staff More page). */}
+      <View style={styles.card}>
+        <HeroCard>
+          <View style={styles.who}>
+            <View style={[styles.avatarRing, { borderColor: colors.heroGlassBorder }]}>
+              <Avatar name={name || "?"} size={56} onHero />
+            </View>
+            <View style={styles.flex}>
+              <Text variant="title" numberOfLines={1} style={{ color: colors.onHero }}>
+                {name}
+              </Text>
+              {portal?.customer.name ? (
+                <Text variant="subhead" numberOfLines={1} style={{ color: colors.onHeroMuted }}>
+                  {portal.customer.email}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        </HeroCard>
+      </View>
 
       <SectionHeader title={t("portal.me.businesses")} />
       <Card padded={false} style={styles.card}>
@@ -64,9 +73,7 @@ export default function CustomerMe() {
         <ListRow
           title={t("portal.me.addBusiness")}
           leading={
-            <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-              <Plus size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-            </View>
+            <RowIcon icon={Plus} />
           }
           chevron
           onPress={() => goCustomer("/customer/add-business")}
@@ -79,9 +86,7 @@ export default function CustomerMe() {
           title={account.data?.has_password ? t("portal.me.changePassword") : t("portal.me.setPassword")}
           subtitle={account.data?.has_password ? undefined : t("portal.me.setPasswordHint")}
           leading={
-            <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-              <KeyRound size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-            </View>
+            <RowIcon icon={KeyRound} />
           }
           chevron
           onPress={() => goCustomer("/customer/password")}
@@ -91,9 +96,7 @@ export default function CustomerMe() {
           title={t("portal.docs.title")}
           subtitle={t("portal.docs.hint")}
           leading={
-            <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-              <FileText size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
-            </View>
+            <RowIcon icon={FileText} />
           }
           chevron
           onPress={() => goCustomer("/customer/documents")}
@@ -135,8 +138,8 @@ export default function CustomerMe() {
 const styles = StyleSheet.create({
   card: { marginHorizontal: gutter },
   who: { flexDirection: "row", alignItems: "center", gap: space.md },
+  avatarRing: { borderRadius: 32, borderWidth: 2, padding: 2 },
   flex: { flex: 1, minWidth: 0, gap: 2 },
-  rowIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   block: { paddingHorizontal: gutter },
   signOut: { marginTop: space.xxxl, marginBottom: space.huge },
 });

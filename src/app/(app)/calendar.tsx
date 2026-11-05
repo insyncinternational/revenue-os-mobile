@@ -15,11 +15,11 @@ import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { Meeting, MeetingView } from "@/types/calendar";
 import { HeaderAction } from "@/ui/HeaderAction";
 import { CalendarCheck, CalendarDays, CalendarPlus } from "@/ui/icons";
-import { SegmentedControl } from "@/ui/SegmentedControl";
+import { FilterChips } from "@/ui/Chip";
 import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
@@ -99,21 +99,19 @@ export default function CalendarScreen() {
           }}
           ListHeaderComponent={
             <View style={styles.header}>
-              <Backdrop area="calendar" underBar />
-              <View style={styles.block}>
-                <SegmentedControl<Tab>
-                  value={tab}
-                  onChange={(v) => {
-                    setTab(v);
-                    setDay(null);
-                  }}
-                  options={[
-                    { key: "upcoming", label: t("meeting.upcoming") },
-                    { key: "needs_outcome", label: needs ? `${t("meeting.toRecord")} · ${needs}` : t("meeting.toRecord") },
-                    { key: "past", label: t("meeting.past") },
-                  ]}
-                />
-              </View>
+              {/* A list filter: the same chips as Tasks, Notifications and Invoices. */}
+              <FilterChips<Tab>
+                value={tab}
+                onChange={(v) => {
+                  setTab(v);
+                  setDay(null);
+                }}
+                options={[
+                  { key: "upcoming", label: t("meeting.upcoming") },
+                  { key: "needs_outcome", label: t("meeting.toRecord"), count: needs || undefined },
+                  { key: "past", label: t("meeting.past") },
+                ]}
+              />
               {tab === "upcoming" ? (
                 <>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>

@@ -22,7 +22,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import { AnimatedNumber } from "@/ui/AnimatedNumber";
 import { Avatar } from "@/ui/Avatar";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Badge } from "@/ui/Badge";
 import { ActionTiles, type TileAction as BarAction } from "@/ui/ActionTiles";
 import { Button } from "@/ui/Button";
@@ -143,7 +143,6 @@ export default function DealScreen() {
         ) : (
           <>
             <View style={styles.hero}>
-              <Backdrop area={area} underBar />
               <Text variant="largeTitle" numberOfLines={3} accessibilityRole="header" style={styles.name}>
                 {d.name}
               </Text>

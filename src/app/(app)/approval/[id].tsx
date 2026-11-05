@@ -14,7 +14,7 @@ import type { AiDraft } from "@/types/approvals";
 import { Avatar } from "@/ui/Avatar";
 import { Badge } from "@/ui/Badge";
 import { Banner } from "@/ui/Banner";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import { ChannelBadge, channelLabel } from "@/ui/ChannelIcon";
@@ -100,7 +100,6 @@ function DraftReview({ draft, refreshing, onRefresh }: { draft: AiDraft; refresh
       <Stack.Screen options={{ title: t("approvals.draftTitle"), headerStyle }} />
       <Screen onRefresh={onRefresh} refreshing={refreshing} keyboardAware>
         <View style={styles.hero}>
-          <Backdrop area="today" underBar />
           <View>
             <Avatar name={name} size={56} />
             <View style={styles.channel}>

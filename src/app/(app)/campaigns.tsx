@@ -11,7 +11,7 @@ import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { Campaign, CampaignStatus } from "@/types/campaign";
 import { Badge } from "@/ui/Badge";
 import { Button } from "@/ui/Button";
@@ -56,7 +56,6 @@ export default function CampaignsScreen() {
           refreshControl={<PullRefresh busy={list.isRefetching} onRefresh={() => void list.refetch()} />}
           ListHeaderComponent={
             <View style={styles.filters}>
-              <Backdrop area="campaigns" underBar />
               <FilterChips<Filter>
                 value={filter}
                 onChange={setFilter}

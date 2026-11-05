@@ -21,6 +21,8 @@ export const keys = {
     timeline: (baseId: BaseId, id: number) => ["contacts", baseId, "timeline", id] as const,
     tasks: (baseId: BaseId, id: number) => ["contacts", baseId, "tasks", id] as const,
     deals: (baseId: BaseId, id: number) => ["contacts", baseId, "deals", id] as const,
+    /** The first few people with a phone nobody has called yet (Today's Up next card). */
+    callQueue: (baseId: BaseId) => ["contacts", baseId, "callQueue"] as const,
   },
   pipeline: {
     all: (baseId: BaseId) => ["pipeline", baseId] as const,

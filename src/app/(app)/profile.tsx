@@ -66,7 +66,7 @@ export default function ProfileScreen() {
       >
         {save.error ? <Banner message={userMessage(save.error)} /> : null}
         <View style={styles.preview}>
-          <Avatar name={shown} uri={user?.avatar_url} size={80} />
+          <Avatar name={shown} uri={user?.avatar_url} size={80} accent />
           <Text variant="headline" numberOfLines={1}>
             {shown}
           </Text>

@@ -92,4 +92,8 @@ export type PlanItem = {
   actions: PlanAction[];
 };
 
+/** GET /calls/queue: reachable people not called yet. */
+export type CallQueueLead = { lead_id: number; name: string | null; role: string | null; company: string | null; phone: string };
+export type CallQueuePage = { leads: CallQueueLead[]; has_more: boolean };
+
 export type MyDayPlan = { items: PlanItem[]; headline: string; generated_at: string };

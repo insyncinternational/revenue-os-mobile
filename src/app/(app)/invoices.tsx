@@ -14,7 +14,7 @@ import { useOnline } from "@/query/useOnline";
 import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { InvoiceStatus } from "@/types/invoice";
 import { Banner } from "@/ui/Banner";
 import { Badge } from "@/ui/Badge";
@@ -75,7 +75,6 @@ export default function InvoicesScreen() {
           }
           ListHeaderComponent={
             <View style={styles.header}>
-              <Backdrop area="invoices" underBar />
               {/* The screen's one highlight: what came in (green), what's still owed, and the paid share as a ring. */}
               <ContrastBlock style={styles.card}>
                 {summary ? (

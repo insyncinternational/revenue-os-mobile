@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { homeApi } from "@/api/home";
 import { StyleSheet, View } from "react-native";
 import { userMessage } from "@/api/errors";
 import { Conversations, Focus, Suggestions } from "@/features/today/Panels";
@@ -29,7 +31,10 @@ import { funnelSteps, isFreshWorkspace, orderMetrics, performanceMetrics, splitH
 import { HERO_ITEMS, NextUpCarousel } from "@/features/today/NextUp";
 import { Button } from "@/ui/Button";
 import { freshSuggestions, todayHeadline } from "@/features/today/headline";
-import { useWorkspaceAccess } from "@/session/workspace";
+import { useActiveBaseId, useWorkspaceAccess } from "@/session/workspace";
+import { keys } from "@/query/keys";
+import { useBoard } from "@/features/pipeline/usePipeline";
+import { pipelineInsights } from "@/features/today/pipelineInsights";
 import { useTodayWidgetSync } from "@/widgets/widgetSync";
 
 /** Today: what needs you now, today's meetings, and how the period is going — one screen, one request. */
@@ -52,6 +57,19 @@ export default function Today() {
   });
 
   const scrim = useStatusBarScrim();
+
+  // "N leads with a phone haven't been called yet" as the hero (nothing in the plan): the first few of them.
+  const baseId = useActiveBaseId() ?? 0;
+  const firstSuggestion = plan.data && plan.data.items.length === 0 ? freshSuggestions(data?.recommendations ?? [], [])[0] : undefined;
+  const callHero = firstSuggestion?.key === "verified_phones_uncalled" && firstSuggestion.count > 0;
+  const queue = useQuery({
+    queryKey: keys.contacts.callQueue(baseId),
+    queryFn: ({ signal }) => homeApi.callQueue(baseId, 3, signal),
+    enabled: callHero && baseId > 0,
+    staleTime: 60_000,
+  });
+  // The Deals tab's board (same cache): the deal to close next, deals not moving, the likely value.
+  const board = useBoard(Boolean(data?.pipeline));
 
   const refresh = () => {
     void home.refetch();
@@ -153,7 +171,12 @@ export default function Today() {
           ) : (
             // The first thing to do is the hero; the rest of the plan and the other suggestions follow it.
             <Reveal index={section++}>
-              <NextUpCarousel items={items} suggestion={heroSuggestion} onComplete={onComplete} />
+              <NextUpCarousel
+                items={items}
+                suggestion={heroSuggestion}
+                onComplete={onComplete}
+                people={callHero && queue.data?.leads.length ? { leads: queue.data.leads, total: firstSuggestion!.count } : undefined}
+              />
             </Reveal>
           )}
           {restItems.length > 0 ? (
@@ -185,7 +208,7 @@ export default function Today() {
           <Reveal index={section++}>
             <SectionHeader title={t("today.pipeline")} action={t("common.seeAll")} onAction={() => go("/pipeline")} />
             <View style={styles.block}>
-              <Glance pipeline={data.pipeline} won={kpis.find((k) => k.key === "won") ?? null} sinceDays={data.kpis?.since_days ?? period} currency={data.kpis?.currency ?? data.pipeline?.currency ?? "USD"} meetings={meetings} />
+              <Glance pipeline={data.pipeline} won={kpis.find((k) => k.key === "won") ?? null} sinceDays={data.kpis?.since_days ?? period} currency={data.kpis?.currency ?? data.pipeline?.currency ?? "USD"} meetings={meetings} insights={pipelineInsights(board.data, board.dataUpdatedAt)} />
             </View>
           </Reveal>
         ) : null}

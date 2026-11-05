@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, useWindowDimensions, View, type TextInputInstanc
 import { router } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { KeyboardAvoidingView, useKeyboardState } from "react-native-keyboard-controller";
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { authApi, isSignedIn, isTwoFactorRequired } from "@/api/auth";
@@ -58,6 +58,9 @@ export default function SignIn() {
   const passwordRef = useRef<TextInputInstance>(null);
   const shake = useSharedValue(0);
   const wait = !introDone;
+  // The step-by-step entrance plays only on a cold start, as the launch logo lifts. After a sign-out the screen is
+  // simply there: rising piece by piece every time felt slow and toy-like.
+  const [entrance] = useState(() => !useLaunch.getState().introDone);
 
   const login = useMutation({
     mutationFn: async () => {
@@ -139,7 +142,7 @@ export default function SignIn() {
         <View style={[styles.column, { paddingTop: insets.top + (compact ? space.xl : space.huge), paddingBottom: insets.bottom + space.lg, gap }]}>
           {/* Head and form together, centred in the space above the footer. */}
           <View style={[styles.main, { gap: compact ? space.xl : space.xxxl }]}>
-          <Reveal wait={wait} style={styles.head}>
+          <Reveal wait={wait} animate={entrance} style={styles.head}>
             {typing ? null : <BrandTile />}
             <Text variant={compact ? "title" : "largeTitle"} align="center" accessibilityRole="header">
               {t("signin.title")}
@@ -153,7 +156,7 @@ export default function SignIn() {
 
           <Animated.View style={[styles.form, { gap }, shakeStyle]}>
             {notice ? <Banner message={notice} kind={login.error || googleError ? "danger" : "warning"} /> : null}
-            <Reveal index={1} wait={wait}>
+            <Reveal index={1} wait={wait} animate={entrance}>
               <Input
                 label={t("auth.email")}
                 placeholder={t("auth.emailPlaceholder")}
@@ -176,7 +179,7 @@ export default function SignIn() {
                 onBlur={() => setFieldFocused(false)}
               />
             </Reveal>
-            <Reveal index={2} wait={wait}>
+            <Reveal index={2} wait={wait} animate={entrance}>
               <Input
                 ref={passwordRef}
                 label={t("auth.password")}
@@ -214,7 +217,7 @@ export default function SignIn() {
               </Pressable>
             </Reveal>
 
-            <Reveal index={3} wait={wait} style={{ gap }}>
+            <Reveal index={3} wait={wait} animate={entrance} style={{ gap }}>
               <Button label={t("auth.signIn")} size="lg" fullWidth loading={login.isPending} disabled={google.isPending} onPress={submit} />
               {googleSignInAvailable ? (
                 <>
@@ -233,7 +236,7 @@ export default function SignIn() {
           </View>
 
           {typing ? null : (
-            <Reveal index={4} wait={wait}>
+            <Reveal index={4} wait={wait} animate={entrance}>
               <Text variant="footnote" tone="muted" align="center">
                 {t("auth.noAccount")}
               </Text>
@@ -251,18 +254,12 @@ export default function SignIn() {
   );
 }
 
-/** The brand mark on an indigo app-icon tile, with a soft halo that breathes slowly behind it. */
+/** The brand mark on an app-icon tile, with a soft, still glow behind it. */
 function BrandTile() {
-  const reduce = useReducedMotion();
-  const breathe = useSharedValue(0);
-  useEffect(() => {
-    if (!reduce) breathe.set(withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }), -1, true));
-  }, [reduce, breathe]);
-  const halo = useAnimatedStyle(() => ({ opacity: 0.55 + breathe.value * 0.45, transform: [{ scale: 0.92 + breathe.value * 0.1 }] }));
   return (
     <View style={styles.tileWrap} accessible accessibilityRole="image" accessibilityLabel="GrowthReach.ai">
       {/* A soft round glow, fading to nothing at its edge. */}
-      <Animated.View style={[styles.halo, halo]}>
+      <View style={styles.halo}>
         <Svg width={HALO} height={HALO}>
           <Defs>
             <RadialGradient id="tileHalo" cx="50%" cy="50%" r="50%">
@@ -272,7 +269,7 @@ function BrandTile() {
           </Defs>
           <Rect width={HALO} height={HALO} fill="url(#tileHalo)" />
         </Svg>
-      </Animated.View>
+      </View>
       <View style={styles.tile}>
         <GradientFill from={launchBrand.splash} to={launchBrand.to} glow={launchBrand.glowSoft} glowOpacity={0.45} />
         <BrandMark size={40} tone="onBrand" />
@@ -306,7 +303,7 @@ const styles = StyleSheet.create({
   main: { flex: 1, justifyContent: "center" },
   head: { alignItems: "center", gap: space.sm },
   tileWrap: { width: 88, height: 88, alignItems: "center", justifyContent: "center", marginBottom: space.sm },
-  halo: { position: "absolute", width: HALO, height: HALO, left: (88 - HALO) / 2, top: (88 - HALO) / 2 },
+  halo: { position: "absolute", width: HALO, height: HALO, left: (88 - HALO) / 2, top: (88 - HALO) / 2, opacity: 0.85 },
   tile: { width: 68, height: 68, borderRadius: radius.xl + 6, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   form: { width: "100%" },
   forgot: { alignSelf: "flex-end", marginTop: space.sm },

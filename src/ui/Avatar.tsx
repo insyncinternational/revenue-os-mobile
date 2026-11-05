@@ -7,17 +7,24 @@ import { accentAvatarTone, avatarTones } from "@/theme/tokens";
 import { accentGradient } from "./Gloss";
 import { Text } from "./Text";
 
-/** `accent`: always the glossy brand tone (the signed-in person in headers). */
-type Props = { name: string; uri?: string | null; size?: number; accent?: boolean };
+/**
+ * `accent`: the signed-in person, always the glossy brand tone. `onHero`: the signed-in person on a brand card,
+ * a white circle with brand initials (the brand tone would vanish into the card).
+ */
+type Props = { name: string; uri?: string | null; size?: number; accent?: boolean; onHero?: boolean };
 
 /**
  * A photo, else the person's initials on one of six soft tints (avatarTones): the same person always gets the
  * same one, so clients are easy to tell apart. `accent` is the signed-in person's glossy brand tone.
  */
-export const Avatar = memo(function Avatar({ name, uri, size = 40, accent }: Props) {
+export const Avatar = memo(function Avatar({ name, uri, size = 40, accent, onHero }: Props) {
   const { colors, scheme } = useTheme();
   const tones = avatarTones(colors, scheme);
-  const tone = accent ? accentAvatarTone(colors) : (tones[stableHash(name || "?") % tones.length] ?? tones[0]!);
+  const tone = onHero
+    ? { bg: colors.surface, fg: colors.primaryText, glossy: false }
+    : accent
+      ? accentAvatarTone(colors)
+      : (tones[stableHash(name || "?") % tones.length] ?? tones[0]!);
   const box = { width: size, height: size, borderRadius: size / 2 };
   return (
     <View style={[styles.base, box, uri ? styles.clip : null]} accessible={false}>

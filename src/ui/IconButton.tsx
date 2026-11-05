@@ -9,7 +9,7 @@ type Props = Omit<PressableProps, "children" | "style"> & {
   label: string;
   tone?: "default" | "primary" | "danger";
   filled?: boolean;
-  /** A floating white circle (headers: back, edit, more), the same in every screen. */
+  /** A white circle (top bars: back, edit), the same in every screen. */
   circle?: boolean;
   size?: number;
 };
@@ -27,7 +27,8 @@ export function IconButton({ icon: Icon, label, tone = "default", filled, circle
       style={({ pressed }) => [
         styles.base,
         { backgroundColor: pressed ? colors.pressed : circle ? colors.surface : filled ? colors.surfaceSecondary : "transparent" },
-        circle && { boxShadow: colors.cardShadowSoft },
+        // A hairline, not a shadow: the top bar clips a shadow to the button's square on Android (a grey box).
+        circle && { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
         disabled && styles.disabled,
       ]}
       {...rest}

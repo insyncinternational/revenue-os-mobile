@@ -14,7 +14,7 @@ import { useCan } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space, type Palette } from "@/theme/tokens";
 import { Avatar } from "@/ui/Avatar";
-import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
+import { useAreaHeaderStyle } from "@/ui/Backdrop";
 import { Badge, type BadgeTone } from "@/ui/Badge";
 import { Banner } from "@/ui/Banner";
 import { ActionTiles, type TileAction as BarAction } from "@/ui/ActionTiles";
@@ -79,7 +79,6 @@ export default function MeetingScreen() {
           {meeting.isPending ? (
             <DelayedFallback>
               <View style={styles.hero}>
-                <Backdrop area="calendar" underBar />
                 <Skeleton width={120} height={20} />
                 <Skeleton width={220} height={28} />
                 <Skeleton width={160} height={16} />
@@ -162,7 +161,6 @@ export default function MeetingScreen() {
       <Stack.Screen options={{ title: "", headerStyle }} />
       <Screen onRefresh={() => void meeting.refetch()} refreshing={meeting.isRefetching}>
         <View style={styles.hero}>
-          <Backdrop area="calendar" underBar />
           <View style={styles.badgeRow}>
             <Badge label={badge} tone={TONE[phase]} dot={phase === "now" || phase === "soon" || phase === "needs_outcome"} />
             {hours != null ? <Badge label={t("meeting.inHours", { 0: hours })} /> : null}

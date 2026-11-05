@@ -16,6 +16,7 @@ import { Chip } from "@/ui/Chip";
 import { FormScreen } from "@/ui/FormScreen";
 import { FormSection } from "@/ui/FormSection";
 import { CircleMinus, Sparkles, Users } from "@/ui/icons";
+import { RowIcon } from "@/ui/RowIcon";
 import { Input } from "@/ui/Input";
 import { ListRow } from "@/ui/ListRow";
 import { SearchBar } from "@/ui/SearchBar";
@@ -121,7 +122,7 @@ function PickClient({ title, onPick }: { title: string; onPick: (id: number) => 
           {list.isPending ? (
             <SkeletonList rows={4} />
           ) : rows.length === 0 ? (
-            <ListRow title={t("workspace.noClients")} leading={<Users size={20} />} />
+            <ListRow title={t("workspace.noClients")} leading={<RowIcon icon={Users} />} />
           ) : (
             rows.map((c, i) => (
               <View key={c.id}>

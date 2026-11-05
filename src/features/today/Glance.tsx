@@ -2,12 +2,13 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { getIntlLocale, t } from "@/i18n";
 import { money, timeOfDay } from "@/lib/format";
-import { go, openMeeting } from "@/lib/navigate";
+import { go, openDeal, openMeeting } from "@/lib/navigate";
 import { useTheme } from "@/theme/ThemeProvider";
 import { radius, space } from "@/theme/tokens";
 import type { KpiMetric, MeetingRow, PipelineOverview } from "@/types/home";
+import type { PipelineInsights } from "./pipelineInsights";
 import { AnimatedNumber } from "@/ui/AnimatedNumber";
-import { CalendarDays, ChevronRight, ICON_STROKE, Trophy } from "@/ui/icons";
+import { CalendarDays, ChevronRight, Clock, ICON_STROKE, Trophy } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Text } from "@/ui/Text";
 
@@ -15,14 +16,14 @@ import { Text } from "@/ui/Text";
 const NOW_BEFORE = 15 * 60_000;
 const NOW_AFTER = 60 * 60_000;
 
-type Props = { pipeline: PipelineOverview | null; won: KpiMetric | null; sinceDays: number; currency: string; meetings: MeetingRow[] };
+type Props = { pipeline: PipelineOverview | null; won: KpiMetric | null; sinceDays: number; currency: string; meetings: MeetingRow[]; insights?: PipelineInsights };
 
 /**
- * The pipeline at a glance, as ONE card (the agency home's pool card is the model): the open amount, a thin bar of
- * its stages with their values, then a row with what was won in the period and the next meeting. Nothing appears
- * or disappears as a separate tile, so the page keeps its shape whatever the data.
+ * The pipeline at a glance, as ONE card (the agency home's pool card is the model): the open amount and what it is
+ * likely worth, a thin bar of its stages, the deal to close next and any deals that stopped moving, then a row
+ * with what was won in the period and the next meeting. Rows join the same card, so the page keeps its shape.
  */
-export function Glance({ pipeline, won, sinceDays, currency, meetings }: Props) {
+export function Glance({ pipeline, won, sinceDays, currency, meetings, insights }: Props) {
   const { colors } = useTheme();
   const locale = getIntlLocale();
   const [now] = useState(() => Date.now());
@@ -58,6 +59,12 @@ export function Glance({ pipeline, won, sinceDays, currency, meetings }: Props) 
           <Text variant="headline" tone="muted" weight="medium">{`${code} `}</Text>
           <AnimatedNumber value={total} format={fmt} variant="display" numberOfLines={1} adjustsFontSizeToFit style={styles.big} />
         </View>
+        {/* What the open deals are likely worth, each weighted by its stage's chance to close. */}
+        {insights && insights.expected > 0 && total > 0 ? (
+          <Text variant="footnote" tone="secondary" numeric numberOfLines={1}>
+            {t("today.expectedValue", { value: money(insights.expected, code, locale) })}
+          </Text>
+        ) : null}
         {total > 0 ? (
           <>
             {/* One thin bar: each stage its share, the first in the brand colour and the next ones lighter. */}
@@ -79,6 +86,17 @@ export function Glance({ pipeline, won, sinceDays, currency, meetings }: Props) 
           </>
         ) : null}
       </PressableScale>
+
+      {insights?.next ? <NextDeal next={insights.next} currency={code} /> : null}
+      {insights?.stalled ? (
+        <PressableScale onPress={() => go("/pipeline")} accessibilityRole="button" scaleTo={0.99} style={[styles.row, styles.stalled, { borderTopColor: colors.border }]}>
+          <Clock size={16} color={colors.textMuted} strokeWidth={ICON_STROKE} />
+          <Text variant="footnote" tone="secondary" numberOfLines={1} style={styles.flex}>
+            {insights.stalled.count === 1 ? t("today.stalledOne", { days: insights.stalled.days }) : t("today.stalledMany", { count: insights.stalled.count })}
+          </Text>
+          <ChevronRight size={15} color={colors.textSubtle} strokeWidth={ICON_STROKE} />
+        </PressableScale>
+      ) : null}
 
       {won || next ? (
         <View style={[styles.foot, { borderTopColor: colors.border }]}>
@@ -102,6 +120,54 @@ export function Glance({ pipeline, won, sinceDays, currency, meetings }: Props) 
         </View>
       ) : null}
     </View>
+  );
+}
+
+/** The open deal most likely to bring money in next: its name, who it's with and stage, amount and chance; opens it. */
+function NextDeal({ next, currency }: { next: NonNullable<PipelineInsights["next"]>; currency: string }) {
+  const { colors } = useTheme();
+  const locale = getIntlLocale();
+  const { deal, chance } = next;
+  const person = [deal.lead?.first_name, deal.lead?.last_name].filter(Boolean).join(" ");
+  const sub = [person || deal.account?.name || deal.lead?.company, deal.stage?.name].filter(Boolean).join(" · ");
+  const amount = deal.amount != null ? money(deal.amount, deal.currency ?? currency, locale) : null;
+  return (
+    <PressableScale
+      onPress={() => openDeal(deal.id)}
+      accessibilityRole="button"
+      accessibilityLabel={[t("today.nextToClose"), deal.name, sub, amount, chance != null ? `${chance}%` : null].filter(Boolean).join(", ")}
+      scaleTo={0.99}
+      style={[styles.row, styles.nextDeal, { borderTopColor: colors.border }]}
+    >
+      <View style={styles.flex}>
+        <Text variant="caption" tone="muted" numberOfLines={1}>
+          {t("today.nextToClose")}
+        </Text>
+        <Text variant="callout" weight="semibold" numberOfLines={1}>
+          {deal.name}
+        </Text>
+        {sub ? (
+          <Text variant="footnote" tone="secondary" numberOfLines={1}>
+            {sub}
+          </Text>
+        ) : null}
+      </View>
+      <View style={styles.end}>
+        {amount ? (
+          <Text variant="callout" weight="semibold" numeric numberOfLines={1}>
+            {amount}
+          </Text>
+        ) : null}
+        {chance != null ? (
+          <View style={[styles.chance, { backgroundColor: colors.surfaceSecondary }]}>
+            <Text variant="caption" weight="medium" numeric tone="secondary">
+              {t("pipeline.likelyPct", { n: chance })}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      <ChevronRight size={15} color={colors.textSubtle} strokeWidth={ICON_STROKE} />
+    </PressableScale>
   );
 }
 
@@ -173,5 +239,11 @@ const styles = StyleSheet.create({
   cell: { flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm + 2, minWidth: 0 },
   cellText: { flex: 1, minWidth: 0, gap: 1 },
   icon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  row: { flexDirection: "row", alignItems: "center", gap: space.sm + 2, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: space.lg },
+  nextDeal: { paddingVertical: space.md },
+  stalled: { paddingVertical: space.sm + 4 },
+  flex: { flex: 1, minWidth: 0, gap: 1 },
+  end: { alignItems: "flex-end", gap: 4 },
+  chance: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },
   split: { width: StyleSheet.hairlineWidth, alignSelf: "stretch", marginHorizontal: space.md },
 });

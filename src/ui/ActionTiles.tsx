@@ -9,44 +9,54 @@ import { Text } from "./Text";
 
 export type TileAction = { key: string; label: string; icon?: IconComponent; glyph?: ReactNode; run: () => void };
 
+/** Size of each round button (the same as Today's shortcuts). */
+export const ACTION_CIRCLE = 52;
+
+/** Pure: buttons per row, so rows stay balanced (6 → 3 + 3, 5 → 3 + 2, 7 → 4 + 3), never more than four. */
+export function actionsPerRow(n: number): number {
+  return n <= 4 ? Math.max(n, 1) : Math.min(4, Math.ceil(n / 2));
+}
+
 /**
- * A detail screen's main actions as big square-ish tiles in the page (Mono look, nothing pinned or floating):
- * the first is ink, the rest white; four to a row, wrapping when there are more.
+ * A detail screen's main actions (call, email, note…): one white card of round grey buttons with a short label
+ * under each, the same look as Today's shortcuts, so every "do something" row in the app reads the same.
+ * Buttons keep one column width, so a second row lines up under the first.
  */
 export function ActionTiles({ actions, style }: { actions: TileAction[]; style?: StyleProp<ViewStyle> }) {
   const { colors } = useTheme();
   if (actions.length === 0) return null;
-  const perRow = Math.min(4, actions.length);
+  const width = `${100 / actionsPerRow(actions.length)}%` as const;
   return (
-    <View style={[styles.grid, style]}>
-      {actions.map((a, i) => {
-        const main = i === 0;
-        const fg = main ? colors.onInk : colors.text;
-        return (
+    <View style={[styles.wrap, style]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]}>
+        {actions.map((a) => (
           <PressableScale
             key={a.key}
             onPress={() => {
-              if (main) haptics.light();
-              else haptics.selection();
+              haptics.selection();
               a.run();
             }}
             accessibilityRole="button"
             accessibilityLabel={a.label}
             scaleTo={0.94}
-            style={[styles.tile, { flexBasis: `${100 / perRow - 3}%`, backgroundColor: main ? colors.ink : colors.surface }]}
+            style={[styles.action, { width }]}
           >
-            {a.glyph ?? (a.icon ? <a.icon size={21} color={fg} strokeWidth={ICON_STROKE + 0.25} /> : null)}
-            <Text variant="caption" numberOfLines={1} style={{ color: fg }}>
+            <View style={[styles.circle, { backgroundColor: colors.surfaceSecondary }]}>
+              {a.glyph ?? (a.icon ? <a.icon size={22} color={colors.text} strokeWidth={ICON_STROKE + 0.25} /> : null)}
+            </View>
+            <Text variant="caption" weight="semibold" tone="secondary" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
               {a.label}
             </Text>
           </PressableScale>
-        );
-      })}
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, paddingHorizontal: gutter },
-  tile: { flexGrow: 1, height: 76, borderRadius: radius.xl, alignItems: "center", justifyContent: "center", gap: space.xs + 2, paddingHorizontal: space.xs },
+  wrap: { paddingHorizontal: gutter },
+  card: { flexDirection: "row", flexWrap: "wrap", rowGap: space.lg, paddingVertical: space.lg, paddingHorizontal: space.xs, borderRadius: radius.xl + 4 },
+  action: { alignItems: "center", gap: space.sm, paddingHorizontal: 2 },
+  circle: { width: ACTION_CIRCLE, height: ACTION_CIRCLE, borderRadius: ACTION_CIRCLE / 2, alignItems: "center", justifyContent: "center" },
 });
