@@ -8,7 +8,7 @@
       "autoIncrement": true,
       "env": {
         "APP_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://leadsreach-backend-dev.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://revenue-os-backend-bb33.onrender.com"
       }
     },
     "preview": {
@@ -19,7 +19,7 @@
       },
       "env": {
         "APP_ENV": "preview",
-        "EXPO_PUBLIC_API_URL": "https://leadsreach-backend-dev.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://revenue-os-backend-bb33.onrender.com"
       }
     }
   },
