@@ -1,0 +1,3 @@
+# The android/ folder exists only after a local emulator build (EAS builds without it), so it must not
+# change the runtime fingerprint, or updates published from this machine would not reach installed apps.
+android/**/*
