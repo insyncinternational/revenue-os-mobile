@@ -45,7 +45,9 @@ describe("client health (same rules as the web)", () => {
     expect(healthOf(client(), NOW)).toEqual({ state: "healthy", reason: "ok" });
     expect(healthOf(client({ active: false }), NOW).reason).toBe("invite");
     expect(healthOf(client({ credits_balance: LOW_CREDITS - 1 }), NOW).reason).toBe("lowCredits");
-    expect(healthOf(client({ last_active_at: null }), NOW).reason).toBe("neverSignedIn");
+    expect(healthOf(client({ last_active_at: null }), NOW)).toEqual({ state: "waiting", reason: "neverSignedIn" });
+    // Never signed in wins over low credits: they haven't started yet.
+    expect(healthOf(client({ last_active_at: null, credits_balance: 0 }), NOW)).toEqual({ state: "waiting", reason: "neverSignedIn" });
     expect(healthOf(client({ last_active_at: new Date(NOW - QUIET_MS - 1).toISOString() }), NOW).reason).toBe("quiet");
     expect(healthOf(client({ campaigns_active: 0 }), NOW).reason).toBe("noCampaigns");
   });

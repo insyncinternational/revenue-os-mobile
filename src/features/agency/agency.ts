@@ -33,8 +33,9 @@ export type HealthReason = "invite" | "lowCredits" | "quiet" | "neverSignedIn" |
 /** Pure: how a client is doing (the web's Client health card, same rules). */
 export function healthOf(c: ClientRow, now: number): { state: HealthState; reason: HealthReason } {
   if (!c.active) return { state: "waiting", reason: "invite" };
+  // Set a password but never opened their account: not started yet, not a client slipping away.
+  if (!c.last_active_at) return { state: "waiting", reason: "neverSignedIn" };
   if (c.credits_balance < LOW_CREDITS) return { state: "risk", reason: "lowCredits" };
-  if (!c.last_active_at) return { state: "risk", reason: "neverSignedIn" };
   if (now - Date.parse(c.last_active_at) > QUIET_MS) return { state: "risk", reason: "quiet" };
   if (!c.campaigns_active) return { state: "risk", reason: "noCampaigns" };
   return { state: "healthy", reason: "ok" };
