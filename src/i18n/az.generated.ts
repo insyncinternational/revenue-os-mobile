@@ -175,6 +175,7 @@ export const az: Readonly<Record<string, string>> = {
   "Booked through Slotwise. Move it there too so the contact gets the new time.": "Slotwise vasitəsilə təyin olunub. Kontaktın yeni vaxtı alması üçün onu orada da köçürün.",
   "Booked. A confirmation is on its way to your email.": "Rezerv edildi. Təsdiq e-poçtunuza göndərilir.",
   "Books a meeting": "Görüş təyin edir",
+  "Branding, snapshots, SaaS and team permissions are on the web.": "Brendinq, snapshot-lar, SaaS və komanda icazələri vebdədir.",
   "Budget": "Büdcə",
   "Build it on the web, follow it here": "Vebdə qurun, burada izləyin",
   "Business": "Biznes",
