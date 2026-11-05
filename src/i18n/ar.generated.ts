@@ -175,7 +175,6 @@ export const ar: Readonly<Record<string, string>> = {
   "Booked through Slotwise. Move it there too so the contact gets the new time.": "تم الحجز عبر Slotwise. انقله هناك أيضًا ليصل الموعد الجديد إلى جهة الاتصال.",
   "Booked. A confirmation is on its way to your email.": "تم الحجز. التأكيد في طريقه إلى بريدك الإلكتروني.",
   "Books a meeting": "يحجز اجتماعًا",
-  "Branding, domain, snapshots, SaaS and team permissions are on the web.": "العلامة التجارية والنطاق واللقطات وSaaS وصلاحيات الفريق متاحة على الويب.",
   "Budget": "الميزانية",
   "Build it on the web, follow it here": "أنشئه على الويب، وتابعه هنا",
   "Business": "النشاط التجاري",

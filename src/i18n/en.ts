@@ -1112,7 +1112,7 @@ export const en = {
   "agency.alerts.adminsOnly": "Agency alerts go to your agency admins.",
   "agency.account.agency": "Agency",
   "agency.account.switchHint": "Another agency, or a client's workspace",
-  "agency.account.webHint": "Branding, domain, snapshots, SaaS and team permissions are on the web.",
+  "agency.account.webHint": "Branding, snapshots, SaaS and team permissions are on the web.",
   "agency.team.title": "Team",
   "agency.team.hint": "Your agency's people",
   "agency.team.members": "Members",
