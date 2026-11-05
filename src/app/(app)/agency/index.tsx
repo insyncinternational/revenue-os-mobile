@@ -57,7 +57,11 @@ export default function AgencyHome() {
   const firstName = firstNameOf(user?.name);
   const greeting = `${t(greetingKey(new Date().getHours()))}${firstName ? `, ${firstName}` : ""}`;
   const totals = dashboard.data?.totals;
-  const summary = totals ? t("agency.home.summary", { clients: count(totals.clients, locale), credits: count(totals.lead_credits, locale) }) : null;
+  const summary = totals
+    ? totals.clients === 1
+      ? t("agency.home.summaryOne", { credits: count(totals.lead_credits, locale) })
+      : t("agency.home.summary", { clients: count(totals.clients, locale), credits: count(totals.lead_credits, locale) })
+    : null;
 
   const quick: { key: string; label: TranslationKey; icon: typeof UserPlus; onPress: () => void }[] = [];
   if (canCreate) quick.push({ key: "contact", label: "agency.quick.addClient", icon: UserPlus, onPress: openNewClient });

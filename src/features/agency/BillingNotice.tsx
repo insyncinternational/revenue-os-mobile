@@ -16,7 +16,9 @@ export function billingProblem(
   agency: { status?: string; on_trial?: boolean; trial_ended?: boolean; trial_ends_at?: string | null } | undefined,
   billing: { billing_status: string | null; suspended_by_billing: boolean; billing_grace_ends_at: string | null } | undefined,
   now: number,
-  locale: string
+  locale: string,
+  /** Not an agency admin: they can't choose the plan, so the trial note says who does. */
+  staff = false
 ): BillingProblem {
   const day = (iso: string) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(iso));
   if (billing?.suspended_by_billing || agency?.status === "suspended") return { tone: "danger", title: t("agency.bill.onHold"), message: t("agency.bill.onHoldMessage") };
@@ -26,7 +28,7 @@ export function billingProblem(
   if (billing?.billing_status === "canceled") return { tone: "warning", title: t("agency.bill.canceled"), message: t("agency.bill.canceledMessage") };
   if (agency?.on_trial && agency.trial_ends_at) {
     const days = Math.max(0, Math.ceil((Date.parse(agency.trial_ends_at) - now) / 86_400_000));
-    return { tone: "warning", title: days === 1 ? t("agency.bill.trialOneDay") : t("agency.bill.trialDays", { days }), message: t("agency.bill.trialMessage") };
+    return { tone: "warning", title: days === 1 ? t("agency.bill.trialOneDay") : t("agency.bill.trialDays", { days }), message: t(staff ? "agency.bill.trialMessageStaff" : "agency.bill.trialMessage") };
   }
   return null;
 }
@@ -38,7 +40,7 @@ export function BillingNotice() {
   const info = useAgencyInfo().data;
   const billing = useAgencyBilling(admin).data;
   const [now] = useState(() => Date.now());
-  const problem = billingProblem(info?.agency, billing?.billing, now, getIntlLocale());
+  const problem = billingProblem(info?.agency, billing?.billing, now, getIntlLocale(), !admin);
   if (!problem) return null;
   const danger = problem.tone === "danger";
   const Icon = danger ? CircleAlert : Clock;

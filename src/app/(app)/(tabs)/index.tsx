@@ -82,7 +82,6 @@ export default function Today() {
   // Written by the app from the counters (translated, and only suggesting what the phone can do).
   const line = counters ? todayHeadline(counters, approvals) : null;
   // "All clear" is said by the caught-up card below; the hero then shows the date instead of saying it twice.
-  const headline = line ? (line.key === "today.headlineClear" ? null : t(line.key, line.vars)) : (plan.data?.headline ?? null);
   const items = plan.data?.items ?? [];
   const meetings = data.meetings ?? [];
   const kpis = data.kpis?.metrics ?? [];
@@ -97,6 +96,14 @@ export default function Today() {
   const suggestions = freshSuggestions(data.recommendations ?? [], items);
   // What to do comes first: the plan, then suggestions; "all caught up" only when there is neither.
   const caughtUp = items.length === 0 && suggestions.length === 0;
+  // "1 item on your plate" over a "You're all caught up" card said two things at once: counters like open
+  // proposals aren't to-dos, so with nothing in the plan only replies, approvals and urgent items get a line.
+  const generalCount = line?.key === "today.headlineItemOne" || line?.key === "today.headlineItems";
+  const headline = line
+    ? line.key === "today.headlineClear" || (caughtUp && generalCount)
+      ? null
+      : t(line.key, line.vars)
+    : (plan.data?.headline ?? null);
   // The hero pages through the first few plan items (or shows the top suggestion when there's no plan).
   const heroItem = items[0];
   const heroSuggestion = heroItem ? undefined : suggestions[0];
