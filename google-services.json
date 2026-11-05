@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "109245726921",
+    "project_id": "growthreach-ai-7a507",
+    "storage_bucket": "growthreach-ai-7a507.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109245726921:android:3422d5a48c4e6cef4f0d18",
+        "android_client_info": {
+          "package_name": "com.revenueos.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYzks2OXbt44a7tfI4Py7i-ZuwJzDecGs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
