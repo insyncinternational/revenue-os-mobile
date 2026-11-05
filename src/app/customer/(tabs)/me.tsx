@@ -5,7 +5,7 @@ import { CustomerHeader } from "@/portal/CustomerHeader";
 import { goCustomer } from "@/portal/navigate";
 import { portalToken, useActivePortal, usePortalSession } from "@/portal/portalSession";
 import { LANGUAGES, setLanguage, t, useLanguage, type AppLanguage } from "@/i18n";
-import { confirm } from "@/lib/confirm";
+import { afterDialogCloses, confirm } from "@/lib/confirm";
 import { useTheme, type ThemePreference } from "@/theme/ThemeProvider";
 import { gutter, space } from "@/theme/tokens";
 import { Avatar } from "@/ui/Avatar";
@@ -127,7 +127,10 @@ export default function CustomerMe() {
           variant="danger"
           fullWidth
           onPress={async () => {
-            if (await confirm(t("portal.me.signOutConfirm", { business: portal?.branding?.business_name ?? "" }), t("more.signOut"), t("common.cancel"), true)) await signOut();
+            if (await confirm(t("portal.me.signOutConfirm", { business: portal?.branding?.business_name ?? "" }), t("more.signOut"), t("common.cancel"), true)) {
+              await afterDialogCloses();
+              await signOut();
+            }
           }}
         />
       </View>

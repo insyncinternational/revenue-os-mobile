@@ -39,6 +39,20 @@ export function clearQueryCache(client: QueryClient): void {
   storage.remove(StorageKeys.queryCache);
 }
 
+/** How long the screen being left keeps its data: the crossfade to sign-in, with room to spare. */
+export const LEAVE_CLEAR_DELAY_MS = 400;
+
+/**
+ * Signing out: the copy saved on the phone goes now, the in-memory data once the screen has faded out. Cleared
+ * first, the page being left went blank under the closing "Sign out?" sheet. Nothing can read it meanwhile: the
+ * token is already gone, so no request can refill it.
+ */
+export function clearQueryCacheAfterLeave(client: QueryClient): void {
+  storage.remove(StorageKeys.queryCache);
+  void client.cancelQueries();
+  setTimeout(() => client.clear(), LEAVE_CLEAR_DELAY_MS);
+}
+
 /** Saves when the app goes to the background (the moment it might be killed). Returns an unsubscribe. */
 export function persistOnBackground(client: QueryClient): () => void {
   const sub = AppState.addEventListener("change", (s) => {

@@ -3,7 +3,7 @@ import { StyleSheet, Switch, View } from "react-native";
 import { router } from "expo-router";
 import Constants from "expo-constants";
 import { LANGUAGES, setLanguage, t, useLanguage, type AppLanguage } from "@/i18n";
-import { confirm } from "@/lib/confirm";
+import { afterDialogCloses, confirm } from "@/lib/confirm";
 import { biometricKind, confirmOwner, useAppLock, type BiometricKind } from "@/session/appLock";
 import { useSession } from "@/session/sessionStore";
 import { useTheme, type ThemePreference } from "@/theme/ThemeProvider";
@@ -134,7 +134,10 @@ export function AccountSettings() {
           variant="danger"
           fullWidth
           onPress={async () => {
-            if (await confirm(t("more.signOutConfirm"), t("more.signOut"), t("common.cancel"), true)) await signOut();
+            if (await confirm(t("more.signOutConfirm"), t("more.signOut"), t("common.cancel"), true)) {
+              await afterDialogCloses();
+              await signOut();
+            }
           }}
         />
         <Text variant="footnote" tone="subtle" align="center">

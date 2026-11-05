@@ -5,7 +5,6 @@ import * as SplashScreen from "expo-splash-screen";
 import Constants from "expo-constants";
 import { useFonts } from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useReducedMotion } from "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -130,7 +129,6 @@ function useUpdateRequired(): boolean {
 function RootStack() {
   const { colors, scheme } = useTheme();
   const statusOverride = useStatusBarOverride((s) => s.style);
-  const reduceMotion = useReducedMotion();
   const status = useSession((s) => s.status);
   const gate = useSession((s) => s.gate);
   const updateRequired = useUpdateRequired();
@@ -145,10 +143,9 @@ function RootStack() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
-          // Signing in or out swaps whole sections (sign-in, the app, the portal): a short crossfade, not the
-          // platform's default, which showed a blank page in between.
-          animation: reduceMotion ? "none" : "fade",
-          animationDuration: 180,
+          // Signing in or out swaps whole sections (sign-in, the app, the portal) in one step: the section being
+          // left is removed at once, so any animation only showed an empty page before the next one.
+          animation: "none",
         }}
       >
         <Stack.Protected guard={updateRequired}>

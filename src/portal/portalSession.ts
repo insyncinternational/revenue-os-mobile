@@ -8,7 +8,7 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { portalAuthApi, setPortalSessionEnded, type PortalToken } from "@/api/portal";
 import { expoPushToken } from "@/push/push";
-import { clearQueryCache } from "@/query/persist";
+import { clearQueryCache, clearQueryCacheAfterLeave } from "@/query/persist";
 import { queryClient } from "@/query/queryClient";
 import { useBrandColor } from "@/theme/brandStore";
 import type { PortalBranding, PortalCustomer, PortalSignedIn } from "@/types/portal";
@@ -114,9 +114,16 @@ export const usePortalSession = create<State>((set, get) => ({
     }
     const sessions = get().sessions.filter((s) => s.slug !== target);
     const active = get().active === target ? (sessions[0]?.slug ?? null) : get().active;
-    clearQueryCache(queryClient);
-    if (!sessions.length) useBrandColor.getState().setWorkspace(null);
-    set({ sessions, active });
+    if (sessions.length) {
+      // Another business stays signed in: its screens must never show this one's data, so clear first.
+      clearQueryCache(queryClient);
+      set({ sessions, active });
+    } else {
+      // The last one: switch to sign-in first, then clear, so the page fades out instead of going blank.
+      useBrandColor.getState().setWorkspace(null);
+      set({ sessions, active });
+      clearQueryCacheAfterLeave(queryClient);
+    }
     await save({ sessions, active });
   },
 }));

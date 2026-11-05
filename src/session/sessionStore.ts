@@ -10,7 +10,7 @@ import { setAuthHandlers, type RefreshOutcome } from "@/api/client";
 import { ApiError, type ApiErrorKind } from "@/api/errors";
 import { readJson, storage, StorageKeys, writeJson } from "@/lib/storage";
 import { unregisterPush } from "@/push/push";
-import { clearQueryCache } from "@/query/persist";
+import { clearQueryCache, clearQueryCacheAfterLeave } from "@/query/persist";
 import { queryClient } from "@/query/queryClient";
 import type { User } from "@/types/session";
 import { clearTodayWidget } from "@/widgets/widgetSync";
@@ -143,13 +143,14 @@ export const useSession = create<SessionState>((set, get) => {
       storage.remove(StorageKeys.user);
       storage.remove(StorageKeys.expiresAt);
       storage.remove(StorageKeys.activeBaseId);
-      clearQueryCache(queryClient);
       // The lock belongs to whoever turned it on; the next person signing in here starts without it.
       useAppLock.getState().setEnabled(false);
       clearTodayWidget();
       // The sign-in screen is GrowthReach.ai's, not the last agency's (its colour came back on the button).
       useBrandColor.getState().setWorkspace(null);
       set({ token: null, user: null, expiresAt: null, activeBaseId: null, status: "signedOut", gate: "ok", endedReason: reason ?? null });
+      // After the switch to sign-in, so the page being left fades out with its content instead of going blank.
+      clearQueryCacheAfterLeave(queryClient);
     },
   };
 });
