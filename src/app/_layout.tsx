@@ -21,6 +21,7 @@ import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { fonts } from "@/theme/tokens";
 import { CelebrateProvider } from "@/ui/Celebrate";
 import { LaunchIntro } from "@/ui/LaunchIntro";
+import { DialogHost } from "@/ui/Dialog";
 import { ToastProvider } from "@/ui/Toast";
 
 // Keep the splash up until fonts and the session are ready — no flash of unstyled text or the wrong screen.
@@ -47,7 +48,6 @@ export default function RootLayout() {
     [fonts.semibold]: require("../../assets/fonts/Geist_600SemiBold.ttf"),
     [fonts.bold]: require("../../assets/fonts/Geist_700Bold.ttf"),
     [fonts.extrabold]: require("../../assets/fonts/Geist_800ExtraBold.ttf"),
-    [fonts.mono]: require("../../assets/fonts/GeistMono_500Medium.ttf"),
   });
   const status = useSession((s) => s.status);
   const hydrate = useSession((s) => s.hydrate);
@@ -90,6 +90,8 @@ export default function RootLayout() {
               <CelebrateProvider>
                 {/* Keyed on the language: switching re-renders every screen once in the new language. */}
                 <RootStack key={language} />
+                {/* Questions and choices in the app's own look, above every screen and sheet. */}
+                <DialogHost />
               </CelebrateProvider>
             </ToastProvider>
           </BrandedTheme>

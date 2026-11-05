@@ -17,13 +17,15 @@ type Props = {
   unread?: boolean;
   chevron?: boolean;
   subtitleLines?: 1 | 2;
+  /** Two lines for long titles that must be read whole (activity sentences); lists that recycle keep one. */
+  titleLines?: 1 | 2;
   onPress?: () => void;
   onLongPress?: () => void;
   accessibilityHint?: string;
 };
 
 /** The one list row used by every list (inbox, contacts, deals, tasks, notifications). Fixed structure = smooth recycling. */
-export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, trailing, unread, chevron, subtitleLines = 1, onPress, onLongPress, accessibilityHint }: Props) {
+export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, trailing, unread, chevron, subtitleLines = 1, titleLines = 1, onPress, onLongPress, accessibilityHint }: Props) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -39,7 +41,7 @@ export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, t
       {leading ? <View style={styles.leading}>{leading}</View> : null}
       <View style={styles.body}>
         <View style={styles.titleLine}>
-          <Text variant="headline" weight={unread ? "semibold" : "medium"} numberOfLines={1} style={styles.title}>
+          <Text variant="headline" weight={unread ? "semibold" : "medium"} numberOfLines={titleLines} style={styles.title}>
             {title}
           </Text>
           {meta ? (

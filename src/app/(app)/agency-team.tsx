@@ -1,4 +1,5 @@
-import { StyleSheet, View , Alert, Platform } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
+import { showDialog } from "@/ui/Dialog";
 import { Stack } from "expo-router";
 import { agencyApi } from "@/api/agency";
 import { userMessage } from "@/api/errors";
@@ -47,17 +48,17 @@ export default function AgencyTeamScreen() {
   const manage = (m: TeamMember) => {
     const name = m.name || m.email || "";
     const other: AgencyMemberRole = m.role === "agency_admin" ? "agency_user" : "agency_admin";
-    const change = { text: other === "agency_admin" ? t("agency.team.makeAdmin") : t("agency.team.makeMember"), onPress: () => member.mutate({ userId: m.user_id, name, role: other }) };
+    const change = { label: other === "agency_admin" ? t("agency.team.makeAdmin") : t("agency.team.makeMember"), onPress: () => member.mutate({ userId: m.user_id, name, role: other }) };
     const remove = {
-      text: t("agency.team.remove"),
+      label: t("agency.team.remove"),
       style: "destructive" as const,
       onPress: () => void confirm(t("agency.ask.remove", { name }), t("agency.team.remove"), t("common.cancel"), true).then((ok) => ok && member.mutate({ userId: m.user_id, name, remove: true })),
     };
     if (Platform.OS === "web") {
-      void confirm(`${change.text}?`, change.text, t("common.cancel")).then((ok) => ok && change.onPress());
+      void confirm(`${change.label}?`, change.label, t("common.cancel")).then((ok) => ok && change.onPress());
       return;
     }
-    Alert.alert(name, roleText(m.role), [change, remove, { text: t("common.cancel"), style: "cancel" }]);
+    showDialog({ title: name, message: roleText(m.role), actions: [change, remove, { label: t("common.cancel"), style: "cancel" }] });
   };
 
   if (!team.data) {
@@ -94,6 +95,7 @@ export default function AgencyTeamScreen() {
                   <ListRow
                     title={m.user_id === me ? t("agency.team.you", { name }) : name}
                     subtitle={[m.email, m.last_active_at ? relativeTime(m.last_active_at, locale) : null].filter(Boolean).join(" · ")}
+                    subtitleLines={2}
                     leading={<Avatar name={name} size={36} />}
                     trailing={<Badge label={m.active ? roleText(m.role) : t("agency.state.invited")} tone={m.role === "agency_admin" ? "brand" : m.active ? "neutral" : "info"} />}
                     onPress={admin && m.user_id !== me ? () => manage(m) : undefined}
@@ -112,6 +114,7 @@ export default function AgencyTeamScreen() {
                     {i > 0 ? <Divider inset={gutter + 36 + space.md} /> : null}
                     <ListRow
                       title={inv.email}
+                      titleLines={2}
                       subtitle={[roleText(inv.role), inv.invited_at ? relativeTime(inv.invited_at, locale) : null].filter(Boolean).join(" · ")}
                       leading={<Avatar name={inv.email} size={36} />}
                       trailing={

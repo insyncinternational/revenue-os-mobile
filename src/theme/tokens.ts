@@ -257,14 +257,13 @@ export function avatarTones(c: Palette, scheme: ColorScheme): readonly AvatarTon
       ];
 }
 
-/** Geist in five weights (each its own family so iOS, Android and web render identically), plus Geist Mono for small labels. */
+/** Geist in five weights (each its own family so iOS, Android and web render identically). One typeface everywhere. */
 export const fonts = {
   regular: "Geist-Regular",
   medium: "Geist-Medium",
   semibold: "Geist-SemiBold",
   bold: "Geist-Bold",
   extrabold: "Geist-ExtraBold",
-  mono: "GeistMono-Medium",
 } as const;
 
 export type TextVariant =
@@ -294,8 +293,8 @@ export const typography: Record<TextVariant, { fontFamily: string; fontSize: num
   subhead: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 19 },
   footnote: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
   caption: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16 },
-  /** Small spaced capitals in Geist Mono: section labels and status tags ("UP NEXT", "THIS WEEK"). */
-  eyebrow: { fontFamily: fonts.mono, fontSize: 11, lineHeight: 14, letterSpacing: 1, textTransform: "uppercase" },
+  /** Small spaced capitals: section labels and status tags ("UP NEXT", "THIS WEEK"). Only for labels in capitals. */
+  eyebrow: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14, letterSpacing: 0.8, textTransform: "uppercase" },
 };
 
 /** 4-point grid. */

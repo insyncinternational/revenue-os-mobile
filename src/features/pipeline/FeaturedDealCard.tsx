@@ -53,8 +53,8 @@ export const FeaturedDealCard = memo(function FeaturedDealCard({ deal, locale, s
       <View style={styles.bottom}>
         {showMoney && amount ? (
           <Text variant="metric" numeric numberOfLines={1} style={[styles.amount, { color: colors.heroGlow }]}>
+            <Text variant="footnote" weight="medium" style={{ color: colors.onContrastMuted }}>{`${currency} `}</Text>
             {amount}
-            <Text variant="footnote" weight="medium" style={{ color: colors.onContrastMuted }}>{` ${currency}`}</Text>
           </Text>
         ) : (
           <View />

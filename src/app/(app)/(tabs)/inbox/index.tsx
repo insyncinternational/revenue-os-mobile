@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
+import { showDialog } from "@/ui/Dialog";
 import { FlashList } from "@shopify/flash-list";
 import { userMessage } from "@/api/errors";
 import { InboxRow } from "@/features/inbox/InboxRow";
@@ -83,11 +84,14 @@ function InboxList() {
     (item: InboxItem) => {
       if (!canManage || Platform.OS === "web") return;
       haptics.selection();
-      Alert.alert(item.contact_label || item.contact_email || "", undefined, [
-        { text: t("inbox.assignMe"), onPress: () => act.mutate({ id: item.id, action: "assignMe", assignees: item.assignee_user_ids ?? [] }, { onSuccess: () => toast.show(t("inbox.assignedToast"), { kind: "success" }) }) },
-        { text: t("inbox.snoozeTomorrow"), onPress: () => act.mutate({ id: item.id, action: "snoozeTomorrow" }, { onSuccess: () => toast.show(t("inbox.snoozedToast")) }) },
-        { text: t("common.cancel"), style: "cancel" },
-      ]);
+      showDialog({
+        title: item.contact_label || item.contact_email || "",
+        actions: [
+          { label: t("inbox.assignMe"), onPress: () => act.mutate({ id: item.id, action: "assignMe", assignees: item.assignee_user_ids ?? [] }, { onSuccess: () => toast.show(t("inbox.assignedToast"), { kind: "success" }) }) },
+          { label: t("inbox.snoozeTomorrow"), onPress: () => act.mutate({ id: item.id, action: "snoozeTomorrow" }, { onSuccess: () => toast.show(t("inbox.snoozedToast")) }) },
+          { label: t("common.cancel"), style: "cancel" },
+        ],
+      });
     },
     [act, canManage, toast]
   );

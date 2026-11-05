@@ -77,7 +77,7 @@ function PipelineCard({ pipeline, deals }: { pipeline: PipelineOverview; deals: 
         <Text variant="footnote" tone="muted">
           {t("pipeline.openValue")}
         </Text>
-        <Text variant="eyebrow" tone="muted" style={styles.lower}>
+        <Text variant="caption" tone="muted">
           {deals === 1 ? t("today.openDealsOne") : t("today.openDeals", { count: deals })}
         </Text>
       </View>
@@ -147,10 +147,20 @@ function WonTile({ metric, sinceDays, currency }: { metric: KpiMetric; sinceDays
       <Text variant="footnote" tone="muted" numberOfLines={1}>
         {t("today.wonDays", { days: sinceDays })}
       </Text>
-      <AnimatedNumber value={metric.value} format={fmt} variant="metric" numberOfLines={1} adjustsFontSizeToFit style={styles.tileNumber} />
-      <Text variant="caption" tone="muted">
-        {metric.kind === "currency" ? currency : t("today.deals")}
-      </Text>
+      {metric.kind === "currency" ? (
+        // Money reads the same everywhere: a small currency code before the number ("AED 12,000").
+        <View style={styles.amount}>
+          <Text variant="footnote" tone="muted" weight="medium">{`${currency} `}</Text>
+          <AnimatedNumber value={metric.value} format={fmt} variant="metric" numberOfLines={1} adjustsFontSizeToFit style={styles.tileNumber} />
+        </View>
+      ) : (
+        <>
+          <AnimatedNumber value={metric.value} format={fmt} variant="metric" numberOfLines={1} adjustsFontSizeToFit style={styles.tileNumber} />
+          <Text variant="caption" tone="muted">
+            {t("today.deals")}
+          </Text>
+        </>
+      )}
     </PressableScale>
   );
 }
@@ -200,7 +210,6 @@ const styles = StyleSheet.create({
   wrap: { gap: space.md },
   card: { borderRadius: radius.xl + 4, padding: space.xl, paddingVertical: space.lg + 2, gap: space.xs },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: space.sm },
-  lower: { textTransform: "none", letterSpacing: 0.2 },
   amount: { flexDirection: "row", alignItems: "baseline" },
   big: { flexShrink: 1, fontSize: 38, lineHeight: 44, letterSpacing: -1.4 },
   bar: { flexDirection: "row", gap: 4, height: 28, marginTop: space.sm },

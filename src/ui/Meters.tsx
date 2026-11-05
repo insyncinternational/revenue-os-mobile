@@ -13,7 +13,7 @@ export function ScoreBar({ value, label }: { value: number; label?: string }) {
   return (
     <View style={styles.score} accessible accessibilityLabel={`${label ? `${label} ` : ""}${v}%`}>
       <Segments value={v} on={colors.primaryFill} off={colors.surfaceTertiary} />
-      <Text variant="eyebrow" numeric style={{ color: colors.textSecondary, letterSpacing: 0.3 }}>
+      <Text variant="caption" numeric style={{ color: colors.textSecondary }}>
         {`${v}%`}
       </Text>
     </View>

@@ -46,7 +46,7 @@ export function PipelineChart({ pipeline, showTotal = true }: { pipeline: Pipeli
             <Text variant="subhead" weight="medium" numberOfLines={1} style={[styles.flex, { color: b.count ? colors.text : colors.textMuted }]}>
               {b.label}
             </Text>
-            <Text variant="eyebrow" numeric style={{ color: colors.textMuted, textTransform: "none", letterSpacing: 0.2 }}>
+            <Text variant="caption" numeric style={{ color: colors.textMuted }}>
               {b.count ? `${b.count} · ${money(b.value, pipeline.currency, locale, { compact: true })}` : "—"}
             </Text>
           </View>

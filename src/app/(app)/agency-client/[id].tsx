@@ -216,9 +216,9 @@ export default function AgencyClientScreen() {
           <>
             <SectionHeader title={t("agency.client.people")} />
             <Card padded={false} style={styles.card}>
-              <ListRow title={t("agency.people.team")} subtitle={t("agency.people.teamHint")} leading={<RowIcon icon={Users} />} chevron onPress={() => openClientPeople(id, "team")} />
+              <ListRow title={t("agency.people.team")} subtitle={t("agency.people.teamHint")} subtitleLines={2} leading={<RowIcon icon={Users} />} chevron onPress={() => openClientPeople(id, "team")} />
               <Divider inset={gutter + 36 + space.md} />
-              <ListRow title={t("agency.people.customers")} subtitle={t("agency.people.customersHint")} leading={<RowIcon icon={Users} />} chevron onPress={() => openClientPeople(id, "customers")} />
+              <ListRow title={t("agency.people.customers")} subtitle={t("agency.people.customersHint")} subtitleLines={2} leading={<RowIcon icon={Users} />} chevron onPress={() => openClientPeople(id, "customers")} />
             </Card>
           </>
         ) : null}
@@ -257,7 +257,7 @@ export default function AgencyClientScreen() {
               {d.activity.slice(0, 8).map((a, i) => (
                 <View key={a.id}>
                   {i > 0 ? <Divider inset={gutter} /> : null}
-                  <ListRow title={a.summary || a.action} subtitle={[a.actor?.name || a.actor?.email, a.created_at ? relativeTime(a.created_at, locale) : null].filter(Boolean).join(" · ")} subtitleLines={1} />
+                  <ListRow title={a.summary || a.action} titleLines={2} subtitle={[a.actor?.name || a.actor?.email, a.created_at ? relativeTime(a.created_at, locale) : null].filter(Boolean).join(" · ")} subtitleLines={1} />
                 </View>
               ))}
             </Card>

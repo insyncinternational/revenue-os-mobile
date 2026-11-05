@@ -65,6 +65,7 @@ export default function AgencyActivityScreen() {
           renderItem={({ item }) => (
             <ListRow
               title={item.summary}
+              titleLines={2}
               subtitle={[item.actor?.name || item.actor?.email, item.at ? dateTime(item.at, locale) : null].filter(Boolean).join(" · ")}
               subtitleLines={1}
               chevron={item.client_id != null}

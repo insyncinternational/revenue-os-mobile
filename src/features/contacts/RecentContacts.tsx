@@ -26,7 +26,7 @@ export function RecentContacts({ contacts, locale, onOpen }: { contacts: Contact
           return (
             <Card key={c.id} onPress={() => onOpen(c)} accessibilityLabel={[name, when ? t("contacts.lastActivity", { when }) : null].filter(Boolean).join(". ")} style={styles.card} contentStyle={styles.body}>
               <Avatar name={name} size={52} />
-              <Text variant="callout" weight="semibold" align="center" numberOfLines={1}>
+              <Text variant="callout" weight="semibold" align="center" numberOfLines={2} style={styles.name}>
                 {name}
               </Text>
               {when ? (
@@ -48,5 +48,7 @@ const styles = StyleSheet.create({
   // Room above and below for the cards' shadow, which a scroll view would cut off.
   row: { paddingHorizontal: gutter, paddingVertical: space.xs, gap: space.sm + 2 },
   card: { width: 124 },
+  // Room for two lines on every card, so a long name wraps instead of ending in "…" and the row stays even.
+  name: { minHeight: 40 },
   body: { alignItems: "center", gap: space.xs, paddingVertical: space.lg, paddingHorizontal: space.sm },
 });

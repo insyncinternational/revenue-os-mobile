@@ -84,6 +84,7 @@ export default function AgencyAccount() {
                 <ListRow
                   title={r.title}
                   subtitle={r.subtitle}
+                  subtitleLines={2}
                   chevron
                   onPress={r.onPress}
                   leading={
