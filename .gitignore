@@ -42,3 +42,7 @@ yarn-error.*
 
 # local env
 .env
+
+# Firebase service account key for push (upload it to EAS, never commit it)
+*firebase-adminsdk*.json
+service-account*.json

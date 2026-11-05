@@ -9,7 +9,8 @@
       "env": {
         "APP_ENV": "production",
         "EXPO_PUBLIC_API_URL": "https://revenue-os-backend-bb33.onrender.com"
-      }
+      },
+      "channel": "production"
     },
     "preview": {
       "extends": "production",
@@ -20,7 +21,8 @@
       "env": {
         "APP_ENV": "preview",
         "EXPO_PUBLIC_API_URL": "https://revenue-os-backend-bb33.onrender.com"
-      }
+      },
+      "channel": "preview"
     }
   },
   "submit": {

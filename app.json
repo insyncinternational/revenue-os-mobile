@@ -139,6 +139,12 @@
         },
         "projectId": "c7c4afba-deac-4120-8a7d-7b4c7c73155f"
       }
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c7c4afba-deac-4120-8a7d-7b4c7c73155f"
     }
   }
 }
