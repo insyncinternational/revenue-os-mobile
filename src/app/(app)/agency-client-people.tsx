@@ -107,7 +107,7 @@ function TeamTab({ clientId }: { clientId: number }) {
                 <Divider inset={gutter + 36 + space.md} />
                 <ListRow
                   title={inv.email}
-                  titleLines={2}
+                  ellipsize="middle"
                   subtitle={inv.expired ? t("agency.people.inviteExpired") : t("agency.people.invitePending", { role: roleLabel(inv.role, false) })}
                   leading={<Avatar name={inv.email} size={36} />}
                   trailing={
@@ -187,8 +187,9 @@ function CustomersTab({ clientId }: { clientId: number }) {
                 {i > 0 ? <Divider inset={gutter + 36 + space.md} /> : null}
                 <ListRow
                   title={c.name || c.email}
-                  subtitle={[c.name ? c.email : null, c.last_login_at ? t("agency.owner.lastLogin", { when: relativeTime(c.last_login_at, locale) }) : null].filter(Boolean).join(" · ")}
-                  subtitleLines={2}
+                  subtitle={c.name ? c.email : c.last_login_at ? t("agency.owner.lastLogin", { when: relativeTime(c.last_login_at, locale) }) : null}
+                  meta={c.name && c.last_login_at ? relativeTime(c.last_login_at, locale) : null}
+                  ellipsize="middle"
                   leading={<Avatar name={c.name || c.email} size={36} />}
                   trailing={<Badge label={t(badge.label)} tone={badge.tone} />}
                   onPress={c.access === "ok" || c.access === "blocked" ? () => void toggle(c) : undefined}

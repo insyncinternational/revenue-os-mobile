@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { StyleSheet, View, type DimensionValue } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, useReducedMotion, Easing } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import { t } from "@/i18n";
@@ -33,12 +34,84 @@ export function SkeletonRow({ avatar = true }: { avatar?: boolean }) {
   );
 }
 
-export function SkeletonList({ rows = 8, avatar = true }: { rows?: number; avatar?: boolean }) {
+/**
+ * Rows while a list loads, in the same white rounded card the real lists use (`bare`: on the page, for lists
+ * that are not in a card, such as People and a chat).
+ */
+export function SkeletonList({ rows = 8, avatar = true, bare = false }: { rows?: number; avatar?: boolean; bare?: boolean }) {
+  const { colors } = useTheme();
   return (
-    <View accessibilityLabel={t("state.loading")} accessibilityRole="progressbar">
+    <View accessibilityLabel={t("state.loading")} accessibilityRole="progressbar" style={bare ? null : [styles.card, { backgroundColor: colors.surface }]}>
       {Array.from({ length: rows }, (_, i) => (
         <SkeletonRow key={i} avatar={avatar} />
       ))}
+    </View>
+  );
+}
+
+/** A client card while the Clients list loads: avatar and name, the numbers strip, the reason line. */
+export function SkeletonClientCards({ count = 3 }: { count?: number }) {
+  const { colors } = useTheme();
+  return (
+    <View accessibilityLabel={t("state.loading")} accessibilityRole="progressbar" style={styles.stack}>
+      {Array.from({ length: count }, (_, i) => (
+        <View key={i} style={[styles.card, styles.clientCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.clientTop}>
+            <Skeleton width={44} height={44} round />
+            <View style={styles.body}>
+              <Skeleton width="60%" height={16} />
+              <Skeleton width="45%" height={12} />
+            </View>
+            <Skeleton width={64} height={24} round />
+          </View>
+          <Skeleton width="100%" height={54} />
+          <Skeleton width="50%" height={12} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Deals while the board loads: its header line, the big amount, the two pills, the chart card and a deal. */
+export function SkeletonPipeline() {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View accessibilityLabel={t("state.loading")} accessibilityRole="progressbar" style={[styles.stack, { paddingTop: insets.top + space.md }]}>
+      <View style={styles.pad}>
+        <Skeleton width={150} height={14} />
+        <Skeleton width={230} height={48} />
+        <View style={styles.pills}>
+          <Skeleton width={130} height={32} round />
+          <Skeleton width={150} height={32} round />
+        </View>
+      </View>
+      <View style={[styles.card, styles.pad, styles.chart, { backgroundColor: colors.surface }]}>
+        <Skeleton width="100%" height={150} />
+      </View>
+      <View style={[styles.pad, styles.section]}>
+        <Skeleton width={90} height={20} />
+      </View>
+      <View style={[styles.card, styles.hero]}>
+        <Skeleton width="100%" height={120} />
+      </View>
+    </View>
+  );
+}
+
+/** A screen with a hero card on top and rows under it (a client's page, a deal), while it loads. */
+export function SkeletonDetail({ rows = 4 }: { rows?: number }) {
+  const { colors } = useTheme();
+  return (
+    <View accessibilityLabel={t("state.loading")} accessibilityRole="progressbar" style={styles.stack}>
+      <View style={[styles.card, styles.hero]}>
+        <Skeleton width="100%" height={180} />
+      </View>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        {Array.from({ length: rows }, (_, i) => (
+          <SkeletonRow key={i} />
+        ))}
+      </View>
     </View>
   );
 }
@@ -57,6 +130,15 @@ export function DelayedFallback({ delay = 150, children }: { delay?: number; chi
 }
 
 const styles = StyleSheet.create({
+  card: { marginHorizontal: gutter, borderRadius: radius.xl + 4, overflow: "hidden", paddingVertical: space.xs },
+  stack: { gap: space.sm + 2 },
+  clientCard: { padding: space.lg, gap: space.md },
+  clientTop: { flexDirection: "row", alignItems: "center", gap: space.md },
+  hero: { borderRadius: radius.xxl, paddingVertical: 0 },
+  pad: { paddingHorizontal: gutter, gap: space.sm },
+  pills: { flexDirection: "row", gap: space.sm, marginTop: space.xs },
+  chart: { marginHorizontal: gutter, paddingVertical: space.lg },
+  section: { marginTop: space.sm },
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: gutter, paddingVertical: space.md, gap: space.md, minHeight: 64 },
   body: { flex: 1, gap: space.sm },
   line: { flexDirection: "row", justifyContent: "space-between", gap: space.md },

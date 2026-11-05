@@ -1,4 +1,4 @@
-import { count, initials, money, percentChange, relativeTime, stableHash } from "./format";
+import { count, initials, money, percentChange, relativeTime, sentenceCase, stableHash } from "./format";
 
 const now = new Date(2026, 10, 1, 15, 0, 0); // Sun 1 Nov 2026, 15:00 local
 
@@ -62,5 +62,15 @@ describe("small helpers", () => {
   it("spreads names over all six avatar colours", () => {
     const names = ["Sara Ahmed", "James Carter", "Layla Hassan", "Omar Khalil", "Northwind Ltd", "Zainab", "Ali", "Fatima Noor", "Acme", "Bilal", "Hana Saeed", "Yusuf", "Mariam", "Khalid Rahman", "Noura", "Tariq", "Dana", "Rami", "Leen", "Faisal"];
     expect(new Set(names.map((n) => stableHash(n) % 6)).size).toBe(6);
+  });
+});
+
+describe("sentenceCase", () => {
+  it("lowercases title-case words after the first, keeping capitals and brand names", () => {
+    expect(sentenceCase("Revenue Won")).toBe("Revenue won");
+    expect(sentenceCase("Start Calling")).toBe("Start calling");
+    expect(sentenceCase("Reply With AI")).toBe("Reply with AI");
+    expect(sentenceCase("Open WhatsApp")).toBe("Open WhatsApp");
+    expect(sentenceCase("Pipeline value")).toBe("Pipeline value");
   });
 });

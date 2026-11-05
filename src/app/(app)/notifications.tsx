@@ -21,6 +21,7 @@ import { FilterChips } from "@/ui/Chip";
 import { BellOff, Building, Calendar, CheckCheck, CircleAlert, ICON_STROKE, KanbanSquare, Link, MessageCircle, Receipt, ShieldCheck, Sparkles, Users, type IconComponent } from "@/ui/icons";
 import { IconButton } from "@/ui/IconButton";
 import { PressableScale } from "@/ui/PressableScale";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
@@ -100,8 +101,7 @@ export default function Notifications() {
           keyExtractor={(i) => i.key}
           getItemType={(i) => i.type}
           contentInsetAdjustmentBehavior="automatic"
-          onRefresh={() => void feed.refetch()}
-          refreshing={feed.isRefetching && !feed.isFetchingNextPage}
+          refreshControl={<PullRefresh busy={feed.isRefetching && !feed.isFetchingNextPage} onRefresh={() => void feed.refetch()} />}
           onEndReachedThreshold={0.6}
           onEndReached={() => {
             if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();

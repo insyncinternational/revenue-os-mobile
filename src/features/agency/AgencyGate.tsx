@@ -3,8 +3,7 @@ import { Redirect } from "expo-router";
 import { agencyApi } from "@/api/agency";
 import { useAppMode } from "@/session/mode";
 import { useBrandColor } from "@/theme/brandStore";
-import { Screen } from "@/ui/Screen";
-import { SkeletonList } from "@/ui/Skeleton";
+import { AgencyHomeSkeleton } from "./AgencyHomeSkeleton";
 import { useAgencyId, useAgencyInfo, useMyAgencies } from "./useAgency";
 
 const entered = new Set<number>();
@@ -40,11 +39,7 @@ export function AgencyGate({ children }: { children: ReactNode }) {
 
   if (mode !== "agency" || agencyId <= 0 || !member) return <Redirect href="/" />;
   if (!info.data && info.isPending) {
-    return (
-      <Screen fixed>
-        <SkeletonList rows={6} />
-      </Screen>
-    );
+    return <AgencyHomeSkeleton />;
   }
   return <>{children}</>;
 }

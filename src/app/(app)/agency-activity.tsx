@@ -15,6 +15,7 @@ import { CardCell } from "@/ui/CardCell";
 import { Activity } from "@/ui/icons";
 import { ListRow } from "@/ui/ListRow";
 import { SearchBar } from "@/ui/SearchBar";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 
@@ -38,8 +39,7 @@ export default function AgencyActivityScreen() {
           keyExtractor={(r) => String(r.id)}
           contentInsetAdjustmentBehavior="automatic"
           keyboardDismissMode="on-drag"
-          onRefresh={() => void feed.refetch()}
-          refreshing={feed.isRefetching && !feed.isFetchingNextPage}
+          refreshControl={<PullRefresh busy={feed.isRefetching && !feed.isFetchingNextPage} onRefresh={() => void feed.refetch()} />}
           onEndReachedThreshold={0.6}
           onEndReached={() => {
             if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();

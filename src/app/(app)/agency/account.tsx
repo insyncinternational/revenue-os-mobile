@@ -3,18 +3,21 @@ import { router } from "expo-router";
 import { AccountSettings } from "@/features/account/AccountSettings";
 import { AgencyHeader } from "@/features/agency/AgencyHeader";
 import { openAgencyActivity, openAgencyBilling, openAgencyReports, openAgencyTeam } from "@/features/agency/navigate";
-import { useAgencyInfo, useIsAgencyAdmin } from "@/features/agency/useAgency";
-import { t } from "@/i18n";
+import { AGENCY_CURRENCY } from "@/features/agency/agency";
+import { useAgencyBilling, useAgencyInfo, useAgencyReports, useAgencyTeam, useIsAgencyAdmin } from "@/features/agency/useAgency";
+import { getIntlLocale, t } from "@/i18n";
+import { money } from "@/lib/format";
 import { useSession } from "@/session/sessionStore";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import { Avatar } from "@/ui/Avatar";
 import { Card } from "@/ui/Card";
 import { HeroCard } from "@/ui/HeroCard";
-import { Activity, ArrowLeftRight, BarChart, CreditCard, ICON_STROKE, Pencil, Users, type IconComponent } from "@/ui/icons";
+import { PressableScale } from "@/ui/PressableScale";
+import { Activity, ArrowLeftRight, BarChart, CreditCard, ICON_STROKE, Users, type IconComponent } from "@/ui/icons";
 import { ListRow } from "@/ui/ListRow";
 import { Screen } from "@/ui/Screen";
-import { Divider, SectionHeader } from "@/ui/Section";
+import { SectionHeader } from "@/ui/Section";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
 import { Text } from "@/ui/Text";
 
@@ -28,14 +31,20 @@ export default function AgencyAccount() {
   const agencyName = info?.agency.brand_name || info?.agency.name || "";
   const role = info?.role === "agency_admin" || info?.role === "platform_admin" ? t("role.agency_admin") : t("role.agency_user");
 
-  const rows: ({ key: string; title: string; subtitle?: string; icon: IconComponent; onPress: () => void } | false)[] = [
-    { key: "team", title: t("agency.team.title"), subtitle: t("agency.team.hint"), icon: Users, onPress: openAgencyTeam },
-    admin && { key: "billing", title: t("agency.billing.title"), subtitle: t("agency.billing.hint"), icon: CreditCard, onPress: openAgencyBilling },
-    { key: "reports", title: t("agency.reports.title"), subtitle: t("agency.reports.hint"), icon: BarChart, onPress: () => openAgencyReports() },
-    admin && { key: "activity", title: t("agency.activity.title"), subtitle: t("agency.activity.hint"), icon: Activity, onPress: openAgencyActivity },
-    { key: "switch", title: t("workspace.title"), subtitle: t("agency.account.switchHint"), icon: ArrowLeftRight, onPress: () => router.push("/switcher") },
+  const locale = getIntlLocale();
+  // Live details for the tiles (each is cached and shared with its own screen).
+  const team = useAgencyTeam().data;
+  const billing = useAgencyBilling(admin).data?.billing;
+  const won = useAgencyReports(30).data?.totals.won_value;
+  const renew = billing?.billing_period_end ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(billing.billing_period_end)) : null;
+
+  const tiles: ({ key: string; title: string; detail: string; icon: IconComponent; onPress: () => void; people?: string[] } | false)[] = [
+    { key: "team", title: t("agency.team.title"), detail: t("agency.team.hint"), icon: Users, onPress: openAgencyTeam, people: team?.members.map((m) => m.name || m.email || "?") },
+    admin && { key: "billing", title: t("agency.billing.title"), detail: billing ? [billing.plan_name, renew ? t("agency.billing.renews", { date: renew }) : null].filter(Boolean).join(" · ") : t("agency.billing.hint"), icon: CreditCard, onPress: openAgencyBilling },
+    { key: "reports", title: t("agency.reports.title"), detail: won != null && won > 0 ? t("agency.top.won", { amount: money(won, AGENCY_CURRENCY, locale, { compact: won >= 100_000 }) }) : t("agency.reports.hint"), icon: BarChart, onPress: () => openAgencyReports() },
+    admin && { key: "activity", title: t("agency.activity.title"), detail: t("agency.activity.hint"), icon: Activity, onPress: openAgencyActivity },
   ];
-  const shown = rows.filter((r): r is Exclude<(typeof rows)[number], false> => r !== false);
+  const shown = tiles.filter((r): r is Exclude<(typeof tiles)[number], false> => r !== false);
 
   return (
     <>
@@ -56,46 +65,74 @@ export default function AgencyAccount() {
                   </Text>
                 ) : null}
               </View>
-              <View style={[styles.editIcon, { backgroundColor: colors.heroGlass }]}>
-                <Pencil size={15} color={colors.onHero} strokeWidth={ICON_STROKE + 0.5} />
+              <View style={[styles.edit, { backgroundColor: colors.surface }]}>
+                <Text variant="footnote" weight="semibold">
+                  {t("common.edit")}
+                </Text>
               </View>
             </View>
             {info ? (
-              <View style={styles.badges}>
-                {[role, agencyName].map((label) => (
-                  <View key={label} style={[styles.badge, { backgroundColor: colors.heroGlass }]}>
-                    <Text variant="caption" weight="semibold" numberOfLines={1} style={{ color: colors.onHero }}>
-                      {label}
-                    </Text>
-                  </View>
-                ))}
+              <View style={[styles.badge, { backgroundColor: colors.heroGlass }]}>
+                <Text variant="caption" weight="semibold" numberOfLines={1} style={{ color: colors.onHero }}>
+                  {[role, agencyName].filter(Boolean).join(" · ")}
+                </Text>
               </View>
             ) : null}
           </HeroCard>
         </AgencyHeader>
 
         <SectionHeader title={t("agency.account.agency")} />
-        <Card padded={false} style={styles.card}>
-          {shown.map((r, i) => {
+        <View style={styles.grid}>
+          {shown.map((r) => {
             const Icon = r.icon;
             return (
-              <View key={r.key}>
-                {i > 0 ? <Divider inset={gutter + 36 + space.md} /> : null}
-                <ListRow
-                  title={r.title}
-                  subtitle={r.subtitle}
-                  subtitleLines={2}
-                  chevron
-                  onPress={r.onPress}
-                  leading={
-                    <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                      <Icon size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
+              <PressableScale
+                key={r.key}
+                onPress={r.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={`${r.title}. ${r.detail}`}
+                scaleTo={0.97}
+                style={[styles.tile, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]}
+              >
+                <View style={styles.tileTop}>
+                  <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSecondary }]}>
+                    <Icon size={18} color={colors.text} strokeWidth={ICON_STROKE + 0.25} />
+                  </View>
+                  {r.people && r.people.length > 0 ? (
+                    <View style={styles.people}>
+                      {r.people.slice(0, 3).map((n, i) => (
+                        <View key={`${n}-${i}`} style={[styles.person, i > 0 && styles.personOverlap, { borderColor: colors.surface }]}>
+                          <Avatar name={n} size={26} />
+                        </View>
+                      ))}
                     </View>
-                  }
-                />
-              </View>
+                  ) : null}
+                </View>
+                <View style={styles.tileText}>
+                  <Text variant="headline" numberOfLines={1}>
+                    {r.title}
+                  </Text>
+                  <Text variant="footnote" tone="muted" numberOfLines={2}>
+                    {r.detail}
+                  </Text>
+                </View>
+              </PressableScale>
             );
           })}
+        </View>
+        <Card padded={false} style={[styles.card, styles.switch]}>
+          <ListRow
+            title={t("workspace.title")}
+            subtitle={t("agency.account.switchHint")}
+            subtitleLines={2}
+            chevron
+            onPress={() => router.push("/switcher")}
+            leading={
+              <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSecondary }]}>
+                <ArrowLeftRight size={18} color={colors.text} strokeWidth={ICON_STROKE + 0.25} />
+              </View>
+            }
+          />
         </Card>
         <Text variant="footnote" tone="muted" style={styles.hint}>
           {t("agency.account.webHint")}
@@ -112,9 +149,16 @@ const styles = StyleSheet.create({
   profileTop: { flexDirection: "row", alignItems: "center", gap: space.md },
   avatarRing: { borderRadius: 34, borderWidth: 2, padding: 2 },
   profileText: { flex: 1, minWidth: 0, gap: 2 },
-  editIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", alignSelf: "flex-start" },
-  badges: { flexDirection: "row", gap: space.sm, flexWrap: "wrap", marginTop: space.xs },
-  badge: { height: 26, paddingHorizontal: space.md, borderRadius: radius.pill, justifyContent: "center", maxWidth: 220 },
+  edit: { height: 32, paddingHorizontal: space.md + 2, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", alignSelf: "flex-start" },
+  badge: { alignSelf: "flex-start", height: 26, paddingHorizontal: space.md, borderRadius: radius.pill, justifyContent: "center", maxWidth: "100%", marginTop: space.xs },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: space.sm + 2, paddingHorizontal: gutter },
+  tile: { flexBasis: "47%", flexGrow: 1, padding: space.lg, gap: space.md, borderRadius: radius.xl },
+  tileTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  tileText: { gap: 2 },
+  people: { flexDirection: "row" },
+  person: { borderWidth: 2, borderRadius: 15 },
+  personOverlap: { marginLeft: -8 },
+  switch: { marginTop: space.sm + 2 },
   card: { marginHorizontal: gutter },
   rowIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   hint: { paddingHorizontal: gutter + space.xs, paddingTop: space.sm },

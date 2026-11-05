@@ -20,6 +20,7 @@ import type { Meeting, MeetingView } from "@/types/calendar";
 import { HeaderAction } from "@/ui/HeaderAction";
 import { CalendarCheck, CalendarDays, CalendarPlus } from "@/ui/icons";
 import { SegmentedControl } from "@/ui/SegmentedControl";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
@@ -91,8 +92,7 @@ export default function CalendarScreen() {
           keyExtractor={(i) => i.key}
           getItemType={(i) => i.type}
           contentInsetAdjustmentBehavior="automatic"
-          onRefresh={refresh}
-          refreshing={(list.isRefetching && !list.isFetchingNextPage) || strip.isRefetching}
+          refreshControl={<PullRefresh busy={(list.isRefetching && !list.isFetchingNextPage) || strip.isRefetching} onRefresh={refresh} />}
           onEndReachedThreshold={0.6}
           onEndReached={() => {
             if (!(tab === "upcoming" && day) && list.hasNextPage && !list.isFetchingNextPage) void list.fetchNextPage();

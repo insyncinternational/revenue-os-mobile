@@ -26,7 +26,6 @@ import {
   CalendarDays,
   ICON_STROKE,
   ListChecks,
-  Pencil,
   Receipt,
   Send,
   ShieldCheck,
@@ -91,19 +90,17 @@ export default function More() {
                   </Text>
                 ) : null}
               </View>
-              <View style={[styles.editIcon, { backgroundColor: colors.heroGlass }]}>
-                <Pencil size={15} color={colors.onHero} strokeWidth={ICON_STROKE + 0.5} />
+              <View style={[styles.editIcon, { backgroundColor: colors.surface }]}>
+                <Text variant="footnote" weight="semibold">
+                  {t("common.edit")}
+                </Text>
               </View>
             </View>
             {access ? (
-              <View style={styles.badges}>
-                {[roleLabel(access.role), access.client?.name ?? access.workspace.name].map((label) => (
-                  <View key={label} style={[styles.badge, { backgroundColor: colors.heroGlass }]}>
-                    <Text variant="caption" weight="semibold" numberOfLines={1} style={{ color: colors.onHero }}>
-                      {label}
-                    </Text>
-                  </View>
-                ))}
+              <View style={[styles.badge, { backgroundColor: colors.heroGlass }]}>
+                <Text variant="caption" weight="semibold" numberOfLines={1} style={{ color: colors.onHero }}>
+                  {[roleLabel(access.role), access.client?.name ?? access.workspace.name].filter(Boolean).join(" · ")}
+                </Text>
               </View>
             ) : null}
           </HeroCard>
@@ -114,12 +111,12 @@ export default function More() {
         <View style={styles.grid}>
           {(
             [
-              { id: "notif", label: t("more.notifications"), icon: Bell, fg: colors.primary, bg: colors.primarySubtle, count: unread, onPress: () => router.push("/notifications") },
-              showApprovals && { id: "approvals", label: t("approvals.title"), icon: ShieldCheck, fg: colors.primary, bg: colors.primarySubtle, count: approvals, onPress: openApprovals },
-              showCalendar && { id: "calendar", label: t("more.calendar"), icon: CalendarDays, fg: colors.primary, bg: colors.primarySubtle, count: toRecord, onPress: openCalendar },
-              showTasks && { id: "tasks", label: t("more.tasks"), icon: ListChecks, fg: colors.primary, bg: colors.primarySubtle, count: myTasks, onPress: openTasks },
-              showInvoices && { id: "invoices", label: t("more.invoices"), icon: Receipt, fg: colors.primary, bg: colors.primarySubtle, count: overdueInvoices, onPress: openInvoices },
-              showCampaigns && { id: "campaigns", label: t("campaigns.title"), icon: Send, fg: colors.primary, bg: colors.primarySubtle, count: liveCampaigns, onPress: openCampaigns },
+              { id: "notif", label: t("more.notifications"), icon: Bell, fg: colors.text, bg: colors.surfaceSecondary, count: unread, onPress: () => router.push("/notifications") },
+              showApprovals && { id: "approvals", label: t("approvals.title"), icon: ShieldCheck, fg: colors.text, bg: colors.surfaceSecondary, count: approvals, onPress: openApprovals },
+              showCalendar && { id: "calendar", label: t("more.calendar"), icon: CalendarDays, fg: colors.text, bg: colors.surfaceSecondary, count: toRecord, onPress: openCalendar },
+              showTasks && { id: "tasks", label: t("more.tasks"), icon: ListChecks, fg: colors.text, bg: colors.surfaceSecondary, count: myTasks, onPress: openTasks },
+              showInvoices && { id: "invoices", label: t("more.invoices"), icon: Receipt, fg: colors.text, bg: colors.surfaceSecondary, count: overdueInvoices, onPress: openInvoices },
+              showCampaigns && { id: "campaigns", label: t("campaigns.title"), icon: Send, fg: colors.text, bg: colors.surfaceSecondary, count: liveCampaigns, onPress: openCampaigns },
             ] as (WorkTileProps | false)[]
           )
             .filter((x): x is WorkTileProps => x !== false)
@@ -137,8 +134,8 @@ export default function More() {
             onPress={() => router.push("/switcher")}
             accessibilityHint={t("workspace.title")}
             leading={
-              <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
-                <ArrowLeftRight size={18} color={colors.textSecondary} strokeWidth={ICON_STROKE} />
+              <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSecondary }]}>
+                <ArrowLeftRight size={18} color={colors.text} strokeWidth={ICON_STROKE + 0.25} />
               </View>
             }
             trailing={access?.source === "agency" ? <Badge label={t("workspace.clients")} tone="brand" /> : undefined}
@@ -151,8 +148,8 @@ export default function More() {
               chevron
               onPress={() => backToAgency(agencyId)}
               leading={
-                <View style={[styles.rowIcon, { backgroundColor: colors.primarySubtle }]}>
-                  <Building size={18} color={colors.primary} strokeWidth={ICON_STROKE} />
+                <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSecondary }]}>
+                  <Building size={18} color={colors.text} strokeWidth={ICON_STROKE + 0.25} />
                 </View>
               }
             />
@@ -216,9 +213,8 @@ const styles = StyleSheet.create({
   avatarRing: { borderRadius: 34, borderWidth: 2, padding: 2 },
   profileText: { flex: 1, minWidth: 0, gap: 2 },
   /** A hint that the card edits the profile (the card itself is the button). */
-  editIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", alignSelf: "flex-start" },
-  badges: { flexDirection: "row", gap: space.sm, flexWrap: "wrap", marginTop: space.xs },
-  badge: { height: 26, paddingHorizontal: space.md, borderRadius: radius.pill, justifyContent: "center", maxWidth: 220 },
+  editIcon: { height: 32, paddingHorizontal: space.md + 2, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", alignSelf: "flex-start" },
+  badge: { alignSelf: "flex-start", height: 26, paddingHorizontal: space.md, borderRadius: radius.pill, justifyContent: "center", maxWidth: "100%", marginTop: space.xs },
   card: { marginHorizontal: gutter },
   block: { paddingHorizontal: gutter },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space.sm + 2, paddingHorizontal: gutter },

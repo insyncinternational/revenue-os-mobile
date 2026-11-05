@@ -38,7 +38,7 @@ export function Segments({ value, on, off, height = 6 }: { value: number; on: st
 
 /**
  * One bar split by share (pipeline value per stage), each part in its own colour; tiny parts keep a sliver.
- * `track`: the colour between the parts (on a ContrastBlock, `contrastTrack`).
+ * `track`: the colour between the parts (on a hero card, `heroGlass`).
  */
 export function StageBar({ parts, track }: { parts: { key: string; share: number; color: string }[]; track?: string }) {
   const { colors } = useTheme();

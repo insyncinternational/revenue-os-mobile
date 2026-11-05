@@ -5,7 +5,8 @@ import { radius, space, touchTarget, type Palette } from "@/theme/tokens";
 import { ICON_STROKE, type IconComponent } from "./icons";
 import { Text } from "./Text";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+/** `onFill` / `glass`: the two buttons on a brand-colour card (white pill, see-through pill). */
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "onFill" | "glass";
 export type ButtonSize = "sm" | "md" | "lg";
 
 type Props = Omit<PressableProps, "style" | "children"> & {
@@ -32,12 +33,20 @@ function colorsFor(variant: ButtonVariant, c: Palette, pressed: boolean) {
       return { bg: pressed ? c.primarySubtlePressed : "transparent", fg: c.primary, border: "transparent" };
     case "danger":
       return { bg: pressed ? c.dangerSurface : "transparent", fg: c.danger, border: c.danger };
+    case "onFill":
+      return { bg: pressed ? c.surfaceSecondary : c.surface, fg: c.text, border: "transparent" };
+    case "glass":
+      return { bg: pressed ? c.primaryTrack : c.primaryTrack, fg: c.onPrimary, border: "transparent" };
   }
 }
+
+const MUTED = (c: Palette) => ({ bg: c.surfaceTertiary, fg: c.textMuted, border: "transparent" });
 
 export function Button({ label, variant = "primary", size = "md", icon: Icon, loading, fullWidth, disabled, style, ...rest }: Props) {
   const { colors } = useTheme();
   const inactive = disabled || loading;
+  // A disabled main button is a plain grey pill (a faded brand fill looks muddy); loading keeps its colour.
+  const muted = !!disabled && !loading && variant === "primary";
   return (
     <Pressable
       accessibilityRole="button"
@@ -46,19 +55,19 @@ export function Button({ label, variant = "primary", size = "md", icon: Icon, lo
       disabled={inactive}
       hitSlop={size === "sm" ? 6 : undefined}
       style={({ pressed }) => {
-        const v = colorsFor(variant, colors, pressed);
+        const v = muted ? MUTED(colors) : colorsFor(variant, colors, pressed);
         return [
           styles.base,
           { height: heights[size], paddingHorizontal: size === "sm" ? space.md + 2 : space.xl, backgroundColor: v.bg, borderColor: v.border },
           fullWidth && styles.full,
-          inactive && styles.disabled,
+          inactive && !muted && styles.disabled,
           style,
         ];
       }}
       {...rest}
     >
       {({ pressed }) => {
-        const fg = colorsFor(variant, colors, pressed).fg;
+        const fg = muted ? MUTED(colors).fg : colorsFor(variant, colors, pressed).fg;
         return (
           <View style={styles.content}>
             {loading ? (

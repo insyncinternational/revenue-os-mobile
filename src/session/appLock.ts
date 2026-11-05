@@ -25,9 +25,19 @@ export async function biometricKind(): Promise<BiometricKind | null> {
   const [hardware, enrolled] = await Promise.all([LocalAuthentication.hasHardwareAsync(), LocalAuthentication.isEnrolledAsync()]);
   if (!hardware || !enrolled) return null;
   const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-  if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return "face";
-  if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) return "fingerprint";
-  return "other";
+  return pickBiometric(Platform.OS, types);
+}
+
+/**
+ * Pure: the label to show. Android phones often list face and fingerprint, but the system prompt apps get asks
+ * for the fingerprint (most Android face unlock is not strong enough for apps), so Android says fingerprint
+ * whenever it has one. iPhones have one or the other, and Face ID is the face.
+ */
+export function pickBiometric(os: string, types: LocalAuthentication.AuthenticationType[]): BiometricKind {
+  const face = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+  const finger = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+  if (os === "android") return finger ? "fingerprint" : face ? "face" : "other";
+  return face ? "face" : finger ? "fingerprint" : "other";
 }
 
 /** Asks the phone. The passcode is allowed as the fallback, so a failed face scan never locks the owner out. */

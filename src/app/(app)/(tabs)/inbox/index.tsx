@@ -23,6 +23,7 @@ import { FilterChips, type FilterOption } from "@/ui/Chip";
 import { Archive, Inbox as InboxIcon, Lock, Mail, MailOpen, Search } from "@/ui/icons";
 import { Text } from "@/ui/Text";
 import { SearchBar } from "@/ui/SearchBar";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { ListReveal } from "@/ui/ListReveal";
@@ -30,6 +31,7 @@ import { SwipeableRow } from "@/ui/SwipeableRow";
 import { useToast } from "@/ui/Toast";
 import { TabHeader } from "@/ui/TabHeader";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
+import { useRefreshOffset } from "@/ui/Screen";
 
 type View_ = InboxFilter["view"] | "archived";
 const CHANNELS: InboxChannel[] = ["email", "whatsapp", "sms", "website_chat", "linkedin", "instagram", "facebook"];
@@ -43,6 +45,7 @@ export default function InboxScreen() {
 }
 
 function InboxList() {
+  const refreshOffset = useRefreshOffset();
   const { colors } = useTheme();
   const scrim = useStatusBarScrim();
   const toast = useToast();
@@ -136,8 +139,7 @@ function InboxList() {
         contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        onRefresh={() => void list.refetch()}
-        refreshing={list.isRefetching && !list.isFetchingNextPage}
+        refreshControl={<PullRefresh busy={list.isRefetching && !list.isFetchingNextPage} onRefresh={() => void list.refetch()} progressViewOffset={refreshOffset} />}
         onEndReachedThreshold={0.6}
         onEndReached={() => {
           if (list.hasNextPage && !list.isFetchingNextPage) void list.fetchNextPage();

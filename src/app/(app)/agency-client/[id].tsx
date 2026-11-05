@@ -34,7 +34,7 @@ import {
 import { ListRow } from "@/ui/ListRow";
 import { Screen } from "@/ui/Screen";
 import { Divider, SectionHeader } from "@/ui/Section";
-import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
+import { DelayedFallback, SkeletonDetail } from "@/ui/Skeleton";
 import { ErrorState, OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
 
@@ -94,7 +94,7 @@ export default function AgencyClientScreen() {
         <Screen>
           {detail.isPending ? (
             <DelayedFallback>
-              <SkeletonList rows={8} />
+              <SkeletonDetail />
             </DelayedFallback>
           ) : (
             <ErrorState offline={!online} message={online ? userMessage(detail.error) : undefined} onRetry={() => void detail.refetch()} />

@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
 import { initials, stableHash } from "@/lib/format";
 import { useTheme } from "@/theme/ThemeProvider";
-import { avatarTones } from "@/theme/tokens";
+import { accentAvatarTone, avatarTones } from "@/theme/tokens";
 import { accentGradient } from "./Gloss";
 import { Text } from "./Text";
 
@@ -11,13 +11,13 @@ import { Text } from "./Text";
 type Props = { name: string; uri?: string | null; size?: number; accent?: boolean };
 
 /**
- * A photo, else the person's initials on one of a few calm tones (ink, grey, a soft accent): the same person
- * always gets the same one. No rainbow gradients in the Mono look.
+ * A photo, else the person's initials on one of six soft tints (avatarTones): the same person always gets the
+ * same one, so clients are easy to tell apart. `accent` is the signed-in person's glossy brand tone.
  */
 export const Avatar = memo(function Avatar({ name, uri, size = 40, accent }: Props) {
   const { colors, scheme } = useTheme();
   const tones = avatarTones(colors, scheme);
-  const tone = accent ? tones[tones.length - 1]! : (tones[stableHash(name || "?") % tones.length] ?? tones[0]!);
+  const tone = accent ? accentAvatarTone(colors) : (tones[stableHash(name || "?") % tones.length] ?? tones[0]!);
   const box = { width: size, height: size, borderRadius: size / 2 };
   return (
     <View style={[styles.base, box, uri ? styles.clip : null]} accessible={false}>

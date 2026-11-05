@@ -19,13 +19,15 @@ type Props = {
   subtitleLines?: 1 | 2;
   /** Two lines for long titles that must be read whole (activity sentences); lists that recycle keep one. */
   titleLines?: 1 | 2;
+  /** "middle" for emails and links: the start and the domain stay, the middle becomes "…". */
+  ellipsize?: "tail" | "middle";
   onPress?: () => void;
   onLongPress?: () => void;
   accessibilityHint?: string;
 };
 
 /** The one list row used by every list (inbox, contacts, deals, tasks, notifications). Fixed structure = smooth recycling. */
-export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, trailing, unread, chevron, subtitleLines = 1, titleLines = 1, onPress, onLongPress, accessibilityHint }: Props) {
+export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, trailing, unread, chevron, subtitleLines = 1, titleLines = 1, ellipsize = "tail", onPress, onLongPress, accessibilityHint }: Props) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -41,7 +43,7 @@ export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, t
       {leading ? <View style={styles.leading}>{leading}</View> : null}
       <View style={styles.body}>
         <View style={styles.titleLine}>
-          <Text variant="headline" weight={unread ? "semibold" : "medium"} numberOfLines={titleLines} style={styles.title}>
+          <Text variant="headline" weight={unread ? "semibold" : "medium"} numberOfLines={titleLines} ellipsizeMode={titleLines === 1 ? ellipsize : "tail"} style={styles.title}>
             {title}
           </Text>
           {meta ? (
@@ -52,7 +54,7 @@ export const ListRow = memo(function ListRow({ title, subtitle, meta, leading, t
         </View>
         {subtitle ? (
           <View style={styles.subLine}>
-            <Text variant="subhead" tone={unread ? "secondary" : "muted"} numberOfLines={subtitleLines} style={styles.subtitle}>
+            <Text variant="subhead" tone={unread ? "secondary" : "muted"} numberOfLines={subtitleLines} ellipsizeMode={subtitleLines === 1 ? ellipsize : "tail"} style={styles.subtitle}>
               {subtitle}
             </Text>
             {unread ? <View style={[styles.dot, { backgroundColor: colors.primary }]} /> : null}

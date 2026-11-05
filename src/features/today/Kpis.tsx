@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { getIntlLocale, t, type TranslationKey } from "@/i18n";
-import { count, money, percentChange } from "@/lib/format";
+import { count, money, percentChange, sentenceCase } from "@/lib/format";
 import { useTheme } from "@/theme/ThemeProvider";
 import { radius, space } from "@/theme/tokens";
 import type { KpiMetric } from "@/types/home";
@@ -99,7 +99,7 @@ function Highlight({ m, fmt, onAddDeal }: { m: KpiMetric; fmt: Fmt; onAddDeal?: 
           <Icon size={17} color={colors.primary} strokeWidth={ICON_STROKE + 0.5} />
         </View>
         <Text variant="subhead" weight="semibold" numberOfLines={1} style={[styles.flex, { color: ink.muted }]}>
-          {m.label}
+          {sentenceCase(m.label)}
         </Text>
         {change ? <ChangeChip change={change} /> : null}
       </View>
@@ -138,7 +138,7 @@ function Tile({ m, fmt, index }: { m: KpiMetric; fmt: Fmt; index: number }) {
           <Icon size={15} color={colors.textSecondary} strokeWidth={ICON_STROKE + 0.5} />
         </View>
         <Text variant="footnote" weight="medium" tone="muted" numberOfLines={1} style={styles.flex}>
-          {m.label}
+          {sentenceCase(m.label)}
         </Text>
       </View>
       {zero ? (

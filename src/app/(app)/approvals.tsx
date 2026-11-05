@@ -16,6 +16,7 @@ import { gutter, space } from "@/theme/tokens";
 import { FilterChips } from "@/ui/Chip";
 import { ListReveal } from "@/ui/ListReveal";
 import { ShieldCheck } from "@/ui/icons";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
@@ -58,8 +59,7 @@ export default function ApprovalsScreen() {
           keyExtractor={(i) => i.key}
           getItemType={(i) => i.kind}
           contentInsetAdjustmentBehavior="automatic"
-          onRefresh={refetch}
-          refreshing={drafts.isRefetching || actions.isRefetching}
+          refreshControl={<PullRefresh busy={drafts.isRefetching || actions.isRefetching} onRefresh={refetch} />}
           ListHeaderComponent={
             draftsOn ? (
               <View style={styles.filters}>

@@ -1,5 +1,16 @@
 /** Pure formatting helpers (no React). Built on Intl — no date or number library. */
 
+/**
+ * Pure: "Revenue Won" → "Revenue won", "Start Calling" → "Start calling", the app's sentence case. Words in
+ * capitals ("AI", "AED", "CRM") and words with a capital inside ("WhatsApp", "iPhone") stay as they are.
+ */
+export function sentenceCase(s: string): string {
+  return s
+    .split(" ")
+    .map((w, i) => (i === 0 || w.length < 2 || w === w.toUpperCase() || /[A-Z]/.test(w.slice(1)) ? w : w.charAt(0).toLowerCase() + w.slice(1)))
+    .join(" ");
+}
+
 export function initials(name: string): string {
   // An email address stands in for a missing name: use the part before the @.
   const source = name.includes("@") ? name.slice(0, name.indexOf("@")) : name;

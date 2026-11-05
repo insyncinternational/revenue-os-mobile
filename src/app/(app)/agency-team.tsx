@@ -94,8 +94,9 @@ export default function AgencyTeamScreen() {
                   {i > 0 ? <Divider inset={gutter + 36 + space.md} /> : null}
                   <ListRow
                     title={m.user_id === me ? t("agency.team.you", { name }) : name}
-                    subtitle={[m.email, m.last_active_at ? relativeTime(m.last_active_at, locale) : null].filter(Boolean).join(" · ")}
-                    subtitleLines={2}
+                    subtitle={m.email}
+                    meta={m.last_active_at ? relativeTime(m.last_active_at, locale) : null}
+                    ellipsize="middle"
                     leading={<Avatar name={name} size={36} />}
                     trailing={<Badge label={m.active ? roleText(m.role) : t("agency.state.invited")} tone={m.role === "agency_admin" ? "brand" : m.active ? "neutral" : "info"} />}
                     onPress={admin && m.user_id !== me ? () => manage(m) : undefined}
@@ -114,7 +115,7 @@ export default function AgencyTeamScreen() {
                     {i > 0 ? <Divider inset={gutter + 36 + space.md} /> : null}
                     <ListRow
                       title={inv.email}
-                      titleLines={2}
+                      ellipsize="middle"
                       subtitle={[roleText(inv.role), inv.invited_at ? relativeTime(inv.invited_at, locale) : null].filter(Boolean).join(" · ")}
                       leading={<Avatar name={inv.email} size={36} />}
                       trailing={

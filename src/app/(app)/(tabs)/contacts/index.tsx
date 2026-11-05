@@ -21,12 +21,14 @@ import { FilterChips } from "@/ui/Chip";
 import { Lock, Users } from "@/ui/icons";
 import { SearchBar } from "@/ui/SearchBar";
 import { Divider } from "@/ui/Section";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { ListReveal } from "@/ui/ListReveal";
 import { TabHeader } from "@/ui/TabHeader";
 import { Text } from "@/ui/Text";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
+import { useRefreshOffset } from "@/ui/Screen";
 
 /**
  * Contacts are leads, which belong to no lockable module (backend services/users/moduleAccess.ts), so the list
@@ -40,6 +42,7 @@ export default function ContactsScreen() {
 }
 
 function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolean }) {
+  const refreshOffset = useRefreshOffset();
   const { colors } = useTheme();
   const scrim = useStatusBarScrim();
   const online = useOnline();
@@ -69,7 +72,7 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
   const filtered = debounced || view !== "all";
   const empty = list.isPending ? (
     <DelayedFallback>
-      <SkeletonList rows={9} />
+      <SkeletonList rows={9} bare />
     </DelayedFallback>
   ) : list.isError ? (
     <ErrorState offline={!online} message={online ? userMessage(list.error) : undefined} onRetry={() => void list.refetch()} />
@@ -93,8 +96,7 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
         contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        onRefresh={() => void list.refetch()}
-        refreshing={list.isRefetching && !list.isFetchingNextPage}
+        refreshControl={<PullRefresh busy={list.isRefetching && !list.isFetchingNextPage} onRefresh={() => void list.refetch()} progressViewOffset={refreshOffset} />}
         onEndReachedThreshold={0.6}
         onEndReached={() => {
           if (list.hasNextPage && !list.isFetchingNextPage) void list.fetchNextPage();
@@ -104,7 +106,7 @@ function ContactList({ canCreate, hidden }: { canCreate: boolean; hidden: boolea
           <View style={styles.header}>
             <TabHeader action={canCreate ? { label: t("contacts.add"), onPress: () => openContactForm() } : undefined} area="contacts"
               title={t("tabs.contacts")}
-              summary={`${count(list.total, locale)} ${view === "mine" ? t("contacts.totalMine") : view === "phone" ? t("contacts.totalPhone") : t("contacts.totalAll")}`}
+              summary={list.isPending ? null : `${count(list.total, locale)} ${view === "mine" ? t("contacts.totalMine") : view === "phone" ? t("contacts.totalPhone") : t("contacts.totalAll")}`}
             />
             <View style={styles.pad}>
               <SearchBar value={search} onChangeText={setSearch} placeholder={t("contacts.search")} />
@@ -149,7 +151,7 @@ function LetterHeading({ letter }: { letter: string }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.letter, { backgroundColor: colors.background }]} accessibilityRole="header">
-      <Text variant="footnote" weight="bold" style={{ color: colors.primaryText }}>
+      <Text variant="footnote" weight="bold" style={{ color: colors.textMuted }}>
         {letter}
       </Text>
     </View>

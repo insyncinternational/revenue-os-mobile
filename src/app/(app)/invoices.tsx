@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
@@ -17,7 +18,7 @@ import { Backdrop, useAreaHeaderStyle } from "@/ui/Backdrop";
 import type { InvoiceStatus } from "@/types/invoice";
 import { Banner } from "@/ui/Banner";
 import { Badge } from "@/ui/Badge";
-import { ContrastBlock, contrastStatus } from "@/ui/ContrastBlock";
+import { ContrastBlock } from "@/ui/ContrastBlock";
 import { FilterChips } from "@/ui/Chip";
 import { HeaderAction } from "@/ui/HeaderAction";
 import { ListReveal } from "@/ui/ListReveal";
@@ -63,11 +64,15 @@ export default function InvoicesScreen() {
           data={rows}
           keyExtractor={(i) => String(i.id)}
           contentInsetAdjustmentBehavior="automatic"
-          onRefresh={() => {
-            void list.refetch();
-            void payments.refetch();
-          }}
-          refreshing={list.isRefetching}
+          refreshControl={
+            <PullRefresh
+              busy={list.isRefetching}
+              onRefresh={() => {
+              void list.refetch();
+              void payments.refetch();
+              }}
+            />
+          }
           ListHeaderComponent={
             <View style={styles.header}>
               <Backdrop area="invoices" underBar />
@@ -77,25 +82,25 @@ export default function InvoicesScreen() {
                   <>
                     <View style={styles.amounts}>
                       <View style={styles.flex}>
-                        <Text variant="footnote" style={{ color: colors.onContrastMuted }}>
+                        <Text variant="footnote" style={{ color: colors.onHeroMuted }}>
                           {t("invoice.collectedLabel")}
                         </Text>
-                        <Text variant="title" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: collected ? contrastStatus("success") : colors.onContrast }}>
+                        <Text variant="title" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: collected ? colors.onHero : colors.onHero }}>
                           {collected ?? (currency ? cents(0, currency, locale) : "—")}
                         </Text>
-                        <Text variant="footnote" style={[styles.owedLabel, { color: colors.onContrastMuted }]}>
+                        <Text variant="footnote" style={[styles.owedLabel, { color: colors.onHeroMuted }]}>
                           {t("invoice.outstanding")}
                         </Text>
-                        <Text variant="headline" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.onContrast }}>
+                        <Text variant="headline" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.onHero }}>
                           {outstanding ?? (currency ? cents(0, currency, locale) : "—")}
                         </Text>
                       </View>
                       {paidShare != null ? (
                         <View style={styles.ring} accessible accessibilityLabel={`${t("invoice.paid")}: ${Math.round(paidShare * 100)}%`}>
-                          <Ring value={paidShare} size={76} stroke={7} color={contrastStatus("success")} track={colors.contrastTrack}>
-                            <Text variant="callout" weight="semibold" numeric style={{ color: colors.onContrast }}>{`${Math.round(paidShare * 100)}%`}</Text>
+                          <Ring value={paidShare} size={76} stroke={7} color={colors.onHero} track={colors.heroGlass}>
+                            <Text variant="callout" weight="semibold" numeric style={{ color: colors.onHero }}>{`${Math.round(paidShare * 100)}%`}</Text>
                           </Ring>
-                          <Text variant="caption" style={{ color: colors.onContrastMuted }}>
+                          <Text variant="caption" style={{ color: colors.onHeroMuted }}>
                             {t("invoice.paid")}
                           </Text>
                         </View>

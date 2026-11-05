@@ -79,8 +79,9 @@ export default function CustomerHome() {
                 {next.starts_at ? dateTime(next.starts_at, locale) : ""}
               </Text>
               <View style={styles.heroActions}>
-                {next.join_url ? <Button label={t("portal.appt.join")} icon={Video} variant="secondary" size="sm" onPress={() => void Linking.openURL(next.join_url!)} /> : null}
-                <Button label={t("portal.appt.reschedule")} variant="secondary" size="sm" onPress={() => openBook(next.id)} />
+                {/* On the colour: the main action is the white pill, the other one glass (as on the credit pool card). */}
+                {next.join_url ? <Button label={t("portal.appt.join")} icon={Video} variant="onFill" size="sm" onPress={() => void Linking.openURL(next.join_url!)} /> : null}
+                <Button label={t("portal.appt.reschedule")} variant={next.join_url ? "glass" : "onFill"} size="sm" onPress={() => openBook(next.id)} />
               </View>
             </HeroCard>
           ) : (

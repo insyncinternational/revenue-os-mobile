@@ -15,10 +15,12 @@ import type { NotificationRow } from "@/types/notifications";
 import { BellOff, CircleAlert, Coins, ICON_STROKE, Receipt, UserPlus, type IconComponent } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Divider } from "@/ui/Section";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
 import { Text } from "@/ui/Text";
+import { useRefreshOffset } from "@/ui/Screen";
 
 /** Pure: the icon and colour of an agency alert, by its event. */
 export function alertLook(type: string): { icon: IconComponent; tone: "success" | "danger" | "warning" } {
@@ -30,6 +32,7 @@ export function alertLook(type: string): { icon: IconComponent; tone: "success" 
 
 /** What happened in the agency that needs the admins: new clients, payments, plan and credit-pool problems. */
 export default function AgencyAlerts() {
+  const refreshOffset = useRefreshOffset();
   const { colors } = useTheme();
   const online = useOnline();
   const locale = getIntlLocale();
@@ -62,8 +65,7 @@ export default function AgencyAlerts() {
         data={alerts.rows}
         keyExtractor={(n) => String(n.id)}
         contentInsetAdjustmentBehavior="never"
-        onRefresh={() => void alerts.refetch()}
-        refreshing={alerts.isRefetching}
+        refreshControl={<PullRefresh busy={alerts.isRefetching} onRefresh={() => void alerts.refetch()} progressViewOffset={refreshOffset} />}
         ItemSeparatorComponent={RowDivider}
         ListHeaderComponent={<AgencyHeader area="account" title={t("agency.tabs.alerts")} summary={alerts.unread ? t("notif.unreadCount", { count: alerts.unread }) : t("agency.alerts.summary")} />}
         ListEmptyComponent={empty}

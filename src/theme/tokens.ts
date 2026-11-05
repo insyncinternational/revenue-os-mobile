@@ -73,12 +73,6 @@ export type Palette = {
   ink: string;
   inkPressed: string;
   onInk: string;
-  /** The dark feature card (ContrastBlock): ink on the light page, a lifted grey on the dark one. */
-  contrast: string;
-  onContrast: string;
-  onContrastMuted: string;
-  /** Empty part of a bar or meter on that card. */
-  contrastTrack: string;
 };
 
 /** The logo's orange (#f7820f light, #ff9a1a dark) with charcoal text on it, like the logo; #b8530b for orange text on white. */
@@ -138,10 +132,6 @@ const light: Palette = {
   ink: BRAND.charcoal,
   inkPressed: "#2a303a",
   onInk: "#ffffff",
-  contrast: "#1b2029",
-  onContrast: "#ffffff",
-  onContrastMuted: "rgba(255, 255, 255, 0.62)",
-  contrastTrack: "rgba(255, 255, 255, 0.16)",
 };
 
 const dark: Palette = {
@@ -198,10 +188,6 @@ const dark: Palette = {
   ink: "#f2f2ee",
   inkPressed: "#d9d9d3",
   onInk: "#0e0e0c",
-  contrast: "#262624",
-  onContrast: "#f2f2ee",
-  onContrastMuted: "rgba(242, 242, 238, 0.6)",
-  contrastTrack: "rgba(242, 242, 238, 0.14)",
 };
 
 export const palettes: Record<ColorScheme, Palette> = { light, dark };
@@ -244,18 +230,31 @@ export const channelColors = {
  */
 export type AvatarTone = { bg: string; fg: string; glossy?: boolean };
 export function avatarTones(c: Palette, scheme: ColorScheme): readonly AvatarTone[] {
-  return scheme === "dark"
-    ? [
-        { bg: c.surfaceTertiary, fg: c.primary },
-        { bg: c.surfaceTertiary, fg: c.text },
-        { bg: c.borderStrong, fg: c.text },
-      ]
-    : [
-        { bg: c.primarySubtle, fg: c.primaryText },
-        { bg: c.surfaceTertiary, fg: c.textSecondary },
-        { bg: c.primaryFill, fg: c.onPrimary, glossy: true },
-      ];
+  return scheme === "dark" ? AVATAR_DARK : AVATAR_LIGHT;
 }
+
+/** The signed-in person in headers: the glossy brand tone. */
+export function accentAvatarTone(c: Palette): AvatarTone {
+  return { bg: c.primaryFill, fg: c.onPrimary, glossy: true };
+}
+
+// Soft tints with a dark text of the same hue (all pass 4.5:1), the same person always getting the same one.
+const AVATAR_LIGHT: readonly AvatarTone[] = [
+  { bg: "#ffe8d3", fg: "#a4480a" },
+  { bg: "#d8f1ec", fg: "#0f6b5c" },
+  { bg: "#e9e5fb", fg: "#4b3bb5" },
+  { bg: "#e3ecfc", fg: "#1e54b7" },
+  { bg: "#fce7f0", fg: "#a3245a" },
+  { bg: "#f1efd9", fg: "#6b5b0e" },
+];
+const AVATAR_DARK: readonly AvatarTone[] = [
+  { bg: "#3a2613", fg: "#ffb877" },
+  { bg: "#123630", fg: "#7fd9c6" },
+  { bg: "#29224f", fg: "#b9aeff" },
+  { bg: "#16284a", fg: "#9dbbff" },
+  { bg: "#3d1a2a", fg: "#ff9cc5" },
+  { bg: "#2f2a10", fg: "#e6d36a" },
+];
 
 /** Geist in five weights (each its own family so iOS, Android and web render identically). One typeface everywhere. */
 export const fonts = {

@@ -7,7 +7,6 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { fonts, gutter, radius, space } from "@/theme/tokens";
 import type { Stage, StageTotal } from "@/types/pipeline";
 import { AnimatedNumber } from "@/ui/AnimatedNumber";
-import { accentGradient } from "@/ui/Gloss";
 import { Text } from "@/ui/Text";
 
 const EASE = Easing.bezier(0.16, 1, 0.3, 1);
@@ -29,7 +28,7 @@ type Props = {
 
 /**
  * The top of the Pipeline tab (Mono look): the open value, very large; two pills (weighted, how likely to close);
- * and a white card with one bar per open stage, growing up from the bottom — the biggest stage in the accent,
+ * and a white card with one bar per open stage, growing up from the bottom — all in the brand colour, the biggest full,
  * empty stages as dashed stubs. Tapping a bar opens that stage below.
  */
 export function PipelineSummary({ stages, totals, openValue, weighted, likely, selected, onSelect, money, compact }: Props) {
@@ -47,8 +46,8 @@ export function PipelineSummary({ stages, totals, openValue, weighted, likely, s
               {t("pipeline.weighted", { value: compact(weighted) })}
             </Text>
           </View>
-          <View style={[styles.pill, { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}>
-            <Text variant="footnote" weight="semibold" numeric style={{ color: colors.onPrimary }}>
+          <View style={[styles.pill, { backgroundColor: colors.surface }]}>
+            <Text variant="footnote" weight="medium" numeric>
               {`${likely}% · ${t("pipeline.likely")}`}
             </Text>
           </View>
@@ -78,7 +77,7 @@ export function PipelineSummary({ stages, totals, openValue, weighted, likely, s
                     <Text variant="eyebrow" numeric numberOfLines={1} style={[styles.value, { color: colors.text }]}>
                       {compact(v)}
                     </Text>
-                    <Bar height={Math.max(14, (v / max) * CHART)} color={i === top ? colors.primaryFill : colors.ink} gloss={i === top ? accentGradient(colors) : undefined} index={i} />
+                    <Bar height={Math.max(14, (v / max) * CHART)} color={colors.primaryFill} faded={i !== top} index={i} />
                   </>
                 ) : (
                   <View style={[styles.stub, { borderColor: colors.borderStrong }]} />
@@ -105,14 +104,15 @@ export function PipelineSummary({ stages, totals, openValue, weighted, likely, s
   );
 }
 
-function Bar({ height, color, gloss, index }: { height: number; color: string; gloss?: string; index: number }) {
+/** One stage's bar: solid brand colour, as on Today's pipeline card; the biggest stage full, the others lighter. */
+function Bar({ height, color, faded, index }: { height: number; color: string; faded: boolean; index: number }) {
   const reduce = useReducedMotion();
   const h = useSharedValue(reduce ? height : 0);
   useEffect(() => {
     h.set(reduce ? height : withDelay(200 + index * 90, withTiming(height, { duration: 800, easing: EASE })));
   }, [height, index, reduce, h]);
   const style = useAnimatedStyle(() => ({ height: h.get() }));
-  return <Animated.View style={[styles.bar, { backgroundColor: color, backgroundImage: gloss }, style]} />;
+  return <Animated.View style={[styles.bar, { backgroundColor: color, opacity: faded ? 0.38 : 1 }, style]} />;
 }
 
 const styles = StyleSheet.create({

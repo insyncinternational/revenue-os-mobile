@@ -4,7 +4,7 @@ import { haptics } from "@/lib/haptics";
 import { openContactForm, openDealForm, openMeetingForm, openTaskForm } from "@/lib/navigate";
 import { useCan, useModuleEnabled } from "@/session/workspace";
 import { useTheme } from "@/theme/ThemeProvider";
-import { radius, space, type Palette } from "@/theme/tokens";
+import { radius, space } from "@/theme/tokens";
 import { CalendarPlus, ICON_STROKE, KanbanSquare, ListTodo, UserPlus, type IconComponent } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Text } from "@/ui/Text";
@@ -28,22 +28,18 @@ export function useQuickActions(): Action[] {
   return all.filter((a): a is Action => a !== false);
 }
 
-/** Each shortcut in its own colour, so the row reads at a glance (and the screen isn't all one brand colour). */
-const TONE: Record<string, { bg: keyof Palette; fg: keyof Palette }> = {
-  contact: { bg: "primarySubtle", fg: "primary" },
-  deal: { bg: "primarySubtle", fg: "primary" },
-  task: { bg: "primarySubtle", fg: "primary" },
-  meeting: { bg: "primarySubtle", fg: "primary" },
-};
+/** Size of each round button: also used by the loading skeletons so nothing moves when the screen loads. */
+export const QUICK_ACTION_SIZE = 52;
 
 /**
- * One row of white tiles (like a modern app's shortcuts): new contact, deal, task, meeting — each with its icon on
- * a soft tile of its own colour.
+ * The shortcuts as one white card holding a row of round buttons (the banking-app pattern): a brand-tinted
+ * circle with the icon, and a short one-line label under it. Lighter than a tile each, and it reads as one group.
  */
 export function QuickActions({ actions }: { actions: Action[] }) {
   const { colors } = useTheme();
+  if (!actions.length) return null;
   return (
-    <View style={styles.row}>
+    <View style={[styles.card, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]}>
       {actions.map((a) => {
         const Icon = a.icon;
         return (
@@ -55,12 +51,13 @@ export function QuickActions({ actions }: { actions: Action[] }) {
             }}
             accessibilityRole="button"
             accessibilityLabel={t(a.label)}
-            style={[styles.action, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]}
+            scaleTo={0.94}
+            style={styles.action}
           >
-            <View style={[styles.tile, { backgroundColor: colors[(TONE[a.key] ?? TONE.deal!).bg] }]}>
-              <Icon size={22} color={colors[(TONE[a.key] ?? TONE.deal!).fg]} strokeWidth={ICON_STROKE + 0.25} />
+            <View style={[styles.circle, { backgroundColor: colors.surfaceSecondary }]}>
+              <Icon size={22} color={colors.text} strokeWidth={ICON_STROKE + 0.25} />
             </View>
-            <Text variant="caption" weight="semibold" numberOfLines={2} style={styles.label}>
+            <Text variant="caption" weight="semibold" tone="secondary" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
               {t(a.label)}
             </Text>
           </PressableScale>
@@ -71,8 +68,7 @@ export function QuickActions({ actions }: { actions: Action[] }) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: space.sm + 2 },
-  action: { flex: 1, alignItems: "center", gap: space.sm, paddingTop: space.md + 2, paddingBottom: space.md, paddingHorizontal: space.xs, borderRadius: radius.xl },
-  tile: { width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  label: { textAlign: "center" },
+  card: { flexDirection: "row", justifyContent: "space-around", paddingVertical: space.lg, paddingHorizontal: space.xs, borderRadius: radius.xl + 4 },
+  action: { flex: 1, alignItems: "center", gap: space.sm, paddingHorizontal: 2 },
+  circle: { width: QUICK_ACTION_SIZE, height: QUICK_ACTION_SIZE, borderRadius: QUICK_ACTION_SIZE / 2, alignItems: "center", justifyContent: "center" },
 });

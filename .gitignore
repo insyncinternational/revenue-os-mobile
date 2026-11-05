@@ -46,3 +46,6 @@ yarn-error.*
 # Firebase service account key for push (upload it to EAS, never commit it)
 *firebase-adminsdk*.json
 service-account*.json
+
+# Local emulator build helper
+android-local-build.cmd

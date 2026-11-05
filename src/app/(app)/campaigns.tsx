@@ -18,6 +18,7 @@ import { Button } from "@/ui/Button";
 import { ChannelGlyph } from "@/ui/ChannelIcon";
 import { FilterChips } from "@/ui/Chip";
 import { PauseCircle, Send } from "@/ui/icons";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { Text } from "@/ui/Text";
@@ -52,8 +53,7 @@ export default function CampaignsScreen() {
           data={items}
           keyExtractor={(c) => String(c.id)}
           contentInsetAdjustmentBehavior="automatic"
-          onRefresh={() => void list.refetch()}
-          refreshing={list.isRefetching}
+          refreshControl={<PullRefresh busy={list.isRefetching} onRefresh={() => void list.refetch()} />}
           ListHeaderComponent={
             <View style={styles.filters}>
               <Backdrop area="campaigns" underBar />

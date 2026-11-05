@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { PullRefresh } from "@/ui/PullRefresh";
 import { StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
@@ -59,11 +60,15 @@ export default function TasksScreen() {
           keyExtractor={(i) => i.key}
           getItemType={(i) => i.type}
           contentInsetAdjustmentBehavior="automatic"
-          onRefresh={() => {
-            setNow(new Date());
-            void list.refetch();
-          }}
-          refreshing={list.isRefetching}
+          refreshControl={
+            <PullRefresh
+              busy={list.isRefetching}
+              onRefresh={() => {
+              setNow(new Date());
+              void list.refetch();
+              }}
+            />
+          }
           ListHeaderComponent={
             <View style={styles.filters}>
               <Backdrop area="tasks" underBar />

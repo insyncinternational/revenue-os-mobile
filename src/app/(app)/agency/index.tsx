@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { userMessage } from "@/api/errors";
 import { AGENCY_CURRENCY, reportMetrics, topClients } from "@/features/agency/agency";
 import { AgencyHeader } from "@/features/agency/AgencyHeader";
+import { AgencyHomeSkeleton } from "@/features/agency/AgencyHomeSkeleton";
 import { BillingNotice } from "@/features/agency/BillingNotice";
 import { ClientRowItem } from "@/features/agency/ClientRowItem";
 import { HealthCard } from "@/features/agency/HealthCard";
@@ -73,12 +74,9 @@ export default function AgencyHome() {
 
   if (!dashboard.data && dashboard.isPending) {
     return (
-      <Screen contentInsetAdjustmentBehavior="never">
-        {header}
-        <DelayedFallback>
-          <SkeletonList rows={6} />
-        </DelayedFallback>
-      </Screen>
+      <DelayedFallback>
+        <AgencyHomeSkeleton />
+      </DelayedFallback>
     );
   }
   if (!dashboard.data) {
@@ -91,6 +89,9 @@ export default function AgencyHome() {
   }
 
   const clients = dashboard.data.clients;
+  const poolNow = totals?.lead_credits ?? 0;
+  const withClients = clients.filter((c) => !c.in_trash).reduce((n, c) => n + c.credits_balance, 0);
+  const poolPct = poolNow + withClients > 0 ? Math.round((poolNow / (poolNow + withClients)) * 100) : 0;
   const recent = [...clients].filter((c) => !c.in_trash).sort((a, b) => Date.parse(b.last_active_at ?? "0") - Date.parse(a.last_active_at ?? "0")).slice(0, 5);
   const metrics = reports.data ? reportMetrics(reports.data, (k) => t(k as TranslationKey)) : [];
   const top = reports.data ? topClients(reports.data) : [];
@@ -98,7 +99,7 @@ export default function AgencyHome() {
 
   return (
     <View style={styles.fill}>
-      <Screen contentInsetAdjustmentBehavior="never" onRefresh={refresh} refreshing={dashboard.isRefetching || reports.isRefetching} onScroll={scrim.onScroll} scrollEventThrottle={16}>
+      <Screen contentInsetAdjustmentBehavior="never" onRefresh={refresh} refreshing={dashboard.isRefetching || reports.isRefetching} onScroll={scrim.onScroll} scrollEventThrottle={16} contentContainerStyle={styles.content}>
         {header}
         {!online ? <OfflineBanner /> : null}
 
@@ -117,18 +118,36 @@ export default function AgencyHome() {
           {/* The agency's hero: the credit pool on the glossy accent card. */}
           <View style={[styles.card, styles.poolCard, { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}>
             <Sheen />
-            <View style={styles.flex}>
+            <View>
               <Text variant="display" numeric numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.onPrimary }}>
-                {count(totals?.lead_credits ?? 0, locale)}
+                {count(poolNow, locale)}
               </Text>
               <Text variant="footnote" style={{ color: colors.onPrimaryMuted }}>
                 {t("agency.home.poolLabel")}
               </Text>
             </View>
-            <View style={styles.poolActions}>
-              {canBuy ? <Button label={t("agency.credits.buy")} size="sm" onPress={openBuyCredits} /> : null}
-              {canCredits ? <Button label={t("agency.credits.give")} size="sm" variant="secondary" onPress={() => openMoveCredits()} /> : null}
-            </View>
+            {/* In the pool vs already with clients: one thin bar, the share in the pool in white. */}
+            {poolNow + withClients > 0 ? (
+              <View style={styles.meter} accessible accessibilityLabel={`${t("agency.credits.inPool", { pct: poolPct })}, ${t("agency.credits.withClientsCount", { count: count(withClients, locale) })}`}>
+                <View style={[styles.track, { backgroundColor: colors.primaryTrack }]}>
+                  <View style={[styles.trackFill, { width: `${poolPct}%`, backgroundColor: colors.onPrimary }]} />
+                </View>
+                <View style={styles.meterLegend}>
+                  <Text variant="caption" numeric style={{ color: colors.onPrimaryMuted }}>
+                    {t("agency.credits.inPool", { pct: poolPct })}
+                  </Text>
+                  <Text variant="caption" numeric style={{ color: colors.onPrimaryMuted }}>
+                    {t("agency.credits.withClientsCount", { count: count(withClients, locale) })}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+            {canBuy || canCredits ? (
+              <View style={styles.poolActions}>
+                {canBuy ? <Button label={t("agency.credits.buy")} size="sm" variant="onFill" onPress={openBuyCredits} style={styles.flex} /> : null}
+                {canCredits ? <Button label={t("agency.credits.give")} size="sm" variant="glass" onPress={() => openMoveCredits()} style={styles.flex} /> : null}
+              </View>
+            ) : null}
           </View>
         </Reveal>
 
@@ -201,7 +220,6 @@ export default function AgencyHome() {
             </Card>
           </Reveal>
         )}
-        <View style={{ height: space.xxl, backgroundColor: colors.background }} />
       </Screen>
       <StatusBarScrim shown={scrim.shown} />
     </View>
@@ -210,10 +228,16 @@ export default function AgencyHome() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  // The tab bar sits below the list, so one normal gap ends the page (no extra empty space).
+  content: { paddingBottom: space.xl },
   block: { paddingHorizontal: gutter, gap: space.md },
   card: { marginHorizontal: gutter },
-  poolCard: { flexDirection: "row", alignItems: "center", gap: space.md, borderRadius: radius.xxl, padding: space.xl, overflow: "hidden" },
-  poolActions: { gap: space.sm, alignItems: "flex-end" },
+  poolCard: { gap: space.md, borderRadius: radius.xxl, padding: space.xl, overflow: "hidden" },
+  poolActions: { flexDirection: "row", gap: space.sm },
+  meter: { gap: space.xs + 2 },
+  track: { height: 8, borderRadius: 4, overflow: "hidden" },
+  trackFill: { height: 8, borderRadius: 4 },
+  meterLegend: { flexDirection: "row", justifyContent: "space-between" },
   flex: { flex: 1, minWidth: 0 },
   empty: { gap: space.sm, alignItems: "flex-start" },
   emptyButton: { marginTop: space.sm },

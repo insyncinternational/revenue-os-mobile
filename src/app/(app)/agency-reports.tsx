@@ -54,13 +54,13 @@ export default function AgencyReportsScreen() {
             ]}
           />
         </View>
-        {tab === "results" ? <Results days={days} /> : <Usage days={days} />}
+        {tab === "results" ? <Results days={days} onUsage={() => setTab("usage")} /> : <Usage days={days} />}
       </Screen>
     </>
   );
 }
 
-function Results({ days }: { days: Days }) {
+function Results({ days, onUsage }: { days: Days; onUsage: () => void }) {
   const locale = getIntlLocale();
   const report = useAgencyReports(days);
   if (!report.data) return report.isError ? <ErrorState message={userMessage(report.error)} onRetry={() => void report.refetch()} /> : <SkeletonList rows={6} />;
@@ -70,7 +70,7 @@ function Results({ days }: { days: Days }) {
   return (
     <>
       <View style={styles.pad}>
-        <Kpis metrics={metrics} currency={AGENCY_CURRENCY} />
+        <Kpis metrics={metrics} currency={AGENCY_CURRENCY} more={{ label: t("agency.reports.usage"), hint: t("agency.reports.title"), onPress: onUsage }} />
         {rate != null ? (
           <Text variant="footnote" tone="muted" style={styles.rate}>
             {t("agency.reports.replyRate", { rate: Math.round(rate) })}
@@ -88,6 +88,7 @@ function Results({ days }: { days: Days }) {
               <ListRow
                 title={c.name}
                 subtitle={t("agency.reports.clientLine", { leads: count(c.leads, locale), sent: count(c.sent, locale), replies: count(c.replies, locale), meetings: count(c.meetings, locale) })}
+                subtitleLines={2}
                 leading={<Avatar name={c.name} size={36} />}
                 trailing={c.won_value > 0 ? <Text variant="callout" weight="semibold" numeric>{money(c.won_value, AGENCY_CURRENCY, locale, { compact: true })}</Text> : undefined}
                 onPress={() => openAgencyClient(c.id)}

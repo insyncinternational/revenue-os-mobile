@@ -81,6 +81,8 @@ function untilReadable(rgb: Rgb, against: string, min: number, dir: "darken" | "
 }
 
 const WHITE = "#ffffff";
+const CHARCOAL = "#14181e";
+const CHARCOAL_PRESSED = "#2a303a";
 const DARK_INK = "#0b0b0d";
 
 /**
@@ -101,6 +103,16 @@ function heroFor(base: Rgb, scheme: ColorScheme): Partial<Palette> {
     heroGlass: darkText ? "rgba(11, 11, 13, 0.08)" : "rgba(255, 255, 255, 0.14)",
     heroGlassBorder: darkText ? "rgba(11, 11, 13, 0.14)" : "rgba(255, 255, 255, 0.22)",
   };
+}
+
+/**
+ * Text and glass on the hero cards (ui/HeroCard): they are drawn on the accent fill, so they use the fill's own
+ * text colour (white for an agency colour), the same as every other card on that fill (the credit pool).
+ */
+function heroOnFill(on: string): Pick<Palette, "onHero" | "onHeroMuted" | "heroGlass" | "heroGlassBorder"> {
+  return on === WHITE
+    ? { onHero: WHITE, onHeroMuted: "rgba(255, 255, 255, 0.8)", heroGlass: "rgba(255, 255, 255, 0.18)", heroGlassBorder: "rgba(255, 255, 255, 0.32)" }
+    : { onHero: DARK_INK, onHeroMuted: "rgba(11, 11, 13, 0.72)", heroGlass: "rgba(11, 11, 13, 0.08)", heroGlassBorder: "rgba(11, 11, 13, 0.14)" };
 }
 
 /** Secondary text and translucent pieces on the accent fill, matching the text colour chosen for it. */
@@ -135,11 +147,12 @@ export function brandPalette(primary: string | null | undefined, scheme: ColorSc
       primaryBorder: `rgba(${rgb}, 0.32)`,
       primaryText: fillHex,
       borderFocus: hex,
-      // Ink is a deep shade of the agency colour, not black (always readable under white text).
-      ink: rgbToHex(untilReadable(shade(base, 0.7), WHITE, 7, "darken")),
-      inkPressed: rgbToHex(shade(base, 0.58)),
-      contrast: rgbToHex(untilReadable(shade(base, 0.7), WHITE, 7, "darken")),
+      // Main buttons stay charcoal under an agency colour too: the colour is kept for the hero card and the
+      // highlights, so it means something where it appears (polish pass 2026-11-05).
+      ink: CHARCOAL,
+      inkPressed: CHARCOAL_PRESSED,
       ...heroFor(base, scheme),
+      ...heroOnFill(WHITE),
     };
   }
 
@@ -158,5 +171,6 @@ export function brandPalette(primary: string | null | undefined, scheme: ColorSc
     primaryText: text,
     borderFocus: text,
     ...heroFor(base, scheme),
+    ...heroOnFill(onPrimary),
   };
 }

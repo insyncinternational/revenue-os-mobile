@@ -22,7 +22,7 @@ import { Banner } from "@/ui/Banner";
 import { ActionTiles, type TileAction as BarAction } from "@/ui/ActionTiles";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
-import { ContrastBlock, contrastStatus } from "@/ui/ContrastBlock";
+import { ContrastBlock } from "@/ui/ContrastBlock";
 import { Ban, CheckCircle2, ChevronRight, ExternalLink, FileText, ICON_STROKE, KanbanSquare, Mail, Send, Share2, UserRound, type IconComponent } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Reveal } from "@/ui/Reveal";
@@ -140,28 +140,28 @@ export default function InvoiceScreen() {
             <View style={styles.badgeRow}>
               <Badge label={t(`invoice.status_${inv.status}` as TranslationKey)} tone={STATUS_TONE[inv.status]} dot={inv.status === "overdue"} />
               {when ? (
-                <Text variant="footnote" weight={inv.status === "overdue" ? "semibold" : undefined} style={{ color: inv.status === "overdue" ? contrastStatus("danger") : colors.onContrastMuted }}>
+                <Text variant="footnote" weight={inv.status === "overdue" ? "semibold" : undefined} style={{ color: inv.status === "overdue" ? colors.onHero : colors.onHeroMuted }}>
                   {when}
                 </Text>
               ) : null}
             </View>
             <View style={styles.amountRow}>
               <View style={styles.flex}>
-                <Text variant="footnote" style={{ color: colors.onContrastMuted }}>
+                <Text variant="footnote" style={{ color: colors.onHeroMuted }}>
                   {open ? t("invoice.balanceDue") : t("invoice.total")}
                 </Text>
                 {/* Counts up on open (cents are whole numbers, so it settles on the exact amount). */}
-                <AnimatedNumber value={amount} format={(n) => cents(Math.round(n), inv.currency, locale)} variant="display" numberOfLines={1} adjustsFontSizeToFit style={[{ color: colors.onContrast }, inv.status === "void" ? styles.struck : null]} />
-                <Text variant="callout" numberOfLines={1} style={{ color: colors.onContrastMuted }}>
+                <AnimatedNumber value={amount} format={(n) => cents(Math.round(n), inv.currency, locale)} variant="display" numberOfLines={1} adjustsFontSizeToFit style={[{ color: colors.onHero }, inv.status === "void" ? styles.struck : null]} />
+                <Text variant="callout" numberOfLines={1} style={{ color: colors.onHeroMuted }}>
                   {[inv.customer_name, inv.customer_email].filter(Boolean).join(" · ") || t("invoice.noCustomer")}
                 </Text>
               </View>
               {paid != null ? (
                 <View style={styles.ring} accessible accessibilityLabel={`${t("invoice.paid")}: ${Math.round(paid * 100)}%`}>
-                  <Ring value={paid} size={64} stroke={6} color={contrastStatus("success")} track={colors.contrastTrack}>
-                    <Text variant="caption" weight="semibold" numeric style={{ color: colors.onContrast }}>{`${Math.round(paid * 100)}%`}</Text>
+                  <Ring value={paid} size={64} stroke={6} color={colors.onHero} track={colors.heroGlass}>
+                    <Text variant="caption" weight="semibold" numeric style={{ color: colors.onHero }}>{`${Math.round(paid * 100)}%`}</Text>
                   </Ring>
-                  <Text variant="caption" style={{ color: colors.onContrastMuted }}>
+                  <Text variant="caption" style={{ color: colors.onHeroMuted }}>
                     {t("invoice.paid")}
                   </Text>
                 </View>

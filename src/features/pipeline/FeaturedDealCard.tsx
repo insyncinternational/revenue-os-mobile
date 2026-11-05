@@ -5,15 +5,15 @@ import { initials } from "@/lib/format";
 import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { Deal } from "@/types/pipeline";
-import { Sheen } from "@/ui/Gloss";
+import { accentGradient, Sheen } from "@/ui/Gloss";
 import { PressableScale } from "@/ui/PressableScale";
 import { Text } from "@/ui/Text";
 
 type Props = { deal: Deal; locale: string; showMoney: boolean; onPress: (d: Deal) => void; fallbackCurrency: string };
 
 /**
- * The first deal of the stage as a feature card (the Mono mock): glossy deep brand, the amount large in a light
- * tint of the brand, how likely it is to close as four segments, and the owner's initials top right.
+ * The first deal of the stage as a feature card (the Mono mock): the hero look (brand fill and gloss), the amount
+ * large, how likely it is to close as four segments, and the owner's initials top right.
  */
 export const FeaturedDealCard = memo(function FeaturedDealCard({ deal, locale, showMoney, onPress, fallbackCurrency }: Props) {
   const { colors } = useTheme();
@@ -28,23 +28,23 @@ export const FeaturedDealCard = memo(function FeaturedDealCard({ deal, locale, s
       accessibilityRole="button"
       accessibilityLabel={[deal.name, who, showMoney && amount ? `${currency} ${amount}` : null, p != null ? `${p}%` : null].filter(Boolean).join(". ")}
       scaleTo={0.985}
-      style={[styles.card, { backgroundColor: colors.contrast, backgroundImage: `linear-gradient(150deg, ${colors.heroFrom} 0%, ${colors.contrast} 65%)` }]}
+      style={[styles.card, { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}
     >
       <Sheen strength={0.6} />
       <View style={styles.top}>
         <View style={styles.flex}>
-          <Text variant="headline" numberOfLines={2} style={{ color: colors.onContrast, fontSize: 17 }}>
+          <Text variant="headline" numberOfLines={2} style={{ color: colors.onHero, fontSize: 17 }}>
             {deal.name}
           </Text>
           {who ? (
-            <Text variant="footnote" numberOfLines={1} style={{ color: colors.onContrastMuted }}>
+            <Text variant="footnote" numberOfLines={1} style={{ color: colors.onHeroMuted }}>
               {who}
             </Text>
           ) : null}
         </View>
         {deal.owner ? (
-          <View style={[styles.owner, { backgroundColor: colors.contrastTrack }]}>
-            <Text variant="caption" weight="semibold" style={{ color: colors.heroGlow, fontSize: 11 }}>
+          <View style={[styles.owner, { backgroundColor: colors.heroGlass }]}>
+            <Text variant="caption" weight="semibold" style={{ color: colors.onHero, fontSize: 11 }}>
               {initials(deal.owner.name || deal.owner.email)}
             </Text>
           </View>
@@ -52,15 +52,18 @@ export const FeaturedDealCard = memo(function FeaturedDealCard({ deal, locale, s
       </View>
       <View style={styles.bottom}>
         {showMoney && amount ? (
-          <Text variant="metric" numeric numberOfLines={1} style={[styles.amount, { color: colors.heroGlow }]}>
-            <Text variant="footnote" weight="medium" style={{ color: colors.onContrastMuted }}>{`${currency} `}</Text>
-            {amount}
-          </Text>
+          // The code and the number side by side on one baseline (nested text clipped the number's descent).
+          <View style={styles.amountRow}>
+            <Text variant="footnote" weight="medium" style={{ color: colors.onHeroMuted }}>{`${currency} `}</Text>
+            <Text variant="metric" numeric numberOfLines={1} adjustsFontSizeToFit style={[styles.amount, { color: colors.onHero }]}>
+              {amount}
+            </Text>
+          </View>
         ) : (
           <View />
         )}
         {p != null ? (
-          <Text variant="eyebrow" numeric style={{ color: colors.onContrastMuted }}>
+          <Text variant="eyebrow" numeric style={{ color: colors.onHeroMuted }}>
             {t("pipeline.likelyPct", { n: p })}
           </Text>
         ) : null}
@@ -68,7 +71,7 @@ export const FeaturedDealCard = memo(function FeaturedDealCard({ deal, locale, s
       {p != null ? (
         <View style={styles.segments} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           {[0, 1, 2, 3].map((i) => (
-            <View key={i} style={[styles.segment, { backgroundColor: i < filled ? colors.heroGlow : colors.contrastTrack }]} />
+            <View key={i} style={[styles.segment, { backgroundColor: i < filled ? colors.onHero : colors.heroGlass }]} />
           ))}
         </View>
       ) : null}
@@ -82,7 +85,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0, gap: 3 },
   owner: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   bottom: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md },
-  amount: { fontSize: 30, lineHeight: 34, letterSpacing: -1 },
+  amountRow: { flexDirection: "row", alignItems: "baseline", flexShrink: 1 },
+  amount: { fontSize: 30, lineHeight: 38, letterSpacing: -1, flexShrink: 1 },
   segments: { flexDirection: "row", gap: 4 },
   segment: { flex: 1, height: 6, borderRadius: 3 },
 });

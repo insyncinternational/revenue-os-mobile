@@ -7,7 +7,8 @@ import { t } from "@/i18n";
 import { Button } from "@/ui/Button";
 import { Building, LogOut } from "@/ui/icons";
 import { Screen } from "@/ui/Screen";
-import { SkeletonList } from "@/ui/Skeleton";
+import { AgencyHomeSkeleton } from "@/features/agency/AgencyHomeSkeleton";
+import { TodaySkeleton } from "@/features/today/TodaySkeleton";
 import { EmptyState } from "@/ui/States";
 import { initialMode, pickAgency } from "@/features/agency/agency";
 import { useAppMode } from "./mode";
@@ -40,11 +41,15 @@ export function TabsGate({ children }: { children: ReactNode }) {
 
   if (mode === "agency" && agencyId) return <Redirect href={AGENCY_HOME} />;
 
+  // The same placeholder as the screen that comes next, so a sign-in shows one loader, not two: Today for a
+  // workspace, the agency home otherwise (agency staff are the ones who wait here for their agencies).
   if (loading || (mode == null && agencies.isPending)) {
-    return (
+    return mode === "workspace" ? (
       <Screen fixed>
-        <SkeletonList rows={6} />
+        <TodaySkeleton />
       </Screen>
+    ) : (
+      <AgencyHomeSkeleton />
     );
   }
   if (noWorkspace) {

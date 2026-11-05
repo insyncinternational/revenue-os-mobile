@@ -19,13 +19,15 @@ import type { Deal } from "@/types/pipeline";
 import { useHeaderChip } from "@/ui/headerChip";
 import { ArrowLeftRight, ChevronDown, ChevronRight, ICON_STROKE, KanbanSquare, Lock, Trophy } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
-import { DelayedFallback, SkeletonList } from "@/ui/Skeleton";
+import { PullRefresh } from "@/ui/PullRefresh";
+import { DelayedFallback, SkeletonPipeline } from "@/ui/Skeleton";
 import { EmptyState, ErrorState, OfflineBanner } from "@/ui/States";
 import { SwipeableRow } from "@/ui/SwipeableRow";
 import { Text } from "@/ui/Text";
 import { ListReveal } from "@/ui/ListReveal";
 import { TabHeader } from "@/ui/TabHeader";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
+import { useRefreshOffset } from "@/ui/Screen";
 
 export default function PipelineScreen() {
   const enabled = useModuleEnabled("crm");
@@ -34,6 +36,7 @@ export default function PipelineScreen() {
 }
 
 function PipelineBoard() {
+  const refreshOffset = useRefreshOffset();
   const { colors } = useTheme();
   const scrim = useStatusBarScrim();
   const chip = useHeaderChip();
@@ -79,7 +82,7 @@ function PipelineBoard() {
     return board.isPending ? (
       <View style={[styles.fill, { backgroundColor: colors.background }]}>
         <DelayedFallback>
-          <SkeletonList rows={6} avatar={false} />
+          <SkeletonPipeline />
         </DelayedFallback>
       </View>
     ) : (
@@ -91,8 +94,7 @@ function PipelineBoard() {
     <View style={styles.header}>
       <TabHeader
         area="pipeline"
-        quiet={seeMoney && openCount > 0}
-        title={seeMoney && openCount > 0 ? t("pipeline.title") : t("tabs.pipeline")}
+        title={t("tabs.pipeline")}
         summary={openCount === 1 ? t("pipeline.dealCountOne") : t("pipeline.dealCount", { count: openCount })}
         action={canCreate ? { label: t("pipeline.add"), onPress: () => openDealForm({ stageId: stage && !stage.is_won && !stage.is_lost ? stage.id : undefined }) } : undefined}
       >
@@ -149,8 +151,7 @@ function PipelineBoard() {
         data={deals}
         keyExtractor={(d) => String(d.id)}
         contentInsetAdjustmentBehavior="never"
-        onRefresh={() => void board.refetch()}
-        refreshing={board.isRefetching}
+        refreshControl={<PullRefresh busy={board.isRefetching} onRefresh={() => void board.refetch()} progressViewOffset={refreshOffset} />}
         ListHeaderComponent={header}
         ListEmptyComponent={
           openCount === 0 && (totals[String(selected)]?.count ?? 0) === 0 && !stages.some((s) => (totals[String(s.id)]?.count ?? 0) > 0) ? (

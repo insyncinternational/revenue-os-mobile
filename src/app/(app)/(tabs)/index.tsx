@@ -25,9 +25,8 @@ import { DelayedFallback } from "@/ui/Skeleton";
 import { ErrorState, OfflineBanner } from "@/ui/States";
 import { StatusBarScrim, useStatusBarScrim } from "@/ui/StatusBarScrim";
 import { useApprovalCount } from "@/features/approvals/useApprovals";
-import { funnelSteps, isFreshWorkspace, orderMetrics, performanceMetrics, topStats } from "@/features/today/charts";
+import { funnelSteps, isFreshWorkspace, orderMetrics, performanceMetrics, splitHighlight } from "@/features/today/charts";
 import { HERO_ITEMS, NextUpCarousel } from "@/features/today/NextUp";
-import { Stats } from "@/features/today/Stats";
 import { Button } from "@/ui/Button";
 import { freshSuggestions, todayHeadline } from "@/features/today/headline";
 import { useWorkspaceAccess } from "@/session/workspace";
@@ -90,8 +89,11 @@ export default function Today() {
   const fresh = isFreshWorkspace(kpis, openDeals, data.conversations?.length ?? 0);
   const funnel = fresh ? null : funnelSteps(kpis);
   // Each number in one place: counts the funnel shows don't get a tile as well.
-  const metrics = orderMetrics(performanceMetrics(kpis, funnel), funnel ? 2 : 5);
-  const stats = topStats(kpis);
+  // and the open pipeline and what was won sit on the Pipeline card above, so Performance doesn't repeat them.
+  const onPipelineCard = fresh ? [] : ["pipeline", "won"];
+  const metrics = orderMetrics(performanceMetrics(kpis, funnel).filter((m) => !onPipelineCard.includes(m.key)), funnel ? 2 : 5);
+  // "See all" fills the empty slot of an odd grid (as Full report does on the agency home), else it is a link.
+  const seeAllTile = !showAllKpis && metrics.rest.length > 0 && splitHighlight(metrics.shown).tiles.length % 2 === 1;
   const canAddDeal = quick.some((a) => a.key === "deal");
   const suggestions = freshSuggestions(data.recommendations ?? [], items);
   // What to do comes first: the plan, then suggestions; "all caught up" only when there is neither.
@@ -134,6 +136,15 @@ export default function Today() {
         />
         {!online ? <OfflineBanner /> : null}
 
+        {/* The shortcuts right under the greeting, as on the agency home. */}
+        {quick.length > 0 ? (
+          <Reveal index={section++}>
+            <View style={styles.quick}>
+              <QuickActions actions={quick} />
+            </View>
+          </Reveal>
+        ) : null}
+
         <View style={styles.upNext}>
           {caughtUp ? (
             <Reveal index={section++}>
@@ -145,12 +156,6 @@ export default function Today() {
               <NextUpCarousel items={items} suggestion={heroSuggestion} onComplete={onComplete} />
             </Reveal>
           )}
-          {/* At a glance, as in the mock: open pipeline, won this period, the next meeting. */}
-          {!fresh ? (
-            <Reveal index={section++}>
-              <Glance pipeline={data.pipeline} won={kpis.find((k) => k.key === "won") ?? null} sinceDays={data.kpis?.since_days ?? period} currency={data.kpis?.currency ?? data.pipeline?.currency ?? "USD"} meetings={meetings} />
-            </Reveal>
-          ) : null}
           {restItems.length > 0 ? (
             <Reveal index={section++}>
               <UpNext items={restItems} onComplete={onComplete} />
@@ -176,9 +181,18 @@ export default function Today() {
           </Reveal>
         </View>
 
-        {kpis.length > 0 && !fresh ? (
+        {!fresh ? (
           <Reveal index={section++}>
-            {/* The period switch sits beside the title: it changes this section and the pipeline below. */}
+            <SectionHeader title={t("today.pipeline")} action={t("common.seeAll")} onAction={() => go("/pipeline")} />
+            <View style={styles.block}>
+              <Glance pipeline={data.pipeline} won={kpis.find((k) => k.key === "won") ?? null} sinceDays={data.kpis?.since_days ?? period} currency={data.kpis?.currency ?? data.pipeline?.currency ?? "USD"} meetings={meetings} />
+            </View>
+          </Reveal>
+        ) : null}
+
+        {metrics.shown.length > 0 && !fresh ? (
+          <Reveal index={section++}>
+            {/* The period switch sits beside the title: it changes this section and the pipeline above. */}
             <SectionHeader
               title={t("today.performance")}
               right={
@@ -195,20 +209,18 @@ export default function Today() {
               }
             />
             <View style={styles.block}>
-              {/* At a glance: the three numbers that moved. "See all" opens every number and the funnel. */}
-              {stats.length > 0 && !showAllKpis ? (
-                <Stats metrics={kpis} currency={data.kpis?.currency ?? "USD"} />
-              ) : (
-                <Kpis
-                  metrics={showAllKpis ? [...metrics.shown, ...metrics.rest] : metrics.shown}
-                  currency={data.kpis?.currency ?? "USD"}
-                  onAddDeal={canAddDeal ? () => openDealForm() : undefined}
-                />
-              )}
+              {/* The same grid as the agency's Results: the number that moved most, then even tiles; with an odd
+                  count the last slot opens every number (and the funnel). */}
+              <Kpis
+                metrics={showAllKpis ? [...metrics.shown, ...metrics.rest] : metrics.shown}
+                currency={data.kpis?.currency ?? "USD"}
+                onAddDeal={canAddDeal ? () => openDealForm() : undefined}
+                more={seeAllTile ? { label: t("today.seeAllCount", { count: metrics.shown.length + metrics.rest.length }), hint: t("today.performance"), onPress: () => setShowAllKpis(true) } : undefined}
+              />
               {showAllKpis && funnel ? <Funnel steps={funnel} metrics={kpis} /> : null}
-              {stats.length > 0 || metrics.rest.length ? (
+              {showAllKpis || (metrics.rest.length > 0 && !seeAllTile) ? (
                 <Button
-                  label={showAllKpis ? t("today.showLess") : t("today.seeAllCount", { count: kpis.length })}
+                  label={showAllKpis ? t("today.showLess") : t("today.seeAllCount", { count: metrics.shown.length + metrics.rest.length })}
                   variant="ghost"
                   size="sm"
                   onPress={() => setShowAllKpis((v) => !v)}
@@ -227,14 +239,6 @@ export default function Today() {
           </Reveal>
         ) : null}
 
-        {/* Quick add, last: the header-free way to start something new. */}
-        {!fresh && quick.length > 0 ? (
-          <Reveal index={section++}>
-            <View style={styles.quick}>
-              <QuickActions actions={quick} />
-            </View>
-          </Reveal>
-        ) : null}
       </Screen>
       <StatusBarScrim shown={scrim.shown} />
     </View>
@@ -245,5 +249,5 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   upNext: { paddingHorizontal: gutter, gap: space.md },
   block: { paddingHorizontal: gutter, gap: space.md },
-  quick: { paddingHorizontal: gutter, paddingTop: space.xxl },
+  quick: { paddingHorizontal: gutter, marginBottom: space.lg },
 });

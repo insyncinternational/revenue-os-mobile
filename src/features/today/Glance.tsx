@@ -1,18 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { getIntlLocale, t } from "@/i18n";
-import { timeOfDay } from "@/lib/format";
+import { money, timeOfDay } from "@/lib/format";
 import { go, openMeeting } from "@/lib/navigate";
 import { useTheme } from "@/theme/ThemeProvider";
 import { radius, space } from "@/theme/tokens";
 import type { KpiMetric, MeetingRow, PipelineOverview } from "@/types/home";
 import { AnimatedNumber } from "@/ui/AnimatedNumber";
-import { accentGradient, Sheen } from "@/ui/Gloss";
+import { CalendarDays, ChevronRight, ICON_STROKE, Trophy } from "@/ui/icons";
 import { PressableScale } from "@/ui/PressableScale";
 import { Text } from "@/ui/Text";
 
-const EASE = Easing.bezier(0.16, 1, 0.3, 1);
 /** A meeting counts as "now" from 15 minutes before it starts until an hour after. */
 const NOW_BEFORE = 15 * 60_000;
 const NOW_AFTER = 60 * 60_000;
@@ -20,208 +18,160 @@ const NOW_AFTER = 60 * 60_000;
 type Props = { pipeline: PipelineOverview | null; won: KpiMetric | null; sinceDays: number; currency: string; meetings: MeetingRow[] };
 
 /**
- * Today's glance, under "Up next" (the Mono mock): the open pipeline as a white card with a barcode bar, then two
- * tiles — won in the period, and the next meeting (glossy deep brand, "Now" with a pulse while it's on).
- * Each part shows only when there's something to say.
+ * The pipeline at a glance, as ONE card (the agency home's pool card is the model): the open amount, a thin bar of
+ * its stages with their values, then a row with what was won in the period and the next meeting. Nothing appears
+ * or disappears as a separate tile, so the page keeps its shape whatever the data.
  */
 export function Glance({ pipeline, won, sinceDays, currency, meetings }: Props) {
+  const { colors } = useTheme();
+  const locale = getIntlLocale();
   const [now] = useState(() => Date.now());
   const next = pickMeeting(meetings, now);
-  const openDeals = pipeline?.bars.reduce((n, b) => n + b.count, 0) ?? 0;
-  const showPipeline = pipeline != null && openDeals > 0;
-  const showWon = won != null;
-  if (!showPipeline && !showWon && !next) return null;
+  const deals = pipeline?.bars.reduce((n, b) => n + b.count, 0) ?? 0;
+  const total = pipeline?.total_value ?? 0;
+  const valued = (pipeline?.bars ?? []).filter((b) => b.value > 0);
+  const fmt = (n: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(n));
+  if (!pipeline && !won && !next) return null;
+  const code = pipeline?.currency ?? currency;
+
   return (
-    <View style={styles.wrap}>
-      {showPipeline ? <PipelineCard pipeline={pipeline} deals={openDeals} /> : null}
-      {showWon || next ? (
-        <View style={styles.row}>
-          {showWon ? <WonTile metric={won} sinceDays={sinceDays} currency={currency} /> : null}
-          {next ? <MeetingTile meeting={next} now={now} /> : null}
+    <View style={[styles.card, { backgroundColor: colors.surface, boxShadow: colors.cardShadowSoft }]}>
+      <PressableScale
+        onPress={() => go("/pipeline")}
+        accessibilityRole="button"
+        accessibilityLabel={`${t("pipeline.openValue")}: ${money(total, code, locale)}, ${deals === 1 ? t("today.openDealsOne") : t("today.openDeals", { count: deals })}`}
+        scaleTo={0.99}
+        style={styles.top}
+      >
+        <View style={styles.between}>
+          <Text variant="footnote" tone="muted">
+            {t("pipeline.openValue")}
+          </Text>
+          <View style={styles.inline}>
+            <Text variant="footnote" tone="muted">
+              {deals === 1 ? t("today.openDealsOne") : t("today.openDeals", { count: deals })}
+            </Text>
+            <ChevronRight size={15} color={colors.textSubtle} strokeWidth={ICON_STROKE} />
+          </View>
+        </View>
+        <View style={styles.amount}>
+          <Text variant="headline" tone="muted" weight="medium">{`${code} `}</Text>
+          <AnimatedNumber value={total} format={fmt} variant="display" numberOfLines={1} adjustsFontSizeToFit style={styles.big} />
+        </View>
+        {total > 0 ? (
+          <>
+            {/* One thin bar: each stage its share, the first in the brand colour and the next ones lighter. */}
+            <View style={styles.bar} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              {valued.map((b, i) => (
+                <View key={b.stage_id} style={[styles.segment, { flexGrow: Math.max(b.value / total, 0.04), backgroundColor: colors.primaryFill, opacity: Math.max(1 - i * 0.22, 0.35) }]} />
+              ))}
+            </View>
+            <View style={styles.legend}>
+              {valued.map((b, i) => (
+                <View key={b.stage_id} style={styles.inline}>
+                  <View style={[styles.dot, { backgroundColor: colors.primaryFill, opacity: Math.max(1 - i * 0.22, 0.35) }]} />
+                  <Text variant="caption" tone="secondary" numeric numberOfLines={1}>
+                    {`${b.label} ${fmt(b.value)}`}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+      </PressableScale>
+
+      {won || next ? (
+        <View style={[styles.foot, { borderTopColor: colors.border }]}>
+          {won ? (
+            <View style={styles.cell}>
+              <View style={[styles.icon, { backgroundColor: colors.surfaceSecondary }]}>
+                <Trophy size={16} color={colors.text} strokeWidth={ICON_STROKE + 0.25} />
+              </View>
+              <View style={styles.cellText}>
+                <Text variant="caption" tone="muted" numberOfLines={1}>
+                  {t("today.wonDays", { days: sinceDays })}
+                </Text>
+                <Text variant="headline" numeric numberOfLines={1}>
+                  {won.kind === "currency" ? money(won.value, currency, locale) : fmt(won.value)}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+          {won && next ? <View style={[styles.split, { backgroundColor: colors.border }]} /> : null}
+          {next ? <MeetingCell meeting={next} now={now} /> : null}
         </View>
       ) : null}
     </View>
   );
 }
 
-/** The meeting for the tile: the one on now or next today, else the latest one from earlier today. */
-function pickMeeting(meetings: MeetingRow[], now: number): MeetingRow | undefined {
-  const start = new Date(now).setHours(0, 0, 0, 0);
-  const end = start + 86_400_000;
-  const today = meetings
-    .filter((m) => m.due_at && m.status !== "cancelled" && Date.parse(m.due_at) >= start && Date.parse(m.due_at) < end)
-    .sort((a, b) => Date.parse(a.due_at!) - Date.parse(b.due_at!));
-  return today.find((m) => Date.parse(m.due_at!) + NOW_AFTER >= now) ?? today[today.length - 1];
-}
-
-function amountParts(value: number, currency: string, locale: string): { code: string; number: string } {
-  return { code: currency, number: new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(value)) };
-}
-
-function PipelineCard({ pipeline, deals }: { pipeline: PipelineOverview; deals: number }) {
-  const { colors } = useTheme();
-  const locale = getIntlLocale();
-  const total = pipeline.total_value;
-  const valued = pipeline.bars.filter((b) => b.value > 0);
-  const top = valued.reduce((best, b) => (b.value > (best?.value ?? -1) ? b : best), valued[0]);
-  const fmt = (n: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n);
-  return (
-    <PressableScale
-      onPress={() => go("/pipeline")}
-      accessibilityRole="button"
-      accessibilityLabel={`${t("pipeline.openValue")}: ${pipeline.currency} ${fmt(total)}, ${deals === 1 ? t("today.openDealsOne") : t("today.openDeals", { count: deals })}`}
-      scaleTo={0.985}
-      style={[styles.card, { backgroundColor: colors.surface }]}
-    >
-      <View style={styles.between}>
-        <Text variant="footnote" tone="muted">
-          {t("pipeline.openValue")}
-        </Text>
-        <Text variant="caption" tone="muted">
-          {deals === 1 ? t("today.openDealsOne") : t("today.openDeals", { count: deals })}
-        </Text>
-      </View>
-      <View style={styles.amount}>
-        <Text variant="headline" tone="muted" weight="medium">
-          {`${amountParts(total, pipeline.currency, locale).code} `}
-        </Text>
-        <AnimatedNumber value={total} format={fmt} variant="display" style={styles.big} numberOfLines={1} adjustsFontSizeToFit />
-      </View>
-      {total > 0 ? (
-        <View style={styles.bar} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {valued.map((b, i) => (
-            <Segment key={b.stage_id} share={b.value / total} index={i} solid={b === top} />
-          ))}
-        </View>
-      ) : null}
-      <View style={styles.legend}>
-        {valued.map((b) => (
-          <Text key={b.stage_id} variant="caption" tone="muted" numberOfLines={1}>
-            {`${b.label} ${fmt(b.value)}`}
-          </Text>
-        ))}
-      </View>
-    </PressableScale>
-  );
-}
-
-/** One stage's share of the bar: the biggest one solid and glossy, the others drawn as a barcode of thin lines. */
-function Segment({ share, index, solid }: { share: number; index: number; solid: boolean }) {
-  const { colors } = useTheme();
-  const reduce = useReducedMotion();
-  const grow = useSharedValue(reduce ? 1 : 0);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    if (!reduce) grow.set(withDelay(250 + index * 120, withTiming(1, { duration: 900, easing: EASE })));
-  }, [reduce, index, grow]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scaleX: grow.get() }] }));
-  const lines = Math.max(1, Math.floor(width / 7));
-  return (
-    <Animated.View
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      style={[styles.segment, { flexGrow: Math.max(share, 0.06) }, styles.fromStart, style, solid && { backgroundColor: colors.primaryFill, backgroundImage: accentGradient(colors) }]}
-    >
-      {solid ? null : (
-        <View style={styles.lines}>
-          {Array.from({ length: lines }, (_, i) => (
-            <View key={i} style={[styles.line, { backgroundColor: colors.primaryFill }]} />
-          ))}
-        </View>
-      )}
-    </Animated.View>
-  );
-}
-
-function WonTile({ metric, sinceDays, currency }: { metric: KpiMetric; sinceDays: number; currency: string }) {
-  const { colors } = useTheme();
-  const locale = getIntlLocale();
-  const fmt = (n: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(n));
-  return (
-    <PressableScale
-      onPress={() => go("/pipeline")}
-      accessibilityRole="button"
-      accessibilityLabel={`${t("today.wonDays", { days: sinceDays })}: ${currency} ${fmt(metric.value)}`}
-      scaleTo={0.97}
-      style={[styles.tile, { backgroundColor: colors.surface }]}
-    >
-      <Text variant="footnote" tone="muted" numberOfLines={1}>
-        {t("today.wonDays", { days: sinceDays })}
-      </Text>
-      {metric.kind === "currency" ? (
-        // Money reads the same everywhere: a small currency code before the number ("AED 12,000").
-        <View style={styles.amount}>
-          <Text variant="footnote" tone="muted" weight="medium">{`${currency} `}</Text>
-          <AnimatedNumber value={metric.value} format={fmt} variant="metric" numberOfLines={1} adjustsFontSizeToFit style={styles.tileNumber} />
-        </View>
-      ) : (
-        <>
-          <AnimatedNumber value={metric.value} format={fmt} variant="metric" numberOfLines={1} adjustsFontSizeToFit style={styles.tileNumber} />
-          <Text variant="caption" tone="muted">
-            {t("today.deals")}
-          </Text>
-        </>
-      )}
-    </PressableScale>
-  );
-}
-
-function MeetingTile({ meeting, now }: { meeting: MeetingRow; now: number }) {
+/** The next meeting in the card's bottom row: when (Now, Next, Tomorrow, Fri) and what time; opens it. */
+function MeetingCell({ meeting, now }: { meeting: MeetingRow; now: number }) {
   const { colors } = useTheme();
   const locale = getIntlLocale();
   const start = Date.parse(meeting.due_at!);
   const live = start - NOW_BEFORE <= now && now <= start + NOW_AFTER;
-  const label = live ? t("today.nowLabel") : start > now ? t("today.nextLabel") : t("today.earlierLabel");
+  const label = meetingLabel(start, now, live, locale);
   return (
     <PressableScale
       onPress={() => openMeeting(meeting.task_id)}
       accessibilityRole="button"
       accessibilityLabel={`${label}: ${timeOfDay(meeting.due_at!, locale)}, ${meeting.title}`}
       scaleTo={0.97}
-      style={[styles.tile, styles.clip, { backgroundColor: colors.contrast, backgroundImage: `linear-gradient(150deg, ${colors.primaryFill} 0%, ${colors.contrast} 75%)` }]}
+      style={styles.cell}
     >
-      <Sheen strength={0.7} />
-      <View style={styles.liveRow}>
-        <Pulse on={live} color={colors.heroGlow} />
-        <Text variant="footnote" style={{ color: colors.onContrastMuted }}>
+      <View style={[styles.icon, { backgroundColor: live ? colors.primarySubtle : colors.surfaceSecondary }]}>
+        <CalendarDays size={16} color={live ? colors.primary : colors.text} strokeWidth={ICON_STROKE + 0.25} />
+      </View>
+      <View style={styles.cellText}>
+        <Text variant="caption" numberOfLines={1} style={{ color: live ? colors.primaryText : colors.textMuted }}>
           {label}
         </Text>
+        <Text variant="headline" numeric numberOfLines={1}>
+          {timeOfDay(meeting.due_at!, locale)}
+        </Text>
       </View>
-      <Text variant="metric" numeric numberOfLines={1} adjustsFontSizeToFit style={[styles.tileNumber, { color: colors.onContrast }]}>
-        {timeOfDay(meeting.due_at!, locale)}
-      </Text>
-      <Text variant="caption" numberOfLines={1} style={{ color: colors.onContrastMuted }}>
-        {meeting.title}
-      </Text>
     </PressableScale>
   );
 }
 
-function Pulse({ on, color }: { on: boolean; color: string }) {
-  const reduce = useReducedMotion();
-  const o = useSharedValue(1);
-  useEffect(() => {
-    if (on && !reduce) o.set(withRepeat(withSequence(withTiming(0.35, { duration: 800 }), withTiming(1, { duration: 800 })), -1));
-  }, [on, reduce, o]);
-  const style = useAnimatedStyle(() => ({ opacity: o.get(), transform: [{ scale: 0.75 + 0.25 * o.get() }] }));
-  return <Animated.View style={[styles.dot, { backgroundColor: color }, style]} />;
+/**
+ * The meeting for the card: the one on now or next today; else the next one coming up (tomorrow, later this
+ * week); else the latest one from earlier today.
+ */
+function pickMeeting(meetings: MeetingRow[], now: number): MeetingRow | undefined {
+  const start = new Date(now).setHours(0, 0, 0, 0);
+  const end = start + 86_400_000;
+  const live = meetings.filter((m) => m.due_at && m.status !== "cancelled").sort((a, b) => Date.parse(a.due_at!) - Date.parse(b.due_at!));
+  const today = live.filter((m) => Date.parse(m.due_at!) >= start && Date.parse(m.due_at!) < end);
+  return today.find((m) => Date.parse(m.due_at!) + NOW_AFTER >= now) ?? live.find((m) => Date.parse(m.due_at!) >= end) ?? today[today.length - 1];
+}
+
+/** "Now", "Next", "Earlier today"; for another day "Tomorrow" or the weekday ("Fri"). */
+function meetingLabel(start: number, now: number, live: boolean, locale: string): string {
+  if (live) return t("today.nowLabel");
+  const dayStart = new Date(now).setHours(0, 0, 0, 0);
+  if (start >= dayStart + 86_400_000) {
+    if (start < dayStart + 2 * 86_400_000) return t("when.tomorrow");
+    return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(start));
+  }
+  return start > now ? t("today.nextLabel") : t("today.earlierLabel");
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.md },
-  card: { borderRadius: radius.xl + 4, padding: space.xl, paddingVertical: space.lg + 2, gap: space.xs },
-  between: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: space.sm },
+  card: { borderRadius: radius.xl + 4, overflow: "hidden" },
+  top: { padding: space.lg, paddingBottom: space.md, gap: space.sm },
+  between: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  inline: { flexDirection: "row", alignItems: "center", gap: space.xs },
   amount: { flexDirection: "row", alignItems: "baseline" },
-  big: { flexShrink: 1, fontSize: 38, lineHeight: 44, letterSpacing: -1.4 },
-  bar: { flexDirection: "row", gap: 4, height: 28, marginTop: space.sm },
-  segment: { height: 28, borderRadius: radius.sm, overflow: "hidden" },
-  fromStart: { transformOrigin: "left" },
-  lines: { flex: 1, flexDirection: "row", gap: 4 },
-  line: { width: 3, height: 28, borderRadius: 1.5 },
-  legend: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", columnGap: space.md, rowGap: 2, marginTop: space.xs },
-  row: { flexDirection: "row", gap: space.md },
-  tile: { flex: 1, minWidth: 0, borderRadius: radius.xl + 4, padding: space.lg + 2, gap: 4 },
-  clip: { overflow: "hidden" },
-  tileNumber: { marginTop: space.xs },
-  liveRow: { flexDirection: "row", alignItems: "center", gap: space.xs + 2 },
+  big: { flexShrink: 1 },
+  bar: { flexDirection: "row", gap: 3, height: 10, marginTop: space.xs },
+  segment: { borderRadius: 5 },
+  legend: { flexDirection: "row", flexWrap: "wrap", columnGap: space.lg, rowGap: space.xs },
   dot: { width: 8, height: 8, borderRadius: 4 },
+  foot: { flexDirection: "row", alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: space.md, paddingHorizontal: space.lg },
+  cell: { flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm + 2, minWidth: 0 },
+  cellText: { flex: 1, minWidth: 0, gap: 1 },
+  icon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  split: { width: StyleSheet.hairlineWidth, alignSelf: "stretch", marginHorizontal: space.md },
 });

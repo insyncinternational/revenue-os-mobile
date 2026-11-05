@@ -20,7 +20,7 @@ export function TabIcon({ Icon, color, size, focused }: { Icon: IconComponent; c
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
   return (
     <Animated.View style={style}>
-      <Icon size={size} color={color} strokeWidth={focused ? ICON_STROKE + 0.5 : ICON_STROKE} />
+      <Icon size={size} color={color} strokeWidth={focused ? ICON_STROKE + 0.5 : ICON_STROKE} fill={focused ? color : "none"} fillOpacity={focused ? 0.22 : 0} />
     </Animated.View>
   );
 }

@@ -6,6 +6,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { gutter, radius, space } from "@/theme/tokens";
 import type { ClientRow } from "@/types/agency";
 import { Avatar } from "@/ui/Avatar";
+import { Badge } from "@/ui/Badge";
 import { Card } from "@/ui/Card";
 import { CheckCircle2, ICON_STROKE } from "@/ui/icons";
 import { ListRow } from "@/ui/ListRow";
@@ -14,7 +15,8 @@ import { Text } from "@/ui/Text";
 import { clientHealth, clientName, type HealthReason } from "./agency";
 import { openAgencyClient } from "./navigate";
 
-function reasonText(reason: HealthReason, c: ClientRow, locale: string): string {
+/** The one-line reason under a client's health (also on the Clients list cards). */
+export function reasonText(reason: HealthReason, c: ClientRow, locale: string): string {
   switch (reason) {
     case "invite":
       return t("agency.health.invite");
@@ -76,7 +78,7 @@ export function HealthCard({ clients }: { clients: ClientRow[] }) {
               title={clientName(r.client)}
               subtitle={reasonText(r.reason, r.client, locale)}
               leading={<Avatar name={clientName(r.client)} size={36} />}
-              chevron
+              trailing={<Badge label={t(r.state === "risk" ? "agency.health.risk" : "agency.health.waiting")} tone={r.state === "risk" ? "danger" : "warning"} />}
               onPress={() => openAgencyClient(r.client.id)}
             />
           </View>

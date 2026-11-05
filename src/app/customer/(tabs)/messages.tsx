@@ -44,7 +44,7 @@ export default function CustomerMessages() {
       >
         <CustomerHeader title={t("portal.tabs.messages")} summary={t("portal.msg.summary", { business: portal?.branding?.business_name ?? "" })} />
         {!messages.data ? (
-          messages.isError ? <ErrorState message={userMessage(messages.error)} onRetry={() => void messages.refetch()} /> : <SkeletonList rows={4} />
+          messages.isError ? <ErrorState message={userMessage(messages.error)} onRetry={() => void messages.refetch()} /> : <SkeletonList rows={4} bare />
         ) : rows.length === 0 ? (
           <EmptyState icon={MessageCircle} title={t("portal.msg.emptyTitle")} message={t("portal.msg.emptyMessage")} />
         ) : (

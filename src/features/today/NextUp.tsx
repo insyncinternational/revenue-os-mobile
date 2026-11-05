@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { getIntlLocale, t } from "@/i18n";
-import { timeOfDay } from "@/lib/format";
+import { timeOfDay, sentenceCase } from "@/lib/format";
 import { haptics } from "@/lib/haptics";
 import { appLinkFor } from "@/lib/links";
 import { go, openWebHref } from "@/lib/navigate";
@@ -80,7 +80,7 @@ export function NextUp({ item, suggestion, onComplete, label }: Props) {
         >
           {Icon ? <Icon size={17} color={colors.primaryFill} strokeWidth={ICON_STROKE + 0.5} /> : null}
           <Text variant="callout" weight="semibold" style={{ color: colors.primaryFill }} numberOfLines={1}>
-            {action.label}
+            {sentenceCase(action.label)}
           </Text>
         </PressableScale>
       ) : null}
